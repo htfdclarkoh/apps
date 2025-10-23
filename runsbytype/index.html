@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runs by Type</title>
+    <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Hide the cursor for the entire page */
+        body {
+            cursor: none;
+            /* Disable all mouse/cursor interactions */
+            pointer-events: none;
+        }
+
+        /* Simple loading spinner, optimized for dark mode */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #818cf8; /* Light indigo */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body class="h-full font-sans text-gray-200">
+    <div class="mx-auto p-4 md:p-8">
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl font-bold text-white">NUMBER OF RUNS BY TYPE</h1>
+        </header>
+
+        <!-- Container for the data -->
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+            <!-- Loading State -->
+            <div id="loading-state" class="p-8 flex flex-col items-center justify-center text-gray-400">
+                <div class="spinner"></div>
+                <p class="mt-4 text-lg">Loading Run Data...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="hidden p-8 text-center text-red-300 bg-red-900/50 rounded-lg">
+                <h3 class="font-bold text-xl">Oops! Something went wrong.</h3>
+                <p id="error-message" class="mt-2"></p>
+            </div>
+            
+            <!-- Data Cards Container -->
+            <div id="run-cards-container" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8 gap-6 p-6">
+                <!-- Data cards will be inserted here -->
+            </div>
+        </div>
+        
+        <footer class="mt-6 text-center text-gray-400 text-sm">
+            <p>615IT</p>
+        </footer>
+    </div>
+
+    <script>
+        // The URL for your Google Sheet CSV
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1511491703&single=true&output=csv';
+
+        // Get references to DOM elements
+        const loadingEl = document.getElementById('loading-state');
+        const errorEl = document.getElementById('error-state');
+        const errorMessageEl = document.getElementById('error-message');
+        const cardContainerEl = document.getElementById('run-cards-container');
+
+        /**
+         * Fetches and displays the run data.
+         */
+        async function fetchRunData() {
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+                }
+                
+                const csvText = await response.text();
+                parseAndDisplayData(csvText);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showError(error.message);
+            }
+        }
+
+        /**
+         * Parses the CSV text and populates the table.
+         * @param {string} csvText - The raw CSV data as a string.
+         */
+        function parseAndDisplayData(csvText) {
+            // Split the CSV text into individual rows
+            const rows = csvText.split('\n');
+
+            // As per your request, we start from row 5 (index 4) and go to row 52 (index 51).
+            // .slice(4, 52) extracts from index 4 up to (but not including) index 52.
+            const dataRows = rows.slice(4, 52);
+
+            // Clear any existing cards
+            cardContainerEl.innerHTML = '';
+            
+            const parsedData = [];
+
+            // Loop through the relevant rows and parse data into an array
+            dataRows.forEach(row => {
+                // Split the row by comma
+                const columns = row.split(',');
+
+                // Column A (index 0) is the run type
+                // Column B (index 1) is the number of runs
+                // We also trim whitespace and remove quotes just in case
+                const runType = columns[0] ? columns[0].trim().replace(/"/g, '') : '';
+                const runCountStr = columns[1] ? columns[1].trim().replace(/"/g, '') : '0';
+                
+                // Convert run count to a number for sorting
+                const runCount = parseFloat(runCountStr) || 0;
+
+                // Only add if we have a valid run type
+                if (runType) {
+                    parsedData.push({ runType, runCount });
+                }
+            });
+
+            // Sort the data by runCount in descending order (most runs at top)
+            parsedData.sort((a, b) => b.runCount - a.runCount);
+
+            // Now, populate the container with the sorted card data
+            parsedData.forEach(item => {
+                // Create the card element
+                const card = document.createElement('div');
+                card.className = 'bg-gray-700 rounded-lg shadow-md p-6 flex flex-col items-center justify-center text-center transition-transform transform hover:scale-105 hover:bg-gray-600';
+
+                // Create element for run count
+                const countEl = document.createElement('div');
+                countEl.className = 'text-4xl font-bold text-lime-400';
+                countEl.textContent = item.runCount;
+                
+                // Create element for run type
+                const typeEl = document.createElement('div');
+                // Updated text-base to text-lg
+                typeEl.className = 'mt-2 text-lg font-medium text-gray-100';
+                typeEl.textContent = item.runType;
+
+                // Append count and type to the card
+                card.appendChild(countEl);
+                card.appendChild(typeEl);
+
+                // Append the card to the container
+                cardContainerEl.appendChild(card);
+            });
+            
+            if (parsedData.length > 0) {
+                showData();
+            } else {
+                showError("No data could be parsed from the specified rows (5-52).");
+            }
+        }
+
+        /**
+         * Hides loading/error and shows the data table.
+         */
+        function showData() {
+            loadingEl.classList.add('hidden');
+            errorEl.classList.add('hidden');
+            cardContainerEl.classList.remove('hidden');
+        }
+
+        /**
+         * Hides loading/data and shows the error message.
+         * @param {string} message - The error message to display.
+         */
+        function showError(message) {
+            loadingEl.classList.add('hidden');
+            cardContainerEl.classList.add('hidden');
+            errorMessageEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        // Run the function when the page loads
+        document.addEventListener('DOMContentLoaded', fetchRunData);
+    </script>
+</body>
+</html>
+
+
+
+
