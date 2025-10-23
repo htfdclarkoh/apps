@@ -120,19 +120,19 @@
                             const nature = run[headersToDisplay['Nature']] || 'N/A';
                             const address = run[headersToDisplay['Incident Address']] || 'N/A';
 
-                            // Card inner HTML structure - Increased font sizes, reduced margins
+                            // Card inner HTML structure - Increased font sizes
                             card.innerHTML = `
                                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-1 pb-1 border-b border-slate-200">
-                                    <div class="text-xl font-semibold text-slate-500">
+                                    <div class="text-2xl font-semibold text-slate-500">
                                         RUN #${runNumber}
                                     </div>
-                                    <div class="text-xl text-slate-500 mt-1 sm:mt-0">
+                                    <div class="text-2xl text-slate-500 mt-1 sm:mt-0">
                                         ${reported}
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 class="text-2xl font-semibold text-red-700 mb-1">${nature}</h3>
-                                    <p class="text-xl text-slate-700">${address}</p>
+                                    <h3 class="text-3xl font-semibold text-red-700 mb-1">${nature}</h3>
+                                    <p class="text-2xl text-slate-700">${address}</p>
                                 </div>
                             `;
                             
@@ -168,13 +168,13 @@
         <!-- Reduced header margin -->
         <header class="mb-4">
             <!-- Title removed, subtitle centered and styled -->
-            <p class="text-2xl font-semibold text-slate-700 mt-1 text-center">Displaying the 10 most recent incidents</p> <!-- Updated text color -->
+            <p class="text-3xl font-semibold text-slate-700 mt-1 text-center">Displaying the 10 most recent incidents</p> <!-- Updated text color -->
         </header>
 
         <!-- Removed the outer white card wrapper to save space -->
         
         <!-- Loading Message - Now a self-contained card -->
-        <div id="loading-message" class="bg-white rounded-xl shadow-lg p-6 text-center text-xl text-slate-500">
+        <div id="loading-message" class="bg-white rounded-xl shadow-lg p-6 text-center text-2xl text-slate-500">
             <!-- Updated spinner color -->
             <svg class="animate-spin h-6 w-6 text-red-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -189,7 +189,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-8 w-8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                 </svg>
-                <strong id="error-text" class="text-xl">Could not load data.</strong>
+                <strong id="error-text" class="text-2xl">Could not load data.</strong>
             </div>
         </div>
 
@@ -211,4 +211,5 @@
     
 </body>
 </html>
+
 
