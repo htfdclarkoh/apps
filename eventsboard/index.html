@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training & Event Board</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind for dark mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <!-- Basic styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            cursor: none; /* Hide the cursor */
+            user-select: none; /* Standard syntax */
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE/Edge */
+        }
+    </style>
+</head>
+<!-- Added padding to the body tag -->
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen antialiased p-4 md:p-8">
+
+    <!-- Removed 'container' and 'mx-auto' classes to use full width -->
+    <div class="w-full">
+        <!-- Header updated to match style from index.html -->
+        <header class="p-6 mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100">Training & Event Board</h1>
+            <!-- Increased subtitle font size -->
+            <p class="text-xl text-gray-600 dark:text-gray-300 mt-2">Upcoming sessions and workshops</p>
+        </header>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="text-center py-12">
+            <!-- Made spinner larger -->
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+            <!-- Increased text size -->
+            <p class="mt-4 text-xl font-medium">Loading events...</p>
+        </div>
+
+        <!-- Error Message -->
+        <!-- Increased text size -->
+        <div id="error" class="hidden text-lg bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg text-center" role="alert">
+            <strong class="font-bold">Error:</strong>
+            <span class="block sm:inline" id="error-message"></span>
+        </div>
+
+        <!-- Event Board Grid -->
+        <div id="event-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+            <!-- Event cards will be injected here -->
+        </div>
+
+        <!-- No Events Message -->
+        <div id="no-events" class="hidden text-center py-12">
+            <!-- This message will be updated by JS -->
+            <p class="text-2xl text-gray-500 dark:text-gray-400">No events found.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchEvents();
+        });
+
+        // --- MODIFIED: Swapped Google Sheet URL for Google Calendar iCal URL ---
+        // This URL points to the public iCal feed for the provided calendar.
+        const CALENDAR_ICAL_URL = 'https://calendar.google.com/calendar/ical/94e368189a926a957a0c9c43138f0c06256f0f17521b1e1b8749ccf63a1a61e7%40group.calendar.google.com/public/basic.ics';
+
+        /**
+         * Fetches and displays the event data from the iCal feed.
+         */
+        async function fetchEvents() {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const errorMessageEl = document.getElementById('error-message');
+            const boardEl = document.getElementById('event-board');
+            const noEventsEl = document.getElementById('no-events');
+
+            loadingEl.classList.remove('hidden');
+            errorEl.classList.add('hidden');
+            noEventsEl.classList.add('hidden'); // Hide by default
+            boardEl.innerHTML = ''; // Clear previous results
+
+            try {
+                // --- MODIFIED: Use a CORS proxy to bypass browser security (CORS) errors ---
+                // The allorigins.win proxy fetches the URL on its server and passes the result back.
+                const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+                const proxiedUrl = PROXY_URL + encodeURIComponent(CALENDAR_ICAL_URL);
+                
+                // --- MODIFIED: Fetch from proxied calendar URL ---
+                const response = await fetch(proxiedUrl);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                         throw new Error(`Calendar not found. Ensure the calendar ID is correct and it is public.`);
+                    }
+                    throw new Error(`Failed to fetch calendar: ${response.status} ${response.statusText}`);
+                }
+                
+                // --- MODIFIED: Get iCal text and parse it ---
+                const icalText = await response.text();
+                const events = parseICAL(icalText);
+                
+                if (events.length === 0) {
+                    noEventsEl.innerHTML = `<p class="text-2xl text-gray-500 dark:text-gray-400">No upcoming events found.</p>`;
+                    noEventsEl.classList.remove('hidden');
+                } else {
+                    displayEvents(events);
+                }
+
+            } catch (err) {
+                console.error(err);
+                errorMessageEl.textContent = err.message || 'Could not load event data.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                loadingEl.classList.add('hidden');
+            }
+        }
+
+        /**
+         * --- NEW FUNCTION ---
+         * Parses iCal (.ics) text into an array of event objects.
+         */
+        function parseICAL(text) {
+            // Unfold multi-line properties (lines starting with a space)
+            const unfoldedText = text.replace(/\r?\n /g, '');
+            
+            // Regex to find all VEVENT blocks
+            const eventBlocks = unfoldedText.match(/BEGIN:VEVENT([\s\S]*?)END:VEVENT/g);
+            
+            if (!eventBlocks) return [];
+
+            const events = [];
+            const now = new Date(); // To filter out past events
+
+            for (const block of eventBlocks) {
+                const event = {};
+
+                // Helper function to extract a property value
+                const getProp = (propName) => {
+                    // Regex to find a property. Handles optional parameters (e.g., DTSTART;TZID=...)
+                    // 'im' flags: i = case-insensitive, m = multi-line
+                    const regex = new RegExp(`^${propName}(?:;.*)?:(.*)$`, 'im');
+                    const match = block.match(regex);
+                    if (match && match[1]) {
+                        // Un-escape iCal characters
+                        return match[1].replace(/\\n/g, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').trim();
+                    }
+                    return null;
+                };
+
+                // Extract properties
+                event.title = getProp('SUMMARY') || 'No Title';
+                event.description = getProp('DESCRIPTION') || '';
+                event.location = getProp('LOCATION') || 'N/A';
+                
+                const dtstart = getProp('DTSTART');
+                const dtend = getProp('DTEND');
+
+                event.start = dtstart ? parseICalDate(dtstart) : null;
+                event.end = dtend ? parseICalDate(dtend) : null;
+
+                // Only add events that haven't ended yet
+                if (event.end && event.end < now) {
+                    continue; // Skip past events
+                }
+
+                // Filter out empty/invalid events
+                if (event.title !== 'No Title' && event.start) {
+                    events.push(event);
+                }
+            }
+            
+            // Sort events by start date, earliest first
+            events.sort((a, b) => a.start - b.start);
+
+            return events;
+        }
+
+        /**
+         * --- NEW FUNCTION ---
+         * Parses an iCal date string (YYYYMMDDTHHMMSSZ or YYYYMMDD) into a Date object.
+         */
+        function parseICalDate(dateString) {
+            try {
+                // Format: YYYYMMDDTHHMMSSZ or YYYYMMDDTHHMMSS
+                if (dateString.includes('T')) {
+                    const year = dateString.substring(0, 4);
+                    const month = dateString.substring(4, 6);
+                    const day = dateString.substring(6, 8);
+                    const hour = dateString.substring(9, 11);
+                    const minute = dateString.substring(11, 13);
+                    const second = dateString.substring(13, 15);
+                    
+                    // Create ISO 8601 string: YYYY-MM-DDTHH:MM:SS
+                    let isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+                    
+                    // If 'Z' is present, it's UTC
+                    if (dateString.endsWith('Z')) {
+                        isoString += 'Z';
+                    }
+                    
+                    return new Date(isoString);
+                } else {
+                    // Format: YYYYMMDD (all-day event)
+                    const year = dateString.substring(0, 4);
+                    const month = dateString.substring(4, 6);
+                    const day = dateString.substring(6, 8);
+                    
+                    // Create date as local time (e.g., starts at midnight local time)
+                    return new Date(`${year}-${month}-${day}T00:00:00`);
+                }
+            } catch (e) {
+                console.warn(`Could not parse iCal date: ${dateString}`, e);
+                return null; // Fallback
+            }
+        }
+
+        /**
+         * Renders the event cards on the board.
+         * (No changes to this function's logic)
+         */
+        function displayEvents(events) {
+            const boardEl = document.getElementById('event-board');
+            boardEl.innerHTML = ''; // Clear board
+
+            // --- Updated column count for wider layout ---
+            boardEl.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6';
+
+
+            for (const event of events) {
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col transform transition-transform duration-300 hover:scale-105';
+
+                // --- MODIFIED: Use event.description, which may contain newlines ---
+                // Replaced <p> with <pre> to respect newlines from the calendar description
+                card.innerHTML = `
+                    <div class="p-6 flex-grow">
+                        <!-- Increased title size -->
+                        <h2 class="text-2xl font-bold mb-2 text-blue-700 dark:text-blue-300">${event.title}</h2>
+                        <!-- Increased description size and use <pre> for formatting -->
+                        <pre class="text-lg text-gray-600 dark:text-gray-400 mb-4 whitespace-pre-wrap font-sans">${event.description || 'No description provided.'}</pre>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-6 border-t border-gray-200 dark:border-gray-600">
+                        <div class="flex items-center mb-3">
+                            <!-- Increased icon size -->
+                            <svg class="w-6 h-6 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <!-- Increased text size -->
+                            <span class="text-lg text-gray-700 dark:text-gray-300">${event.location}</span>
+                        </div>
+                        <div class="flex items-center mb-3">
+                            <!-- Increased icon size -->
+                            <svg class="w-6 h-6 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <!-- Increased text size -->
+                            <span class="text-lg text-gray-700 dark:text-gray-300">
+                                <strong class="font-medium">Start:</strong> ${formatEventDate(event.start)}
+                            </span>
+                        </div>
+                        <div class="flex items-center">
+                            <!-- Increased icon size -->
+                            <svg class="w-6 h-6 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <!-- Increased text size -->
+                            <span class="text-lg text-gray-700 dark:text-gray-300">
+                                <strong class="font-medium">End:</strong> ${formatEventDate(event.end)}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                boardEl.appendChild(card);
+            }
+        }
+
+        /**
+         * --- MODIFIED ---
+         * Formats a Date object into a readable format.
+         */
+        function formatEventDate(dateObject) { // Changed parameter name from dateString
+            if (!dateObject) { // Handles null
+                return 'N/A';
+            }
+            try {
+                // No longer need new Date(), as dateObject is already a Date
+                if (isNaN(dateObject.getTime())) {
+                    return 'Invalid Date'; // Handle invalid dates from parser
+                }
+                return dateObject.toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                console.warn(`Could not format date: ${dateObject}`, e);
+                return 'Error'; // Fallback
+            }
+        }
+
+    </script>
+</body>
+</html>
+

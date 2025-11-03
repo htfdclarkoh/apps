@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Status Board</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use the Inter font family */
+        body { 
+            font-family: 'Inter', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <!-- Background gradient effect -->
+    <div class="absolute top-0 left-0 w-full h-full bg-cover bg-center z-0" style="background-image: radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.1), transparent 40%), radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.1), transparent 40%);"></div>
+    
+    <!-- Main content container -->
+    <div class="relative min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 z-10">
+        <div class="w-full max-w-7xl mx-auto">
+            <header class="text-center mb-8">
+                <h1 class="text-8xl font-bold tracking-wider text-white uppercase drop-shadow-lg">Unit Status</h1>
+                <p class="text-3xl text-teal-400 mt-4">Live Status Board</p>
+            </header>
+
+            <main>
+                <!-- Glassmorphism card effect -->
+                <div class="bg-gray-900/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table id="status-table" class="w-full text-left">
+                            <thead class="text-2xl text-gray-400 uppercase bg-white/5">
+                                <tr>
+                                    <th scope="col" class="px-6 py-4">Unit</th>
+                                    <th scope="col" class="px-6 py-4">Status</th>
+                                    <th scope="col" class="px-6 py-4">Location</th>
+                                    <th scope="col" class="px-6 py-4">Comments</th>
+                                    <th scope="col" class="px-6 py-4 text-right">Reported</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="divide-y divide-gray-700/50 text-3xl">
+                                <!-- Data rows will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="text-center mt-12 text-2xl text-gray-500">
+                <p id="last-updated">Last updated: --</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- External scripts for functionality -->
+    <script src="config.js"></script>
+    <script src="common.js"></script>
+    <script>
+        /**
+         * Creates a status indicator with a colored dot.
+         * @param {string} statusText - The status text from the data.
+         * @returns {string} HTML string for the status cell.
+         */
+        function getStatusIndicator(statusText) {
+            const status = (statusText || '').trim().toLowerCase();
+            let dotColor = 'bg-gray-500'; // Default color for unknown statuses
+            let textColor = 'text-gray-300';
+
+            if (status.includes('in service')) {
+                dotColor = 'bg-green-500';
+                textColor = 'text-green-300';
+            } else if (status.includes('oos')) {
+                dotColor = 'bg-red-500';
+                textColor = 'text-red-300';
+            } else if (status.length > 0) { // Any other status that isn't empty
+                dotColor = 'bg-yellow-500';
+                textColor = 'text-yellow-300';
+            }
+
+            // Capitalize the first letter of the status for better display
+            const formattedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+
+            return `
+                <div class="flex items-center">
+                    <span class="h-6 w-6 rounded-full ${dotColor} mr-6 flex-shrink-0"></span>
+                    <span class="${textColor}">${formattedStatus || 'N/A'}</span>
+                </div>
+            `;
+        }
+
+        /**
+         * Renders the maintenance data into the table.
+         * @param {Array<Object>} maintenanceData - The data fetched from the sheet.
+         */
+        function displayData(maintenanceData) {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = ''; // Clear previous data
+
+            if (!maintenanceData || maintenanceData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr class="bg-transparent">
+                        <td colspan="5" class="text-center p-12 text-gray-400">
+                            <div class="flex flex-col items-center">
+                                <svg class="mx-auto h-24 w-24 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2z" />
+                                </svg>
+                                <h3 class="mt-4 text-3xl font-medium text-gray-300">No Data Available</h3>
+                                <p class="mt-2 text-2xl text-gray-500">Could not find any maintenance records in the sheet.</p>
+                            </div>
+                        </td>
+                    </tr>`;
+                return;
+            }
+            
+            // Sort data by the 'Reported' date in descending order (most recent first)
+            maintenanceData.sort((a, b) => {
+                // Create Date objects. If a date is invalid or missing, treat it as a very old date.
+                const dateA = a.Reported ? new Date(a.Reported) : new Date(0);
+                const dateB = b.Reported ? new Date(b.Reported) : new Date(0);
+                
+                // For descending order, subtract dateA from dateB.
+                // This places more recent dates (larger timestamps) before older ones.
+                return dateB - dateA;
+            });
+
+            maintenanceData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-white/5 transition-colors duration-200';
+                row.innerHTML = `
+                    <td class="px-6 py-5 font-medium text-white whitespace-nowrap">${item.Unit || ''}</td>
+                    <td class="px-6 py-5">${getStatusIndicator(item.Status)}</td>
+                    <td class="px-6 py-5 whitespace-nowrap">${item.Location || ''}</td>
+                    <td class="px-6 py-5 text-gray-300">${item.Comments || ''}</td>
+                    <td class="px-6 py-5 text-right text-gray-400 whitespace-nowrap">${item.Reported || ''}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            updateTimestamp();
+        }
+        
+        /**
+         * Updates the "Last updated" timestamp in the footer.
+         */
+        function updateTimestamp() {
+            const el = document.getElementById('last-updated');
+            if (el) {
+                const now = new Date();
+                const options = {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                };
+                const dateTimeString = now.toLocaleString(navigator.language, options);
+                el.textContent = `Last updated: ${dateTimeString}`;
+            }
+        }
+
+        /**
+         * Wrapper function to load data from the sheet.
+         */
+        function refreshData() {
+            // Assumes loadSheetData is defined in common.js as in the original file
+            loadSheetData(CONFIG.maintenanceSheetUrl, 'maintenanceData', displayData, 5);
+        }
+
+        // Initial data load and periodic refresh
+        document.addEventListener('DOMContentLoaded', refreshData);
+        setInterval(refreshData, (CONFIG.cacheDurationMinutes || 5) * 60 * 1000);
+    </script>
+</body>
+</html>

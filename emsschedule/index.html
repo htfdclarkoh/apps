@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMS Crew Schedule</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PapaParse for parsing CSV data from Google Sheets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        /* Custom font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* slate-900 */
+            /* A subtle gradient background for more visual depth */
+            background-image: radial-gradient(circle at top left, rgba(79, 70, 229, 0.2), transparent 30%),
+                              radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.15), transparent 40%);
+        }
+
+        /* Add a subtle animation for cards appearing */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .schedule-card {
+            /* Apply the animation to each card */
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Simple scrollbar styling for a more modern look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; /* slate-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5; /* indigo-600 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6366f1; /* indigo-500 */
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-gray-300 min-h-screen">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-10">
+            <!-- Header with a gradient text for a modern feel -->
+            <h1 class="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+                EMS DAY SCHEDULE
+            </h1>
+            <p class="mt-2 text-lg text-slate-400">Upcoming Crew Assignments</p>
+        </header>
+
+        <!-- The schedule data will be loaded here -->
+        <div id="schedule-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Loading placeholder with a more prominent spinner -->
+            <div id="loading-state" class="col-span-1 md:col-span-2 lg:col-span-3 text-center p-12">
+                 <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+                 <p class="mt-4 text-slate-400 text-lg">Fetching latest schedule...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- HOW TO GET YOUR GOOGLE SHEET URL ---
+        // 1. In your Google Sheet, go to File > Share > Publish to web.
+        // 2. In the "Link" tab, select the specific sheet you want to display.
+        // 3. In the dropdown next to it, select "Comma-separated values (.csv)".
+        // 4. Click the "Publish" button.
+        // 5. Copy the generated URL and paste it below, replacing the placeholder URL.
+        const googleSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=652905631&single=true&output=csv';
+
+        // Helper function to format the date string into a more readable format
+        const formatDate = (dateString) => {
+            const options = { weekday: 'long', month: 'short', day: 'numeric' };
+            const date = new Date(dateString);
+            // Adjust for timezone offset to prevent the date from being off by one
+            date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+            return date.toLocaleDateString(undefined, options);
+        };
+
+        // Function to fetch and display the schedule
+        function loadSchedule() {
+            const container = document.getElementById('schedule-container');
+            const loadingIndicator = document.getElementById('loading-state');
+
+            // Friendly message if the URL is not set
+            if (googleSheetUrl === 'YOUR_GOOGLE_SHEET_CSV_URL_HERE') {
+                loadingIndicator.innerHTML = `
+                    <div class="col-span-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-4 py-3 rounded-lg text-center">
+                        <h3 class="font-bold text-lg">Configuration Needed</h3>
+                        <p class="mt-2">Please open this HTML file in a text editor and replace <strong>'YOUR_GOOGLE_SHEET_CSV_URL_HERE'</strong> with the actual URL from your published Google Sheet.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Use PapaParse to fetch and parse the CSV data from the Google Sheet
+            Papa.parse(googleSheetUrl, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    container.innerHTML = ''; // Clear loading state
+
+                    if (!results.data || results.data.length === 0) {
+                        container.innerHTML = '<p class="col-span-full text-center text-slate-400">No schedule data found. Please check your Google Sheet.</p>';
+                        return;
+                    }
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    let futureEventsFound = false;
+                    let daysDisplayed = 0; // Counter for displayed days
+
+                    for (const row of results.data) {
+                        // Stop if we have already displayed 9 days
+                        if (daysDisplayed >= 9) {
+                            break;
+                        }
+
+                        if (row.Date && row.Date.trim() !== '') {
+                            const eventDate = new Date(row.Date);
+                            eventDate.setMinutes(eventDate.getMinutes() + eventDate.getTimezoneOffset());
+                            
+                            // Only show events from today onwards
+                            if (eventDate >= today) {
+                                futureEventsFound = true;
+                                daysDisplayed++; // Increment the counter
+
+                                const isToday = eventDate.toDateString() === today.toDateString();
+                                
+                                // Card template with updated styles and icons
+                                const card = `
+                                    <div class="schedule-card bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl shadow-lg transition-all duration-300 hover:border-indigo-500 hover:shadow-indigo-500/20 hover:-translate-y-1 ${isToday ? 'border-2 border-green-500 shadow-green-500/20' : ''}">
+                                        <div class="p-6">
+                                            <div class="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <p class="text-2xl font-bold text-white">${formatDate(row.Date)}</p>
+                                                    ${isToday ? '<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200 mt-1">Today</span>' : ''}
+                                                </div>
+                                                <div class="flex-shrink-0 flex items-center text-md font-medium text-slate-300 bg-slate-700/50 px-3 py-1 rounded-full">
+                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                     </svg>
+                                                    ${row.Time || 'N/A'}
+                                                </div>
+                                            </div>
+                                            <div class="border-t border-slate-700 my-4"></div>
+                                            <div class="space-y-4 text-slate-300 text-lg">
+                                                <p class="text-sm uppercase font-semibold text-indigo-400">Assigned Personnel</p>
+                                                <div class="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                                    <span>${row.CrewMember1 || 'Not Assigned'}</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                                    <span>${row.CrewMember2 || 'Not Assigned'}</span>
+                                                </div>
+                                                <!-- Only show trainee if one is assigned -->
+                                                ${(row.Trainee && row.Trainee.toLowerCase() !== 'none' && row.Trainee.trim() !== '') ? `
+                                                <div class="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                    <span class="font-light"><span class="font-medium text-slate-400">Trainee:</span> ${row.Trainee}</span>
+                                                </div>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                container.insertAdjacentHTML('beforeend', card);
+                            }
+                        }
+                    }
+
+                    if (!futureEventsFound) {
+                        container.innerHTML = '<p class="col-span-full text-center text-slate-400 text-lg">No upcoming shifts found on the schedule.</p>';
+                    }
+                },
+                error: function(error) {
+                    console.error("Error fetching or parsing data:", error);
+                    container.innerHTML = `
+                        <div class="col-span-full bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-lg text-center">
+                            <strong class="font-bold">Error!</strong>
+                            <span class="block sm:inline mt-1">Could not load the schedule. Please ensure the Google Sheet is published correctly and the URL is valid.</span>
+                        </div>
+                    `;
+                }
+            });
+        }
+        
+        // Load the schedule when the page is ready
+        document.addEventListener('DOMContentLoaded', loadSchedule);
+    </script>
+
+</body>
+</html>

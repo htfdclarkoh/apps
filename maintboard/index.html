@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark"> <!-- Added 'dark' class -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Board</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use Inter as the default sans-serif font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 h-full flex flex-col p-4 sm:p-8">
+
+    <div class="flex flex-col flex-grow overflow-hidden w-full">
+        <!-- Header -->
+        <!-- Updated header to match styles from index.html -->
+        <header class="p-6 mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100">Maintenance Board</h1>
+            <p class="text-base text-gray-500 dark:text-gray-400 mt-1">Upcoming Services and/or Issues</p>
+        </header>
+
+        <!-- Grid for Maintenance Items -->
+        <main class="flex-grow overflow-y-auto"> <!-- Added classes for scrolling -->
+            <div id="maintenance-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6"> <!-- Added more columns for wider layout -->
+                <!-- Loading State -->
+                <p id="loading-message" class="text-gray-400 text-lg md:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5 text-center p-10"> <!-- Adjusted col-span -->
+                    Loading maintenance schedule...
+                </p>
+                <!-- Items will be injected here by JavaScript -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // The URL for your Google Sheet CSV
+        const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1823565140&single=true&output=csv';
+
+        // --- CSV Parsing Function ---
+        // A simple CSV parser that can handle quoted fields.
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            if (lines.length === 0) return [];
+
+            // Extract headers
+            const headers = lines.shift().split(',').map(h => h.trim().replace(/"/g, ''));
+            
+            // Find indices of required headers
+            const headerIndices = {
+                vendor: headers.indexOf('Vendor'),
+                service: headers.indexOf('Service or Issue'),
+                location: headers.indexOf('Location'),
+                date: headers.indexOf('Date')
+            };
+            
+            // Check if all required headers are present
+            if (Object.values(headerIndices).some(index => index === -1)) {
+                console.error('CSV headers are missing or incorrect. Expected "Vendor", "Service or Issue", "Location", "Date".');
+                console.log('Found headers:', headers);
+                return { error: 'CSV headers are missing or incorrect.' };
+            }
+
+            // Map rows to objects
+            const data = lines.map(line => {
+                if (line.trim() === '') return null; // Skip empty lines
+                
+                const values = [];
+                const regex = /(?:"([^"]*)"|([^,]*))(?:,|$)/g;
+                let match;
+
+                // Keep matching until the end of the line
+                while ((match = regex.exec(line)) !== null) {
+                    values.push(match[1] || match[2] || '');
+
+                    // Check if we've reached the end of the string
+                    if (regex.lastIndex === line.length) {
+                        // If the line ends with a comma, we need to add an empty field
+                        if (line.endsWith(',')) {
+                            values.push('');
+                        }
+                        break; // End loop
+                    }
+
+                    // Safety check for zero-length matches
+                    if (match.index === regex.lastIndex && match[0].length === 0) {
+                        break;
+                    }
+                } // <-- This closing brace was missing
+
+                if (values.length < headers.length) return null; // Skip malformed lines
+
+                return {
+                    vendor: values[headerIndices.vendor]?.trim() || 'N/A',
+                    service: values[headerIndices.service]?.trim() || 'N/A',
+                    location: values[headerIndices.location]?.trim() || 'N/A',
+                    date: values[headerIndices.date]?.trim() || null
+                };
+            }).filter(item => item && item.date); // Filter out empty or dateless items
+
+            return data;
+        }
+
+        // --- Date Analysis Function ---
+        function analyzeDate(dateString) {
+            if (!dateString) {
+                return { status: 'Unknown', color: 'bg-gray-200 text-gray-900', formatted: 'No Date' };
+            }
+
+            try {
+                const itemDate = new Date(dateString);
+                if (isNaN(itemDate.getTime())) { // Check for invalid date
+                    throw new Error('Invalid date format');
+                }
+
+                const today = new Date();
+                
+                // Normalize dates to midnight for accurate comparison
+                today.setHours(0, 0, 0, 0);
+                itemDate.setHours(0, 0, 0, 0);
+
+                const formatted = itemDate.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                if (itemDate < today) {
+                    return { status: 'Overdue', color: 'bg-red-200 text-red-900', formatted };
+                } else if (itemDate.getTime() === today.getTime()) {
+                    return { status: 'Today', color: 'bg-yellow-200 text-yellow-900', formatted };
+                } else {
+                    return { status: 'Upcoming', color: 'bg-blue-200 text-blue-900', formatted };
+                }
+
+            } catch (e) {
+                console.warn(`Could not parse date: ${dateString}`, e);
+                return { status: 'Invalid Date', color: 'bg-gray-200 text-gray-900', formatted: dateString };
+            }
+        }
+
+        // --- Main Fetch and Render Function ---
+        async function loadMaintenanceData() {
+            const grid = document.getElementById('maintenance-grid');
+            const loadingMessage = document.getElementById('loading-message');
+
+            try { // <-- This 'try' was not properly closed
+                const response = await fetch(GOOGLE_SHEET_URL);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch data: ${response.statusText}`);
+                }
+
+                const csvText = await response.text();
+                const data = parseCSV(csvText);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Sort data by date, upcoming first
+                data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                // Clear loading message
+                if (loadingMessage) {
+                    loadingMessage.remove();
+                }
+
+                // This code was misplaced inside the parseCSV function
+                if (data.length === 0) {
+                    grid.innerHTML = '<p class="text-gray-400 text-lg md:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5 text-center p-10">No maintenance items found.</p>'; // <!-- Adjusted col-span -->
+                    return;
+                }
+
+                // This code was also misplaced
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-8 flex flex-col justify-between'; // Changed p-6 to p-8
+
+                    const dateInfo = analyzeDate(item.date);
+
+                    card.innerHTML = `
+                        <div>
+                            <!-- Date Badge -->
+                            <div class="mb-4"> <!-- Changed mb-3 to mb-4 -->
+                                <span class="inline-block px-4 py-1 text-base font-medium rounded-full ${dateInfo.color}"> <!-- Changed text-sm to text-base, px-3 to px-4 -->
+                                    ${dateInfo.status}: ${dateInfo.formatted}
+                                </span>
+                            </div>
+
+                            <!-- Service/Issue -->
+                            <h3 class="text-2xl font-semibold text-white mb-4 break-words"> <!-- Changed text-xl to text-2xl, mb-3 to mb-4 -->
+                                ${item.service}
+                            </h3>
+                        </div>
+
+                        <!-- Vendor and Location -->
+                        <div>
+                            <div class="flex items-center text-gray-300 mb-2"> <!-- Changed mb-1 to mb-2 -->
+                                <!-- Vendor Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"> <!-- Changed h-5 w-5 to h-6 w-6, mr-2 to mr-3 -->
+                                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="break-words text-lg">${item.vendor}</span> <!-- Added text-lg -->
+                            </div>
+                            <div class="flex items-center text-gray-300">
+                                <!-- Location Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"> <!-- Changed h-5 w-5 to h-6 w-6, mr-2 to mr-3 -->
+                                  <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="break-words text-lg">${item.location}</span> <!-- Added text-lg -->
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+            } catch (error) { // <-- This 'catch' was causing the error due to the broken 'try' block
+                console.error('Error loading maintenance data:', error);
+                grid.innerHTML = `
+                    <div class="md:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5 text-center p-10 bg-red-900/20 rounded-lg border border-red-700"> <!-- Adjusted col-span -->
+                        <h3 class="text-xl font-semibold text-red-300 mb-2">Failed to load data</h3>
+                        <p class="text-red-400">${error.message}</p>
+                        <p class="text-gray-400 mt-2 text-sm">Please check the browser console and ensure the Google Sheet URL is correct and public.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load the data when the page is ready
+        document.addEventListener('DOMContentLoaded', loadMaintenanceData);
+</script>
+
+</body>
+</html>
+
