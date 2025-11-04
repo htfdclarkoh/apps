@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fire Department - Last 10 Runs</title>
+    <title>Last 10 Runs</title>
     <!-- Load Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -34,9 +34,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Load PapaParse library from jsdelivr CDN with integrity check -->
-    <!-- Fixed typo: xintegrity -> integrity -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js" xintegrity="sha512-SGWzhMxtQ8lLIQmCLYDVDgpL-A3HCSLImA94Sj9J/R/Uv/Nlns/3hASBlL3aBvL81/f+z2b1CV/a/G/U3/ziFQ==" crossorigin="anonymous"></script>
+    <!-- Load PapaParse library from jsdelivr CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js" crossorigin="anonymous"></script>
     
     <script>
         // Wait for the DOM to be fully loaded before running the script
@@ -45,7 +44,6 @@
             const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=515267348&single=true&output=csv';
 
             // Get elements
-            // Updated to get the new list container
             const runsList = document.getElementById('runs-list');
             const runsListContainer = document.getElementById('runs-list-container');
             const loadingMessage = document.getElementById('loading-message');
@@ -91,7 +89,7 @@
                             }
                         }
 
-                        // --- Data sorting logic (unchanged) ---
+                        // --- Data sorting logic ---
                         data.sort((a, b) => {
                             const dateA = new Date(a.Reported);
                             const dateB = new Date(b.Reported);
@@ -107,11 +105,11 @@
                         // Clear the list
                         runsList.innerHTML = '';
 
-                        // --- MODIFICATION: Populate the list with cards ---
+                        // --- MODIFICATION: Populate the list with cards (DARK THEME) ---
                         last10Runs.forEach((run, index) => {
                             const card = document.createElement('div');
-                            // Card styling - Added animation class
-                            card.className = 'bg-white p-3 rounded-lg shadow border border-slate-200 transition-shadow hover:shadow-md float-up-animation';
+                            // Card styling - Dark theme, new hover effect, animation
+                            card.className = 'bg-slate-800 p-3 rounded-lg shadow border border-slate-700 transition-colors duration-200 hover:bg-slate-700 float-up-animation';
                             // Add animation delay for a staggered effect
                             card.style.animationDelay = `${index * 0.05}s`;
                             
@@ -120,21 +118,23 @@
                             const nature = run[headersToDisplay['Nature']] || 'N/A';
                             const address = run[headersToDisplay['Incident Address']] || 'N/A';
 
-                            // Card inner HTML structure - Increased font sizes
+                            // --- FONT SIZE INCREASED ---
+                            // Card inner HTML structure - Updated text colors for dark theme
                             card.innerHTML = `
-                                <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-1 pb-1 border-b border-slate-200">
-                                    <div class="text-2xl font-semibold text-slate-500">
+                                <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-1 pb-1 border-b border-slate-700">
+                                    <div class="text-3xl font-semibold text-slate-400">
                                         RUN #${runNumber}
                                     </div>
-                                    <div class="text-2xl text-slate-500 mt-1 sm:mt-0">
+                                    <div class="text-3xl text-slate-400 mt-1 sm:mt-0">
                                         ${reported}
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 class="text-3xl font-semibold text-red-700 mb-1">${nature}</h3>
-                                    <p class="text-2xl text-slate-700">${address}</p>
+                                    <h3 class="text-4xl font-semibold text-red-500 mb-1">${nature}</h3>
+                                    <p class="text-3xl text-slate-300">${address}</p>
                                 </div>
                             `;
+                            // --- END FONT SIZE INCREASE ---
                             
                             runsList.appendChild(card);
                         });
@@ -161,35 +161,33 @@
         });
     </script>
 </head>
-<body class="bg-slate-100 min-h-screen antialiased"> <!-- Updated background color -->
+<!-- DARK THEME: Updated background and default text color -->
+<body class="bg-slate-900 min-h-screen antialiased text-slate-200">
 
-    <!-- Reduced container padding -->
-    <div class="container mx-auto p-4 max-w-7xl">
-        <!-- Reduced header margin -->
-        <header class="mb-4">
-            <!-- Title removed, subtitle centered and styled -->
-            <p class="text-3xl font-semibold text-slate-700 mt-1 text-center">Displaying the 10 most recent incidents</p> <!-- Updated text color -->
+    <!-- FULL WIDTH: Removed container, max-w-7xl, and p-4. Added p-2 for spacing. -->
+    <div class="p-2">
+        <!-- HEADER UPDATED: Matched style from the provided example -->
+        <header class="p-6 mb-6 bg-slate-800 rounded-lg shadow-lg">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-100">LAST 10 INCIDENTS</h1>
         </header>
-
-        <!-- Removed the outer white card wrapper to save space -->
         
-        <!-- Loading Message - Now a self-contained card -->
-        <div id="loading-message" class="bg-white rounded-xl shadow-lg p-6 text-center text-2xl text-slate-500">
+        <!-- Loading Message - DARK THEME: Updated colors & FONT SIZE INCREASED -->
+        <div id="loading-message" class="bg-slate-800 rounded-xl shadow-lg p-6 text-center text-3xl text-slate-400 max-w-lg mx-auto">
             <!-- Updated spinner color -->
-            <svg class="animate-spin h-6 w-6 text-red-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin h-6 w-6 text-red-500 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             Loading incident data...
         </div>
 
-        <!-- Error Message - Now a self-contained card -->
-        <div id="error-message" class="hidden bg-white rounded-xl shadow-lg p-6 text-center text-red-800">
+        <!-- Error Message - DARK THEME: Updated colors & FONT SIZE INCREASED -->
+        <div id="error-message" class="hidden bg-slate-800 rounded-xl shadow-lg p-6 text-center text-red-400 max-w-lg mx-auto">
             <div class="flex items-center justify-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-8 w-8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                 </svg>
-                <strong id="error-text" class="text-2xl">Could not load data.</strong>
+                <strong id="error-text" class="text-3xl">Could not load data.</strong>
             </div>
         </div>
 
@@ -197,10 +195,9 @@
         <!-- This container starts hidden and is shown on success -->
         <div id="runs-list-container" class="hidden">
             <!-- 
-                MODIFICATION: 
-                - Changed grid flow to column-first on medium screens (md:grid-flow-col)
-                - Explicitly set 2 columns (md:grid-cols-2) and 5 rows (md:grid-rows-5)
-                - This makes items fill the first column (1-5), then the second column (6-10)
+                Grid layout for the cards.
+                - 1 column on small screens
+                - 2 columns on medium screens, filling column-first
             -->
             <div id="runs-list" class="grid grid-cols-1 md:grid-flow-col md:grid-cols-2 md:grid-rows-5 gap-2">
                 <!-- Run cards will be inserted here by JavaScript -->
@@ -211,5 +208,3 @@
     
 </body>
 </html>
-
-
