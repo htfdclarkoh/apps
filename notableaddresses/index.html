@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<!-- Added 'dark' class for compatibility -->
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Address Notes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Use a clean, professional sans-serif font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Apply the professional font */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Dark theme background */
+            background-color: #111827; /* gray-900 */
+        }
+
+        /* Simple animation for note appearance */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .note-card {
+            animation: fadeIn 0.5s ease-out;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            /* No rotation, no tape */
+        }
+        .note-card:hover {
+            /* Standard hover effect */
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+
+        /* Loading spinner animation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .loader {
+            width: 44px;
+            height: 44px;
+            border: 4px solid #374151; /* gray-700 */
+            /* Brighter color for dark mode */
+            border-top-color: #818cf8; /* indigo-400 */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 4rem auto;
+        }
+    </style>
+</head>
+<!-- Dark theme text color -->
+<body class="text-gray-200">
+
+    <!-- Main container - Removed container, mx-auto, and max-w-7xl to use full width -->
+    <div class="p-4 sm:p-8">
+
+        <!-- Header - Styled like the example -->
+        <header class="p-6 mb-8 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-100">NOTABLE ADDRESSES</h1>
+        </header>
+
+        <!-- Color Key Legend - Dark Mode - FONT INCREASED -->
+        <div class="mb-8 p-4 bg-gray-800 rounded-lg shadow-sm border border-gray-700 flex flex-wrap justify-center gap-4 sm:gap-6 text-base sm:text-lg">
+            <h4 class="font-semibold text-gray-300 w-full text-center sm:w-auto mb-2 sm:mb-0">Legend:</h4>
+            <span class="inline-flex items-center">
+                <span class="h-4 w-1 rounded-full bg-green-500 mr-2"></span> Green = General
+            </span>
+            <span class="inline-flex items-center">
+                <span class="h-4 w-1 rounded-full bg-yellow-500 mr-2"></span> Yellow = Important
+            </span>
+            <span class="inline-flex items-center">
+                <span class="h-4 w-1 rounded-full bg-red-500 mr-2"></span> Red = Urgent
+            </span>
+            <span class="inline-flex items-center">
+                <span class="h-4 w-1 rounded-full bg-blue-500 mr-2"></span> Blue = Other
+            </span>
+        </div>
+
+        <!-- Saved Notes List - Added xl and 2xl column definitions -->
+        <div>
+            <div id="notesList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+                <!-- Initial Loading Spinner -->
+                <div id="loadingIndicator" class="col-span-full">
+                    <div class="loader"></div>
+                    <!-- FONT INCREASED -->
+                    <p class="text-center text-gray-400 text-xl">Loading notes...</p>
+                </div>
+                <!-- Notes will be dynamically inserted here -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const notesList = document.getElementById('notesList');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            // URL for the Google Sheet CSV
+            const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1769339552&single=true&output=csv';
+
+            async function loadNotesFromSheet() {
+                try {
+                    const response = await fetch(sheetUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const csvText = await response.text();
+                    const notes = parseCSV(csvText);
+                    renderNotes(notes);
+                } catch (error) {
+                    console.error("Failed to load notes:", error);
+                    // FONT INCREASED
+                    notesList.innerHTML = `<div class="text-center text-red-400 py-4 col-span-full text-xl">Failed to load notes. Please check the URL or your network connection.</div>`;
+                }
+            }
+            
+            function parseCSV(text) {
+                const lines = text.trim().split('\n').map(line => line.trim());
+                const headers = lines.shift().split(',').map(h => h.trim());
+
+                return lines.map(line => {
+                    const values = [];
+                    let currentVal = '';
+                    let inQuotes = false;
+                    for (const char of line) {
+                        if (char === '"') {
+                            inQuotes = !inQuotes;
+                        } else if (char === ',' && !inQuotes) {
+                            values.push(currentVal);
+                            currentVal = '';
+                        } else {
+                            currentVal += char;
+                        }
+                    }
+                    values.push(currentVal);
+
+                    const noteObject = {};
+                    headers.forEach((header, index) => {
+                        const key = header.toLowerCase().trim();
+                        const value = values[index] ? values[index].replace(/"/g, '').trim() : '';
+                        noteObject[key] = value;
+                    });
+                    return noteObject;
+                });
+            }
+
+            function renderNotes(notes) {
+                notesList.innerHTML = ''; // Clear current list (and loader)
+
+                if (!notes || notes.length === 0) {
+                    // FONT INCREASED
+                    notesList.innerHTML = `<div class="text-center text-gray-400 py-4 col-span-full text-xl">No notes found in the spreadsheet.</div>`;
+                    return;
+                }
+                
+                // Reverse to show the latest entries first
+                notes.reverse();
+
+                notes.forEach(note => {
+                    if (!note.address) return; // Skip if address is missing
+
+                    // Determine border color based on Priority
+                    const priority = (note.priority || '').toLowerCase();
+                    let borderColorClass = 'border-blue-500'; // Default note color
+                    
+                    if (priority === 'red') {
+                        borderColorClass = 'border-red-500';
+                    } else if (priority === 'yellow') {
+                        borderColorClass = 'border-yellow-500';
+                    } else if (priority === 'green') {
+                        borderColorClass = 'border-green-500';
+                    }
+
+                    const noteElement = document.createElement('div');
+                    // Dark mode card styles
+                    noteElement.className = `note-card bg-gray-800 shadow-lg rounded-lg ${borderColorClass} border-l-4 flex flex-col overflow-hidden border border-gray-700`;
+                    
+                    noteElement.innerHTML = `
+                        <!-- Main content padding -->
+                        <div class="p-5 flex-grow">
+                            <!-- Professional font sizing with dark mode text - FONT INCREASED -->
+                            <h3 class="font-semibold text-2xl text-gray-100 break-words">${escapeHTML(note.address.toUpperCase())}</h3>
+                            <p class="text-gray-300 mt-2 whitespace-pre-wrap break-words text-lg">${escapeHTML((note.note || '').toUpperCase())}</p>
+</div>
+                        <!-- Footer for timestamp, with a top border -->
+                        <div class_alias="p-4 bg-gray-800/50 border-t border-gray-700">
+                            <!-- FONT INCREASED -->
+                            <p class="text-base text-gray-400 text-right">${escapeHTML((note.timestamp || '').toUpperCase())}</p>
+                        </div>
+                    `;
+                    // A small hack to fix tailwind purge issue with dynamic classes
+                    noteElement.lastElementChild.className = 'p-4 bg-gray-800/50 border-t border-gray-700';
+
+                    notesList.appendChild(noteElement);
+                });
+            }
+
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.appendChild(document.createTextNode(str));
+                return div.innerHTML;
+            }
+            
+            // Initial load
+            loadNotesFromSheet();
+        });
+    </script>
+
+</body>
+</html>
+
