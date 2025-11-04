@@ -81,11 +81,11 @@
             </span>
         </div>
 
-        <!-- Saved Notes List - Added xl and 2xl column definitions -->
+        <!-- Saved Notes List - Changed from grid to flex-wrap -->
         <div>
-            <div id="notesList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-                <!-- Initial Loading Spinner -->
-                <div id="loadingIndicator" class="col-span-full">
+            <div id="notesList" class="flex flex-wrap gap-6">
+                <!-- Initial Loading Spinner - Changed from col-span-full to w-full -->
+                <div id="loadingIndicator" class="w-full">
                     <div class="loader"></div>
                     <!-- FONT INCREASED -->
                     <p class="text-center text-gray-400 text-xl">Loading notes...</p>
@@ -115,8 +115,8 @@
                     renderNotes(notes);
                 } catch (error) {
                     console.error("Failed to load notes:", error);
-                    // FONT INCREASED
-                    notesList.innerHTML = `<div class="text-center text-red-400 py-4 col-span-full text-xl">Failed to load notes. Please check the URL or your network connection.</div>`;
+                    // FONT INCREASED & Changed from col-span-full to w-full
+                    notesList.innerHTML = `<div class="text-center text-red-400 py-4 w-full text-xl">Failed to load notes. Please check the URL or your network connection.</div>`;
                 }
             }
             
@@ -154,8 +154,8 @@
                 notesList.innerHTML = ''; // Clear current list (and loader)
 
                 if (!notes || notes.length === 0) {
-                    // FONT INCREASED
-                    notesList.innerHTML = `<div class="text-center text-gray-400 py-4 col-span-full text-xl">No notes found in the spreadsheet.</div>`;
+                    // FONT INCREASED & Changed from col-span-full to w-full
+                    notesList.innerHTML = `<div class="text-center text-gray-400 py-4 w-full text-xl">No notes found in the spreadsheet.</div>`;
                     return;
                 }
                 
@@ -178,15 +178,16 @@
                     }
 
                     const noteElement = document.createElement('div');
-                    // Dark mode card styles
-                    noteElement.className = `note-card bg-gray-800 shadow-lg rounded-lg ${borderColorClass} border-l-4 flex flex-col overflow-hidden border border-gray-700`;
+                    // Dark mode card styles - Added w-max (width: max-content) and max-w-full
+                    noteElement.className = `note-card bg-gray-800 shadow-lg rounded-lg ${borderColorClass} border-l-4 flex flex-col overflow-hidden border border-gray-700 w-max max-w-full`;
                     
                     noteElement.innerHTML = `
                         <!-- Main content padding -->
                         <div class="p-5 flex-grow">
                             <!-- Professional font sizing with dark mode text - FONT INCREASED -->
                             <h3 class="font-semibold text-2xl text-gray-100 break-words">${escapeHTML(note.address.toUpperCase())}</h3>
-                            <p class="text-gray-300 mt-2 whitespace-pre-wrap break-words text-lg">${escapeHTML((note.note || '').toUpperCase())}</p>
+                            <!-- Removed 'whitespace-pre-wrap' to allow natural text wrapping -->
+                            <p class="text-gray-300 mt-2 break-words text-lg">${escapeHTML((note.note || '').toUpperCase())}</p>
 </div>
                         <!-- Footer for timestamp, with a top border -->
                         <div class_alias="p-4 bg-gray-800/50 border-t border-gray-700">
