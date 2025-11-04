@@ -1,314 +1,216 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Training & Event Board</title>
-    <!-- Load Tailwind CSS -->
+    <title>Dept Events & Trainings</title>
+    
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Configure Tailwind for dark mode -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                },
-            },
-        }
-    </script>
-    <!-- Basic styles -->
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            cursor: none; /* Hide the cursor */
-            user-select: none; /* Standard syntax */
-            -webkit-user-select: none; /* Safari */
-            -moz-user-select: none; /* Firefox */
-            -ms-user-select: none; /* IE/Edge */
+            background-color: #020617; /* bg-slate-950 */
+            overflow: hidden; /* This line removes the scrollbar from the body */
+        }
+        /* Custom styles for the feed view */
+        .event-card {
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            border: 1px solid #1e293b; /* border-slate-800 */
+        }
+        .event-card:hover {
+            transform: translateY(-2px);
+            background-color: #1e293b; /* bg-slate-800 */
+        }
+        /* Keyframes for the shimmer animation on skeleton loaders */
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        .skeleton-shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            transform: translateX(-100%);
+            background-image: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0,
+                rgba(255, 255, 255, 0.03) 20%,
+                rgba(255, 255, 255, 0.08) 60%,
+                rgba(255, 255, 255, 0)
+            );
+            animation: shimmer 1.8s infinite;
         }
     </style>
 </head>
-<!-- Added padding to the body tag -->
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen antialiased p-4 md:p-8">
+<body class="bg-slate-950 text-slate-300 antialiased">
 
-    <!-- Removed 'container' and 'mx-auto' classes to use full width -->
-    <div class="w-full">
-        <!-- Header updated to match style from index.html -->
-        <header class="p-6 mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100">Training & Event Board</h1>
-            <!-- Increased subtitle font size -->
-            <p class="text-xl text-gray-600 dark:text-gray-300 mt-2">Upcoming sessions and workshops</p>
+    <!-- === MAIN CONTAINER UPDATED === -->
+    <!-- Removed max-w-7xl, container, mx-auto and changed min-h-screen to h-screen to fill the viewport -->
+    <div class="w-full h-screen p-6 md:p-8 flex flex-col">
+        
+        <!-- === HEADER UPDATED === -->
+        <!-- Removed 'text-center' and added 'text-left' to align title and subtitle -->
+        <header class="p-6 mb-12 flex-shrink-0 bg-slate-900 rounded-lg shadow-lg text-left border border-slate-800">
+            <h1 class="text-3xl sm:text-4xl font-bold text-white">MEETINGS, TRAININGS, AND EVENTS</h1>
         </header>
+        <!-- === END HEADER UPDATE === -->
 
-        <!-- Loading Indicator -->
-        <div id="loading" class="text-center py-12">
-            <!-- Made spinner larger -->
-            <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
-            <!-- Increased text size -->
-            <p class="mt-4 text-xl font-medium">Loading events...</p>
+        <!-- Configuration Section (hidden, but holds the credentials) -->
+        <div class="hidden">
+            <input type="password" id="apiKey" value="AIzaSyA3GRJ6eD0DSVkk0eblWxvNAspvELfEXPU">
+            <input type="email" id="calendarId" value="94e368189a926a957a0c9c43138f0c06256f0f17521b1e1b8749ccf63a1a61e7@group.calendar.google.com">
         </div>
-
-        <!-- Error Message -->
-        <!-- Increased text size -->
-        <div id="error" class="hidden text-lg bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg text-center" role="alert">
-            <strong class="font-bold">Error:</strong>
-            <span class="block sm:inline" id="error-message"></span>
-        </div>
-
-        <!-- Event Board Grid -->
-        <div id="event-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-            <!-- Event cards will be injected here -->
-        </div>
-
-        <!-- No Events Message -->
-        <div id="no-events" class="hidden text-center py-12">
-            <!-- This message will be updated by JS -->
-            <p class="text-2xl text-gray-500 dark:text-gray-400">No events found.</p>
-        </div>
+        
+        <!-- Main content area -->
+        <!-- === MAIN CONTENT UPDATED === -->
+        <!-- Removed 'overflow-y-auto' and 'pr-2' to prevent scrolling -->
+        <main class="flex-grow">
+            <!-- Events will be displayed here in a two-column grid format -->
+            <div id="events-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 <!-- Skeleton Loader -->
+                 <div id="events-placeholder" class="grid grid-cols-1 md:grid-cols-2 gap-8 col-span-2">
+                    <!-- We repeat this block for a nice loading effect -->
+                    <div class="relative overflow-hidden flex items-start gap-6 p-6 min-h-[150px] bg-slate-900 rounded-lg border border-slate-800 skeleton-shimmer">
+                        <div class="flex-shrink-0 w-20 h-20 bg-slate-800 rounded-md mt-1"></div>
+                        <div class="flex-grow space-y-3 pt-1">
+                            <div class="h-6 bg-slate-800 rounded w-3/4"></div>
+                            <div class="h-5 bg-slate-800 rounded w-1/2"></div>
+                            <div class="h-5 bg-slate-800 rounded w-full mt-4"></div>
+                            <div class="h-5 bg-slate-800 rounded w-2/3"></div>
+                        </div>
+                    </div>
+                    <!-- === MODIFICATION: Removed two skeleton loaders to match the 6-event limit === -->
+                 </div>
+            </div>
+        </main>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchEvents();
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiKeyInput = document.getElementById('apiKey');
+            const calendarIdInput = document.getElementById('calendarId');
+            const eventsContainer = document.getElementById('events-container');
+            const eventsPlaceholder = document.getElementById('events-placeholder');
+            
+            let allEvents = []; // Store all fetched events here
+
+            // Helper function to get parts of the date
+            function getDateParts(eventStart) {
+                const dateStr = eventStart?.date || eventStart?.dateTime;
+                if (!dateStr) return { month: '', day: '', time: 'Time TBD' };
+                
+                const date = new Date(dateStr);
+                const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+                const day = date.toLocaleDateString('en-US', { day: '2-digit' });
+
+                let time = 'All-Day';
+                if (eventStart.dateTime) {
+                    time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                }
+                
+                return { month, day, time };
+            }
+
+            // This function renders the events into the feed
+            function renderEvents() {
+                eventsContainer.innerHTML = ''; // Clear everything including the placeholder
+
+                if (allEvents.length === 0) {
+                    eventsContainer.innerHTML = `
+                        <div class="col-span-1 md:col-span-2 text-center py-20 px-6 bg-slate-900 rounded-lg border border-slate-800">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-slate-600 mb-4"><path d="M12.5 22h-6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path><path d="m21.7 17.8-1.1-1.1a1 1 0 0 0-1.5 0l-1 1a1 1 0 0 0 0 1.5l1.1 1.1c.4.4 1 .4 1.5 0l1-1a1 1 0 0 0 0-1.5z"></path><path d="m16 22 3-3"></path></svg>
+                            <h2 class="text-2xl font-semibold text-white">No Upcoming Events</h2>
+                            <p class="text-slate-400 mt-2 text-lg">Please check back later for new events.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                for (const event of allEvents) {
+                    if (!event.summary) continue;
+
+                    const eventItem = document.createElement('div');
+                    // Changed to items-start for better alignment with description
+                    eventItem.className = 'event-card bg-slate-900 rounded-lg flex items-start p-6 gap-6'; 
+                    
+                    const { month, day, time } = getDateParts(event.start);
+                    const locationText = event.location || 'Remote / TBD';
+                    const description = event.description; // Get the description
+                    
+                    const timeIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-1.5 align-middle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+                    const locationIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-1.5 align-middle"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`;
+
+                    eventItem.innerHTML = `
+                        <!-- Date Block -->
+                        <div class="date-block text-center flex-shrink-0 w-20 bg-slate-800/70 rounded-lg p-3 border border-slate-700">
+                            <p class="month text-sm font-bold text-cyan-400 tracking-wider">${month || 'TBD'}</p>
+                            <p class="day text-4xl font-extrabold text-white tracking-tight">${day || '--'}</p>
+                        </div>
+                        
+                        <!-- Event Details -->
+                        <div class="details flex-grow">
+                            <h3 class="font-bold text-white text-lg md:text-xl leading-tight">${event.summary}</h3>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4 text-base text-slate-400 mt-2">
+                                <span class="flex items-center">${timeIcon} ${time}</span>
+                                <span class="flex items-center mt-1 sm:mt-0">${locationIcon} ${locationText}</span>
+                            </div>
+                            <!-- === FIX: Completed this template literal line === -->
+                            ${description ? `<p class="text-base text-slate-400 mt-4 prose prose-invert max-w-none">${description}</p>` : ''}
+                        </div>
+                    `;
+                    eventsContainer.appendChild(eventItem);
+                }
+            }
+
+            async function loadEvents() {
+                const apiKey = apiKeyInput.value.trim();
+                const calendarId = calendarIdInput.value.trim();
+
+                if (!apiKey || !calendarId) {
+                    eventsContainer.innerHTML = '<p class="text-red-500 col-span-2">API Key or Calendar ID is missing.</p>';
+                    return;
+                }
+                
+                const timeMin = new Date().toISOString();
+                const apiUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${timeMin}&singleEvents=true&orderBy=startTime`;
+
+                try {
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) {
+                        throw new Error(`Google Calendar API error: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    // === MODIFICATION: Use .slice(0, 6) to only get the first 6 events ===
+                    allEvents = (data.items || []).slice(0, 6);
+                    renderEvents();
+                } catch (error) {
+                    console.error('Error fetching calendar events:', error);
+                    eventsContainer.innerHTML = `
+                        <div class="col-span-1 md:col-span-2 text-center py-20 px-6 bg-slate-900 rounded-lg border border-red-900/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-red-500 mb-4"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <h2 class="text-2xl font-semibold text-white">Failed to Load Events</h2>
+                            <p class="text-slate-400 mt-2 text-lg">There was an error connecting to the Google Calendar API.</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            loadEvents();
         });
-
-        // --- MODIFIED: Swapped Google Sheet URL for Google Calendar iCal URL ---
-        // This URL points to the public iCal feed for the provided calendar.
-        const CALENDAR_ICAL_URL = 'https://calendar.google.com/calendar/ical/94e368189a926a957a0c9c43138f0c06256f0f17521b1e1b8749ccf63a1a61e7%40group.calendar.google.com/public/basic.ics';
-
-        /**
-         * Fetches and displays the event data from the iCal feed.
-         */
-        async function fetchEvents() {
-            const loadingEl = document.getElementById('loading');
-            const errorEl = document.getElementById('error');
-            const errorMessageEl = document.getElementById('error-message');
-            const boardEl = document.getElementById('event-board');
-            const noEventsEl = document.getElementById('no-events');
-
-            loadingEl.classList.remove('hidden');
-            errorEl.classList.add('hidden');
-            noEventsEl.classList.add('hidden'); // Hide by default
-            boardEl.innerHTML = ''; // Clear previous results
-
-            try {
-                // --- MODIFIED: Use a CORS proxy to bypass browser security (CORS) errors ---
-                // The allorigins.win proxy fetches the URL on its server and passes the result back.
-                const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-                const proxiedUrl = PROXY_URL + encodeURIComponent(CALENDAR_ICAL_URL);
-                
-                // --- MODIFIED: Fetch from proxied calendar URL ---
-                const response = await fetch(proxiedUrl);
-                if (!response.ok) {
-                    if (response.status === 404) {
-                         throw new Error(`Calendar not found. Ensure the calendar ID is correct and it is public.`);
-                    }
-                    throw new Error(`Failed to fetch calendar: ${response.status} ${response.statusText}`);
-                }
-                
-                // --- MODIFIED: Get iCal text and parse it ---
-                const icalText = await response.text();
-                const events = parseICAL(icalText);
-                
-                if (events.length === 0) {
-                    noEventsEl.innerHTML = `<p class="text-2xl text-gray-500 dark:text-gray-400">No upcoming events found.</p>`;
-                    noEventsEl.classList.remove('hidden');
-                } else {
-                    displayEvents(events);
-                }
-
-            } catch (err) {
-                console.error(err);
-                errorMessageEl.textContent = err.message || 'Could not load event data.';
-                errorEl.classList.remove('hidden');
-            } finally {
-                loadingEl.classList.add('hidden');
-            }
-        }
-
-        /**
-         * --- NEW FUNCTION ---
-         * Parses iCal (.ics) text into an array of event objects.
-         */
-        function parseICAL(text) {
-            // Unfold multi-line properties (lines starting with a space)
-            const unfoldedText = text.replace(/\r?\n /g, '');
-            
-            // Regex to find all VEVENT blocks
-            const eventBlocks = unfoldedText.match(/BEGIN:VEVENT([\s\S]*?)END:VEVENT/g);
-            
-            if (!eventBlocks) return [];
-
-            const events = [];
-            const now = new Date(); // To filter out past events
-
-            for (const block of eventBlocks) {
-                const event = {};
-
-                // Helper function to extract a property value
-                const getProp = (propName) => {
-                    // Regex to find a property. Handles optional parameters (e.g., DTSTART;TZID=...)
-                    // 'im' flags: i = case-insensitive, m = multi-line
-                    const regex = new RegExp(`^${propName}(?:;.*)?:(.*)$`, 'im');
-                    const match = block.match(regex);
-                    if (match && match[1]) {
-                        // Un-escape iCal characters
-                        return match[1].replace(/\\n/g, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').trim();
-                    }
-                    return null;
-                };
-
-                // Extract properties
-                event.title = getProp('SUMMARY') || 'No Title';
-                event.description = getProp('DESCRIPTION') || '';
-                event.location = getProp('LOCATION') || 'N/A';
-                
-                const dtstart = getProp('DTSTART');
-                const dtend = getProp('DTEND');
-
-                event.start = dtstart ? parseICalDate(dtstart) : null;
-                event.end = dtend ? parseICalDate(dtend) : null;
-
-                // Only add events that haven't ended yet
-                if (event.end && event.end < now) {
-                    continue; // Skip past events
-                }
-
-                // Filter out empty/invalid events
-                if (event.title !== 'No Title' && event.start) {
-                    events.push(event);
-                }
-            }
-            
-            // Sort events by start date, earliest first
-            events.sort((a, b) => a.start - b.start);
-
-            return events;
-        }
-
-        /**
-         * --- NEW FUNCTION ---
-         * Parses an iCal date string (YYYYMMDDTHHMMSSZ or YYYYMMDD) into a Date object.
-         */
-        function parseICalDate(dateString) {
-            try {
-                // Format: YYYYMMDDTHHMMSSZ or YYYYMMDDTHHMMSS
-                if (dateString.includes('T')) {
-                    const year = dateString.substring(0, 4);
-                    const month = dateString.substring(4, 6);
-                    const day = dateString.substring(6, 8);
-                    const hour = dateString.substring(9, 11);
-                    const minute = dateString.substring(11, 13);
-                    const second = dateString.substring(13, 15);
-                    
-                    // Create ISO 8601 string: YYYY-MM-DDTHH:MM:SS
-                    let isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
-                    
-                    // If 'Z' is present, it's UTC
-                    if (dateString.endsWith('Z')) {
-                        isoString += 'Z';
-                    }
-                    
-                    return new Date(isoString);
-                } else {
-                    // Format: YYYYMMDD (all-day event)
-                    const year = dateString.substring(0, 4);
-                    const month = dateString.substring(4, 6);
-                    const day = dateString.substring(6, 8);
-                    
-                    // Create date as local time (e.g., starts at midnight local time)
-                    return new Date(`${year}-${month}-${day}T00:00:00`);
-                }
-            } catch (e) {
-                console.warn(`Could not parse iCal date: ${dateString}`, e);
-                return null; // Fallback
-            }
-        }
-
-        /**
-         * Renders the event cards on the board.
-         * (No changes to this function's logic)
-         */
-        function displayEvents(events) {
-            const boardEl = document.getElementById('event-board');
-            boardEl.innerHTML = ''; // Clear board
-
-            // --- Updated column count for wider layout ---
-            boardEl.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6';
-
-
-            for (const event of events) {
-                const card = document.createElement('div');
-                card.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col transform transition-transform duration-300 hover:scale-105';
-
-                // --- MODIFIED: Use event.description, which may contain newlines ---
-                // Replaced <p> with <pre> to respect newlines from the calendar description
-                card.innerHTML = `
-                    <div class="p-6 flex-grow">
-                        <!-- Increased title size -->
-                        <h2 class="text-2xl font-bold mb-2 text-blue-700 dark:text-blue-300">${event.title}</h2>
-                        <!-- Increased description size and use <pre> for formatting -->
-                        <pre class="text-lg text-gray-600 dark:text-gray-400 mb-4 whitespace-pre-wrap font-sans">${event.description || 'No description provided.'}</pre>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700 p-6 border-t border-gray-200 dark:border-gray-600">
-                        <div class="flex items-center mb-3">
-                            <!-- Increased icon size -->
-                            <svg class="w-6 h-6 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            <!-- Increased text size -->
-                            <span class="text-lg text-gray-700 dark:text-gray-300">${event.location}</span>
-                        </div>
-                        <div class="flex items-center mb-3">
-                            <!-- Increased icon size -->
-                            <svg class="w-6 h-6 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            <!-- Increased text size -->
-                            <span class="text-lg text-gray-700 dark:text-gray-300">
-                                <strong class="font-medium">Start:</strong> ${formatEventDate(event.start)}
-                            </span>
-                        </div>
-                        <div class="flex items-center">
-                            <!-- Increased icon size -->
-                            <svg class="w-6 h-6 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            <!-- Increased text size -->
-                            <span class="text-lg text-gray-700 dark:text-gray-300">
-                                <strong class="font-medium">End:</strong> ${formatEventDate(event.end)}
-                            </span>
-                        </div>
-                    </div>
-                `;
-                boardEl.appendChild(card);
-            }
-        }
-
-        /**
-         * --- MODIFIED ---
-         * Formats a Date object into a readable format.
-         */
-        function formatEventDate(dateObject) { // Changed parameter name from dateString
-            if (!dateObject) { // Handles null
-                return 'N/A';
-            }
-            try {
-                // No longer need new Date(), as dateObject is already a Date
-                if (isNaN(dateObject.getTime())) {
-                    return 'Invalid Date'; // Handle invalid dates from parser
-                }
-                return dateObject.toLocaleString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit'
-                });
-            } catch (e) {
-                console.warn(`Could not format date: ${dateObject}`, e);
-                return 'Error'; // Fallback
-            }
-        }
-
     </script>
 </body>
+
+
 </html>
 
