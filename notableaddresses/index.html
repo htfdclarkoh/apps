@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Address Notes</title>
+    <title>Address Notes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,8 +14,7 @@
         /* Apply the professional font */
         body {
             font-family: 'Inter', sans-serif;
-            /* Dark theme background */
-            background-color: #111827; /* gray-900 */
+            /* Dark theme background is now handled by body class */
         }
 
         /* Simple animation for note appearance */
@@ -27,192 +26,245 @@
         .note-card {
             animation: fadeIn 0.5s ease-out;
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            /* No rotation, no tape */
         }
         .note-card:hover {
-            /* Standard hover effect */
-            transform: translateY(-4px);
+            transform: translateY(-2px);
+            /* A subtle shadow for dark mode */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            z-index: 10;
-        }
-
-        /* Loading spinner animation */
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .loader {
-            width: 44px;
-            height: 44px;
-            border: 4px solid #374151; /* gray-700 */
-            /* Brighter color for dark mode */
-            border-top-color: #818cf8; /* indigo-400 */
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 4rem auto;
         }
     </style>
 </head>
-<!-- Dark theme text color -->
-<body class="text-gray-200">
+<!-- Updated body classes to match dark theme from header.html -->
+<body class="bg-gray-900 text-gray-100 p-4 md:p-8">
 
-    <!-- Main container - Removed container, mx-auto, and max-w-7xl to use full width -->
-    <div class="p-4 sm:p-8">
-
-        <!-- Header - Styled like the example -->
-        <header class="p-6 mb-8 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-100">NOTABLE ADDRESSES</h1>
-        </header>
-
-        <!-- Color Key Legend - Dark Mode - FONT INCREASED -->
-        <div class="mb-8 p-4 bg-gray-800 rounded-lg shadow-sm border border-gray-700 flex flex-wrap justify-center gap-4 sm:gap-6 text-base sm:text-lg">
-            <h4 class="font-semibold text-gray-300 w-full text-center sm:w-auto mb-2 sm:mb-0">Legend:</h4>
-            <span class="inline-flex items-center">
-                <span class="h-4 w-1 rounded-full bg-green-500 mr-2"></span> Green = General
-            </span>
-            <span class="inline-flex items-center">
-                <span class="h-4 w-1 rounded-full bg-yellow-500 mr-2"></span> Yellow = Important
-            </span>
-            <span class="inline-flex items-center">
-                <span class="h-4 w-1 rounded-full bg-red-500 mr-2"></span> Red = Urgent
-            </span>
-            <span class="inline-flex items-center">
-                <span class="h-4 w-1 rounded-full bg-blue-500 mr-2"></span> Blue = Other
-            </span>
-        </div>
-
-        <!-- Saved Notes List - Changed from grid to flex-wrap -->
-        <div>
-            <div id="notesList" class="flex flex-wrap gap-6">
-                <!-- Initial Loading Spinner - Changed from col-span-full to w-full -->
-                <div id="loadingIndicator" class="w-full">
-                    <div class="loader"></div>
-                    <!-- FONT INCREASED -->
-                    <p class="text-center text-gray-400 text-xl">Loading notes...</p>
-                </div>
-                <!-- Notes will be dynamically inserted here -->
+    <!-- Updated header to match the style of header.html -->
+    <!-- Removed max-w-6xl and mx-auto to allow full width -->
+    <header class="p-6 mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100">NOTABLE ADDRESSES</h1>
+        
+        <!-- Color Legend -->
+        <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4">
+            <div class="flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full bg-red-900/80 border border-red-700"></span>
+                <span class="text-sm text-gray-600 dark:text-gray-300">High Priority</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full bg-yellow-900/80 border border-yellow-700"></span>
+                <span class="text-sm text-gray-600 dark:text-gray-300">Medium Priority</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full bg-green-900/80 border border-green-700"></span>
+                <span class="text-sm text-gray-600 dark:text-gray-300">General / Low Priority</span>
             </div>
         </div>
+    </header>
 
-    </div>
+    <!-- Removed max-w-6xl and mx-auto to allow full width -->
+    <main>
+        <!-- Message area for loading or no notes -->
+        <div id="message-area" class="text-center p-6 bg-gray-800 rounded-lg shadow-md hidden">
+            <p id="message-text" class="text-xl text-gray-300"></p>
+        </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const notesList = document.getElementById('notesList');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            
-            // URL for the Google Sheet CSV
-            const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1769339552&single=true&output=csv';
+        <!-- Grid container for notes -->
+        <div id="notes-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Notes will be dynamically inserted here -->
+        </div>
+    </main>
 
-            async function loadNotesFromSheet() {
+    <footer class="text-center mt-12 text-gray-500">
+    </footer>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import Firebase services
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // *** ADDED 'orderBy' to imports ***
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Use the provided Firebase config
+        const firebaseConfig = {
+          apiKey: "AIzaSyCqqW_fryqigzg7zDWgEsuADhBkPYcHQMo",
+          authDomain: "db2-2f64c.firebaseapp.com",
+          projectId: "db2-2f64c",
+          storageBucket: "db2-2f64c.firebasestorage.app",
+          messagingSenderId: "234811583682",
+          appId: "1:234811583682:web:aa2bd4e29296207c0d5f5b",
+          measurementId: "G-38MS80C490"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Get DOM elements
+        const notesList = document.getElementById('notes-list');
+        const messageText = document.getElementById('message-text');
+        const messageArea = document.getElementById('message-area');
+
+        // Authentication state listener
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in (anonymously or otherwise)
+                console.log("User signed in with UID:", user.uid);
+                // Once authenticated, set up the real-time data listener
+                setupNoteListener();
+            } else {
+                // User is signed out, attempt anonymous sign-in
+                console.log("No user found, attempting anonymous sign-in...");
                 try {
-                    const response = await fetch(sheetUrl);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const csvText = await response.text();
-                    const notes = parseCSV(csvText);
-                    renderNotes(notes);
+                    await signInAnonymously(auth);
+                    // The onAuthStateChanged listener will fire again with the new user
                 } catch (error) {
-                    console.error("Failed to load notes:", error);
-                    // FONT INCREASED & Changed from col-span-full to w-full
-                    notesList.innerHTML = `<div class="text-center text-red-400 py-4 w-full text-xl">Failed to load notes. Please check the URL or your network connection.</div>`;
+                    console.error("Anonymous sign-in failed: ", error);
+                    showMessage("Error: Could not authenticate to view data.");
                 }
             }
+        });
+
+        /**
+         * Sets up the real-time listener for the 'addressNotes' collection.
+         */
+        function setupNoteListener() {
+            showMessage("Loading notes...", false);
             
-            function parseCSV(text) {
-                const lines = text.trim().split('\n').map(line => line.trim());
-                const headers = lines.shift().split(',').map(h => h.trim());
+            // This is the collection your admin panel writes to
+            const notesCollectionRef = collection(db, 'addressNotes');
+            
+            // *** UPDATED query to sort by 'createdAt' in descending order (newest first) ***
+            const q = query(notesCollectionRef, orderBy("createdAt", "desc"));
 
-                return lines.map(line => {
-                    const values = [];
-                    let currentVal = '';
-                    let inQuotes = false;
-                    for (const char of line) {
-                        if (char === '"') {
-                            inQuotes = !inQuotes;
-                        } else if (char === ',' && !inQuotes) {
-                            values.push(currentVal);
-                            currentVal = '';
-                        } else {
-                            currentVal += char;
-                        }
-                    }
-                    values.push(currentVal);
-
-                    const noteObject = {};
-                    headers.forEach((header, index) => {
-                        const key = header.toLowerCase().trim();
-                        const value = values[index] ? values[index].replace(/"/g, '').trim() : '';
-                        noteObject[key] = value;
-                    });
-                    return noteObject;
-                });
-            }
-
-            function renderNotes(notes) {
-                notesList.innerHTML = ''; // Clear current list (and loader)
-
-                if (!notes || notes.length === 0) {
-                    // FONT INCREASED & Changed from col-span-full to w-full
-                    notesList.innerHTML = `<div class="text-center text-gray-400 py-4 w-full text-xl">No notes found in the spreadsheet.</div>`;
+            // onSnapshot listens for real-time updates
+            onSnapshot(q, (querySnapshot) => {
+                notesList.innerHTML = ''; // Clear old notes
+                
+                if (querySnapshot.empty) {
+                    showMessage("No notable addresses found.", false);
                     return;
                 }
+
+                messageArea.classList.add('hidden'); // Hide message area
                 
-                // Reverse to show the latest entries first
-                notes.reverse();
-
-                notes.forEach(note => {
-                    if (!note.address) return; // Skip if address is missing
-
-                    // Determine border color based on Priority
-                    const priority = (note.priority || '').toLowerCase();
-                    let borderColorClass = 'border-blue-500'; // Default note color
-                    
-                    if (priority === 'red') {
-                        borderColorClass = 'border-red-500';
-                    } else if (priority === 'yellow') {
-                        borderColorClass = 'border-yellow-500';
-                    } else if (priority === 'green') {
-                        borderColorClass = 'border-green-500';
-                    }
-
-                    const noteElement = document.createElement('div');
-                    // Dark mode card styles - Added w-max (width: max-content) and max-w-full
-                    noteElement.className = `note-card bg-gray-800 shadow-lg rounded-lg ${borderColorClass} border-l-4 flex flex-col overflow-hidden border border-gray-700 w-max max-w-full`;
-                    
-                    noteElement.innerHTML = `
-                        <!-- Main content padding -->
-                        <div class="p-5 flex-grow">
-                            <!-- Professional font sizing with dark mode text - FONT INCREASED -->
-                            <h3 class="font-semibold text-2xl text-gray-100 break-words">${escapeHTML(note.address.toUpperCase())}</h3>
-                            <!-- Removed 'whitespace-pre-wrap' to allow natural text wrapping -->
-                            <p class="text-gray-300 mt-2 break-words text-lg">${escapeHTML((note.note || '').toUpperCase())}</p>
-</div>
-                        <!-- Footer for timestamp, with a top border -->
-                        <div class_alias="p-4 bg-gray-800/50 border-t border-gray-700">
-                            <!-- FONT INCREASED -->
-                            <p class="text-base text-gray-400 text-right">${escapeHTML((note.timestamp || '').toUpperCase())}</p>
-                        </div>
-                    `;
-                    // A small hack to fix tailwind purge issue with dynamic classes
-                    noteElement.lastElementChild.className = 'p-4 bg-gray-800/50 border-t border-gray-700';
-
-                    notesList.appendChild(noteElement);
+                const notes = [];
+                querySnapshot.forEach((doc) => {
+                    notes.push(doc.data());
                 });
+
+                // Render the notes (already sorted by Firestore)
+                renderNotes(notes);
+
+            }, (error) => {
+                console.error("Error fetching notes: ", error);
+                showMessage("Error loading notes. Check console for details.");
+            });
+        }
+
+        /**
+         * Displays a message in the message area.
+         * @param {string} message - The message to display.
+         * @param {boolean} [isError=true] - Whether the message is an error.
+         */
+        function showMessage(message, isError = true) {
+            messageText.textContent = message;
+            messageText.classList.toggle('text-red-400', isError);
+            messageText.classList.toggle('text-gray-300', !isError);
+            messageArea.classList.remove('hidden');
+        }
+
+        /**
+         * Renders the array of notes into the DOM.
+         * @param {Array<object>} notes - The array of note data objects.
+         */
+        function renderNotes(notes) {
+            notesList.innerHTML = ''; // Clear old notes
+            notes.forEach(createNoteCard);
+        }
+
+
+        /**
+         * Creates and appends a note card to the list.
+         * @param {object} note - The note data object from Firestore.
+         */
+        function createNoteCard(note) {
+            // Determine card colors based on priority
+            let bgColor = 'bg-gray-800';
+            let borderColor = 'border-gray-700';
+
+            if (note.priority === 'Red') {
+                bgColor = 'bg-red-900/80'; // Darker red with opacity
+                borderColor = 'border-red-700';
+            } else if (note.priority === 'Yellow') {
+                bgColor = 'bg-yellow-900/80'; // Darker yellow with opacity
+                borderColor = 'border-yellow-700';
+            } else if (note.priority === 'Green' || note.priority === 'General') {
+                bgColor = 'bg-green-900/80'; // Darker green with opacity
+                borderColor = 'border-green-700';
             }
 
-            function escapeHTML(str) {
-                const div = document.createElement('div');
-                div.appendChild(document.createTextNode(str));
-                return div.innerHTML;
-            }
+            const noteElement = document.createElement('div');
+            noteElement.className = `note-card overflow-hidden rounded-lg shadow-xl ${bgColor} border ${borderColor} flex flex-col`;
             
-            // Initial load
-            loadNotesFromSheet();
-        });
+            // *** UPDATED to format the 'createdAt' timestamp ***
+            const timestamp = formatTimestamp(note.createdAt);
+
+            // Note: Using .toUpperCase() to match the style of your other apps
+            noteElement.innerHTML = `
+                <!-- Main content area -->
+                <div class_alias="p-5 flex-grow">
+                    <h3 class="font-semibold text-2xl text-white break-words">${escapeHTML(note.address ? note.address.toUpperCase() : 'NO ADDRESS')}</h3>
+                    <p class="text-gray-300 mt-2 break-words text-lg">${escapeHTML(note.note ? note.note.toUpperCase() : 'NO NOTE')}</p>
+                </div>
+                <!-- Footer for timestamp -->
+                <div class_alias="p-4 bg-gray-800/50 border-t ${borderColor}">
+                    <p class="text-base text-gray-400 text-right font-medium">${timestamp}</p>
+                </div>
+            `;
+            // A hack to fix Tailwind's CSS purging issue with dynamic classes
+            noteElement.children[0].className = 'p-5 flex-grow';
+            noteElement.children[1].className = `p-4 bg-gray-800/5G-213LH7WH40/50 border-t ${borderColor}`;
+
+            notesList.appendChild(noteElement);
+        }
+
+        /**
+         * Formats a Firestore Timestamp into a readable string.
+         * @param {object} timestamp - The Firestore Timestamp object.
+         * @returns {string} - The formatted date/time string.
+         */
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                // Convert Firestore Timestamp to JS Date
+                const date = timestamp.toDate();
+                return date.toLocaleString('en-US', {
+                    month: 'numeric',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                console.warn("Could not format timestamp:", timestamp, e);
+                return 'Invalid Date';
+            }
+        }
+
+
+        /**
+         * Sanitizes a string to prevent XSS.
+         * @param {string} str - The string to escape.
+         * @returns {string} - The escaped string.
+         */
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
     </script>
 
 </body>
 </html>
-
