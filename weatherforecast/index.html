@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Weather Display</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* --- Custom Styles & Animations --- */
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+            color: #e5e7eb;
+            overflow-x: hidden;
+        }
+
+        /* --- Dynamic Background --- */
+        #background-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+            transition: background 1.5s ease-in-out;
+            background-size: 200% 200%;
+            animation: gradient-flow 20s ease infinite;
+        }
+
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Weather-specific gradients */
+        .bg-clear-day { background-image: linear-gradient(135deg, #4299e1, #f59e0b, #fefce8); }
+        .bg-clear-night { background-image: linear-gradient(135deg, #1e3a8a, #4c1d95, #111827); }
+        .bg-cloudy { background-image: linear-gradient(135deg, #6b7280, #9ca3af, #d1d5db); }
+        .bg-rainy { background-image: linear-gradient(135deg, #374151, #4b5563, #1f2937); }
+        .bg-snowy { background-image: linear-gradient(135deg, #9ca3af, #e5e7eb, #bfdbfe); }
+        .bg-stormy { background-image: linear-gradient(135deg, #1f2937, #4b5563, #f59e0b); }
+        .bg-foggy { background-image: linear-gradient(135deg, #a1a1aa, #d4d4d8, #e5e7eb); }
+        .bg-default { background-image: linear-gradient(135deg, #1f2937, #374151, #111827); }
+
+        /* --- Glassmorphism Effect for Cards --- */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 1.5rem; /* More rounded corners */
+        }
+        
+        /* --- Wind Arrow Transition --- */
+        #wind-arrow {
+             transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- Entrance Animations --- */
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+        .animate-slide-up { animation: slide-up 0.8s ease-out forwards; }
+        
+        .animated-item {
+            opacity: 0; /* Initially hidden */
+        }
+        
+        .icon-shadow {
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8 bg-gray-900">
+    <div id="background-gradient" class="bg-default"></div>
+
+    <div id="weather-container" class="max-w-7xl mx-auto">
+        <!-- Header Section -->
+        <header class="text-center mb-8 animated-item">
+            <h1 id="location-name" class="text-3xl sm:text-4xl font-bold tracking-wider text-white uppercase" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Loading Weather...</h1>
+            <p id="current-time" class="text-lg text-gray-300"></p>
+        </header>
+
+        <!-- Main Weather Display -->
+        <main id="weather-main" class="glass-card p-6 shadow-2xl flex flex-col lg:flex-row items-center justify-between text-center lg:text-left mb-8 animated-item">
+            <!-- Current Conditions -->
+            <div class="flex flex-col lg:flex-row items-center gap-6 mb-6 lg:mb-0">
+                <div id="current-icon" class="w-32 h-32 lg:w-40 lg:h-40 text-white icon-shadow"></div>
+                <div>
+                    <p id="current-temp" class="text-6xl sm:text-7xl font-extrabold text-white"></p>
+                    <p id="current-condition" class="text-xl text-gray-200 capitalize"></p>
+                    <p class="text-lg text-gray-300">Feels like <span id="apparent-temp"></span></p>
+                </div>
+            </div>
+
+            <!-- Daily Details -->
+            <div class="text-lg grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-x-8 gap-y-4 text-left">
+                <p><span class="font-bold text-white">High:</span> <span id="today-high" class="text-gray-200"></span></p>
+                <p><span class="font-bold text-white">Low:</span> <span id="today-low" class="text-gray-200"></span></p>
+                <p><span class="font-bold text-white">Humidity:</span> <span id="today-humidity" class="text-gray-200"></span></p>
+                <p><span class="font-bold text-white">Precip:</span> <span id="today-precip" class="text-gray-200"></span></p>
+                 <div class="flex items-center col-span-2 sm:col-span-4 lg:col-span-2">
+                    <svg id="wind-arrow" class="w-6 h-6 mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    <p><span class="font-bold text-white">Wind:</span> <span id="today-wind" class="text-gray-200"></span></p>
+                </div>
+                <div class="flex items-center gap-4 col-span-2 sm:col-span-4 lg:col-span-2">
+                    <p><span class="font-bold text-white">Sunrise:</span> <span id="sunrise-time" class="text-gray-200"></span></p>
+                    <p><span class="font-bold text-white">Sunset:</span> <span id="sunset-time" class="text-gray-200"></span></p>
+                </div>
+            </div>
+        </main>
+
+        <!-- 7-Day Forecast -->
+        <h2 class="text-2xl font-bold text-white text-center mb-4 animated-item">7-Day Forecast</h2>
+        <div id="forecast-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 text-center animated-item">
+            <!-- Forecast items will be loaded here by JavaScript -->
+        </div>
+        
+        <!-- Loading / Error State -->
+        <div id="message-container" class="text-center p-12 text-gray-200 text-xl"></div>
+    </div>
+    
+    <script src="config.js"></script>
+    <script>
+        // --- CONFIGURATION ---
+        // All settings are now managed in config.js under the 'weatherConfig' object.
+        const LATITUDE = CONFIG.weatherConfig.latitude;
+        const LONGITUDE = CONFIG.weatherConfig.longitude;
+        const LOCATION_NAME = CONFIG.weatherConfig.locationName;
+        const REFRESH_INTERVAL_MINUTES = CONFIG.weatherConfig.refreshIntervalMinutes;
+        // -------------------
+
+        // --- SVG WEATHER ICONS ---
+        const WEATHER_ICONS = {
+            clearDay: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#fef08a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="10"/><line x1="32" y1="3" y2="32" x2="10"/><line x1="32" y1="61" y2="32" x2="54"/><line x1="3" y1="32" y2="10" x2="32"/><line x1="61" y1="32" y2="54" x2="32"/><line x1="12.2" y1="12.2" y2="18.6" x2="18.6"/><line x1="51.8" y1="51.8" y2="45.4" x2="45.4"/><line x1="12.2" y1="51.8" y2="18.6" x2="45.4"/><line x1="51.8" y1="12.2" y2="45.4" x2="18.6"/></svg>`,
+            clearNight: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#e0e7ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M28.3,16.2A21.2,21.2,0,0,1,50.1,32a21,21,0,0,1-1.3,7.6,18.8,18.8,0,0,0-19-22A18.7,18.7,0,0,0,28.3,16.2Z"/></svg>`,
+            cloudy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#d1d5db" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M41.5,41.5A11,11,0,1,1,41.5,19.5h-19a14,14,0,1,0,0,28h19a11,11,0,0,0,0-22,11.2,11.2,0,0,0-2.5.3"/></svg>`,
+            rain: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M41.5,41.5A11,11,0,1,1,41.5,19.5h-19a14,14,0,1,0,0,28h19a11,11,0,0,0,0-22,11.2,11.2,0,0,0-2.5.3" stroke="#d1d5db" stroke-width="3"/><line x1="24" y1="50" x2="24" y2="58" stroke="#60a5fa" stroke-width="3"/><line x1="32" y1="50" x2="32" y2="58" stroke="#60a5fa" stroke-width="3"/><line x1="40" y1="50" x2="40" y2="58" stroke="#60a5fa" stroke-width="3"/></svg>`,
+            snow: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M41.5,41.5A11,11,0,1,1,41.5,19.5h-19a14,14,0,1,0,0,28h19a11,11,0,0,0,0-22,11.2,11.2,0,0,0-2.5.3" stroke="#d1d5db" stroke-width="3"/><line x1="24" y1="54" x2="24" y2="54" stroke="#e0f2fe" stroke-width="5"/><line x1="32" y1="54" x2="32" y2="54" stroke="#e0f2fe" stroke-width="5"/><line x1="40" y1="54" x2="40" y2="54" stroke="#e0f2fe" stroke-width="5"/></svg>`,
+            storm: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M41.5,41.5A11,11,0,1,1,41.5,19.5h-19a14,14,0,1,0,0,28h19a11,11,0,0,0,0-22,11.2,11.2,0,0,0-2.5.3" stroke="#d1d5db" stroke-width="3"/><polyline points="34 48 30 54 36 54 32 60" stroke="#facc15" stroke-width="3"/></svg>`,
+            fog: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#d1d5db" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14,24h36M18,34h28M14,44h36"/></svg>`,
+        };
+        
+        /**
+         * Maps WMO weather codes to our custom icons and background classes.
+         * @param {number} code - The WMO weather code.
+         * @param {boolean} isDay - True if it's currently daytime.
+         * @returns {object} { icon: svgString, background: className }
+         */
+        function mapWeatherCode(code, isDay) {
+            if ([0, 1].includes(code)) return { icon: isDay ? WEATHER_ICONS.clearDay : WEATHER_ICONS.clearNight, background: isDay ? 'bg-clear-day' : 'bg-clear-night' };
+            if ([2, 3].includes(code)) return { icon: WEATHER_ICONS.cloudy, background: 'bg-cloudy' };
+            if ([45, 48].includes(code)) return { icon: WEATHER_ICONS.fog, background: 'bg-foggy' };
+            if (code >= 51 && code <= 67 || (code >= 80 && code <= 82)) return { icon: WEATHER_ICONS.rain, background: 'bg-rainy' };
+            if (code >= 71 && code <= 77 || (code >= 85 && code <= 86)) return { icon: WEATHER_ICONS.snow, background: 'bg-snowy' };
+            if (code >= 95) return { icon: WEATHER_ICONS.storm, background: 'bg-stormy' };
+            // Default fallback
+            return { icon: WEATHER_ICONS.cloudy, background: 'bg-default' };
+        }
+        
+        // Simple WMO code to description text
+        const WMO_DESCRIPTIONS = { 0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Rime fog", 51: "Light drizzle", 53: "Drizzle", 55: "Dense drizzle", 61: "Slight rain", 63: "Rain", 65: "Heavy rain", 71: "Slight snow", 73: "Snow", 75: "Heavy snow", 80: "Rain showers", 82: "Violent rain showers", 85: "Snow showers", 95: "Thunderstorm", 96: "Thunderstorm with hail", 99: "Thunderstorm with heavy hail" };
+
+        /**
+         * Fetches and displays weather data.
+         */
+        async function loadWeatherData() {
+            const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto`;
+            
+            const messageContainer = document.getElementById('message-container');
+            const animatedItems = document.querySelectorAll('.animated-item');
+
+            messageContainer.innerHTML = '<span>Loading fresh weather data...</span>';
+            animatedItems.forEach(item => item.style.opacity = 0);
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                const data = await response.json();
+                if (!data.current || !data.daily) throw new Error("API response missing data.");
+
+                // --- Update UI ---
+                const isDay = data.current.is_day === 1;
+                const { icon, background } = mapWeatherCode(data.current.weather_code, isDay);
+                document.getElementById('background-gradient').className = background;
+
+                document.getElementById('location-name').textContent = LOCATION_NAME;
+                
+                // Current Conditions
+                document.getElementById('current-temp').textContent = `${Math.round(data.current.temperature_2m)}°`;
+                document.getElementById('apparent-temp').textContent = `${Math.round(data.current.apparent_temperature)}°`;
+                document.getElementById('current-icon').innerHTML = icon;
+                document.getElementById('current-condition').textContent = WMO_DESCRIPTIONS[data.current.weather_code] || 'Unknown';
+                document.getElementById('wind-arrow').style.transform = `rotate(${data.current.wind_direction_10m}deg)`;
+
+                // Today's Summary
+                document.getElementById('today-high').textContent = `${Math.round(data.daily.temperature_2m_max[0])}°F`;
+                document.getElementById('today-low').textContent = `${Math.round(data.daily.temperature_2m_min[0])}°F`;
+                document.getElementById('today-humidity').textContent = `${data.current.relative_humidity_2m}%`;
+                const windDir = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'][Math.round(data.daily.wind_direction_10m_dominant[0] / 22.5) % 16];
+                document.getElementById('today-wind').textContent = `${Math.round(data.daily.wind_speed_10m_max[0])} mph ${windDir}`;
+                document.getElementById('today-precip').textContent = `${data.daily.precipitation_probability_max[0]}%`;
+                const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+                document.getElementById('sunrise-time').textContent = new Date(data.daily.sunrise[0]).toLocaleTimeString([], timeOptions);
+                document.getElementById('sunset-time').textContent = new Date(data.daily.sunset[0]).toLocaleTimeString([], timeOptions);
+
+
+                // 7-Day Forecast
+                const forecastContainer = document.getElementById('forecast-container');
+                forecastContainer.innerHTML = ''; 
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(data.daily.time[i]);
+                    const dayName = i === 0 ? 'Today' : date.toLocaleString('en-US', { weekday: 'short' });
+                    const forecastCode = data.daily.weather_code[i];
+                    // For forecast, assume daytime icon for simplicity
+                    const { icon: forecastIcon } = mapWeatherCode(forecastCode, true);
+
+                    const forecastItem = document.createElement('div');
+                    forecastItem.className = 'glass-card p-4 flex flex-col items-center justify-between';
+                    forecastItem.innerHTML = `
+                        <p class="font-bold text-lg">${dayName}</p>
+                        <div class="w-16 h-16 my-2 text-white">${forecastIcon}</div>
+                        <div>
+                            <p class="text-white font-semibold">${Math.round(data.daily.temperature_2m_max[i])}°</p>
+                            <p class="text-gray-300">${Math.round(data.daily.temperature_2m_min[i])}°</p>
+                        </div>
+                    `;
+                    forecastContainer.appendChild(forecastItem);
+                }
+
+                // Animate content into view
+                messageContainer.innerHTML = '';
+                document.querySelector('header').classList.add('animate-fade-in');
+                document.getElementById('weather-main').classList.add('animate-slide-up');
+                document.querySelector('h2').classList.add('animate-slide-up');
+                forecastContainer.classList.add('animate-slide-up');
+                
+                // Add staggered animation to forecast items
+                const forecastItems = forecastContainer.children;
+                for(let i = 0; i < forecastItems.length; i++) {
+                    setTimeout(() => {
+                        forecastItems[i].style.opacity = '1';
+                        forecastItems[i].classList.add('animate-slide-up');
+                    }, 100 * i);
+                }
+
+
+            } catch (error) {
+                console.error("Error loading weather data:", error);
+                messageContainer.innerHTML = `<span class="text-red-300">Error: Could not load weather data.</span>`;
+            }
+        }
+
+        // --- Clock Update ---
+        function updateTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleTimeString([], {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // --- Initial Load & Refresh Interval ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadWeatherData();
+            updateTime();
+            setInterval(loadWeatherData, REFRESH_INTERVAL_MINUTES * 60 * 1000);
+            setInterval(updateTime, 1000); // Update clock every second
+        });
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Weather Radar</title>
+
+    <!-- LeafletJS CSS for map rendering -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles to ensure the map displays correctly and the app has a consistent font */
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevents scrollbars from appearing */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        .leaflet-control-attribution a {
+            color: #0078A8;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white antialiased">
+
+    <div id="map"></div>
+
+    <!-- LeafletJS JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script src="config.js"></script>
+    <script>
+        // --- Initial Map Setup ---
+        // Map coordinates and zoom level are now managed in config.js
+        const mapCoordinates = [CONFIG.weatherConfig.latitude, CONFIG.weatherConfig.longitude];
+        const defaultZoom = CONFIG.weatherConfig.radarZoom;
+
+        // Initialize the Leaflet map
+        const map = L.map('map', { zoomControl: false }).setView(mapCoordinates, defaultZoom);
+
+        // --- Base Map Layer ---
+        // Using OpenStreetMap for the underlying map geography.
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // --- Weather Radar Management ---
+        let currentRadarLayer = null;
+
+        // Function to add/update the radar layer
+        const updateRadarLayer = () => {
+            const opacity = 0.7; // Hardcoded opacity
+
+            // Remove the old layer if it exists
+            if (currentRadarLayer) {
+                map.removeLayer(currentRadarLayer);
+            }
+            
+            // Add a timestamp to the URL to prevent caching and ensure fresh data
+            const timestamp = new Date().getTime();
+
+            // Using the IEM NEXRAD source directly
+            const radarUrl = `https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi?_=${timestamp}`;
+            const newLayer = L.tileLayer.wms(radarUrl, {
+                layers: 'nexrad-n0r-900913',
+                format: 'image/png',
+                transparent: true,
+                attribution: 'Weather data &copy; IEM NEXRAD'
+            });
+
+            if (newLayer) {
+                currentRadarLayer = newLayer;
+                currentRadarLayer.setOpacity(opacity);
+                currentRadarLayer.addTo(map);
+            }
+        };
+
+        // --- Initial Load ---
+        // Load the default radar layer when the page first loads.
+        updateRadarLayer();
+        
+        // Refresh the radar layer periodically to get the latest data
+        // Using the same interval as the weather forecast for consistency
+        setInterval(updateRadarLayer, (CONFIG.weatherConfig.refreshIntervalMinutes || 15) * 60 * 1000);
+
+    </script>
+
+</body>
+</html>
