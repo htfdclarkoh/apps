@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Use the Inter font family */
         body { 
@@ -19,19 +19,17 @@
 </head>
 <body class="bg-gray-900 text-gray-200">
 
-    <!-- Background gradient effect -->
     <div class="absolute top-0 left-0 w-full h-full bg-cover bg-center z-0" style="background-image: radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.1), transparent 40%), radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.1), transparent 40%);"></div>
     
-    <!-- Main content container -->
-    <div class="relative min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 z-10">
-        <div class="w-full max-w-7xl mx-auto">
-            <header class="text-center mb-8">
-                <h1 class="text-8xl font-bold tracking-wider text-white uppercase drop-shadow-lg">Unit Status</h1>
-                <p class="text-3xl text-teal-400 mt-4">Live Status Board</p>
-            </header>
+    <div class="relative min-h-screen flex flex-col p-4 sm:p-6 md:p-8 z-10">
+        
+        <header class="p-6 mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-100">APPARATUS STATUS</h1>
+            <p class="text-base text-gray-400 mt-1">Live Status Board</p>
+        </header>
 
+        <div class="w-full">
             <main>
-                <!-- Glassmorphism card effect -->
                 <div class="bg-gray-900/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table id="status-table" class="w-full text-left">
@@ -45,137 +43,183 @@
                                 </tr>
                             </thead>
                             <tbody id="table-body" class="divide-y divide-gray-700/50 text-3xl">
-                                <!-- Data rows will be inserted here by JavaScript -->
+                                <tr id="loading-row">
+                                    <td colspan="5" class="text-center p-12 text-gray-400 text-2xl">
+                                        Connecting to live data...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </main>
-
-            <footer class="text-center mt-12 text-2xl text-gray-500">
-                <p id="last-updated">Last updated: --</p>
-            </footer>
-        </div>
+            </div>
     </div>
 
-    <!-- External scripts for functionality -->
-    <script src="config.js"></script>
-    <script src="common.js"></script>
-    <script>
+    <script type="module">
+        // Import functions from the SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, collection, query, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // Your Firebase configuration object (UPDATED)
+        const firebaseConfig = {
+          apiKey: "AIzaSyCqqW_fryqigzg7zDWgEsuADhBkPYcHQMo",
+          authDomain: "db2-2f64c.firebaseapp.com",
+          projectId: "db2-2f64c",
+          storageBucket: "db2-2f64c.firebasestorage.app",
+          messagingSenderId: "234811583682",
+          appId: "1:234811583682:web:aa2bd4e29296207c0d5f5b",
+          measurementId: "G-38MS80C490"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
         /**
          * Creates a status indicator with a colored dot.
          * @param {string} statusText - The status text from the data.
          * @returns {string} HTML string for the status cell.
          */
         function getStatusIndicator(statusText) {
-            const status = (statusText || '').trim().toLowerCase();
+            const status = (statusText || '').trim();
             let dotColor = 'bg-gray-500'; // Default color for unknown statuses
             let textColor = 'text-gray-300';
 
-            if (status.includes('in service')) {
+            if (status === 'In Service') {
                 dotColor = 'bg-green-500';
                 textColor = 'text-green-300';
-            } else if (status.includes('oos')) {
+            } else if (status === 'OOS') {
                 dotColor = 'bg-red-500';
                 textColor = 'text-red-300';
-            } else if (status.length > 0) { // Any other status that isn't empty
+            } else if (status === 'Limited Service') {
                 dotColor = 'bg-yellow-500';
                 textColor = 'text-yellow-300';
             }
 
-            // Capitalize the first letter of the status for better display
-            const formattedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
-
             return `
                 <div class="flex items-center">
                     <span class="h-6 w-6 rounded-full ${dotColor} mr-6 flex-shrink-0"></span>
-                    <span class="${textColor}">${formattedStatus || 'N/A'}</span>
+                    <span class="${textColor}">${status || 'N/A'}</span>
                 </div>
             `;
         }
+        
+        /**
+         * Formats a Firestore Timestamp into a readable string.
+         * @param {object} timestamp - The Firestore Timestamp object.
+         * @returns {string} A formatted date/time string.
+         */
+        function formatFirestoreTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                const date = timestamp.toDate(); // Convert Firestore Timestamp to JS Date
+                return date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric'
+                });
+            } catch (e) {
+                return 'Invalid Date';
+            }
+        }
+
 
         /**
-         * Renders the maintenance data into the table.
-         * @param {Array<Object>} maintenanceData - The data fetched from the sheet.
+         * Renders the unit status data into the table.
+         * @param {Array<Object>} unitData - The data from Firestore.
          */
-        function displayData(maintenanceData) {
+        function displayData(unitData) {
             const tableBody = document.getElementById('table-body');
             tableBody.innerHTML = ''; // Clear previous data
 
-            if (!maintenanceData || maintenanceData.length === 0) {
+            if (!unitData || unitData.length === 0) {
                 tableBody.innerHTML = `
                     <tr class="bg-transparent">
-                        <td colspan="5" class="text-center p-12 text-gray-400">
-                            <div class="flex flex-col items-center">
-                                <svg class="mx-auto h-24 w-24 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2z" />
-                                </svg>
-                                <h3 class="mt-4 text-3xl font-medium text-gray-300">No Data Available</h3>
-                                <p class="mt-2 text-2xl text-gray-500">Could not find any maintenance records in the sheet.</p>
-                            </div>
+                        <td colspan="5" class="text-center p-12 text-gray-400 text-2xl">
+                            <h3 class="font-medium text-gray-300">No Data Available</h3>
+                            <p class="mt-2 text-xl text-gray-500">No unit statuses found in the database.</p>
                         </td>
                     </tr>`;
                 return;
             }
             
-            // Sort data by the 'Reported' date in descending order (most recent first)
-            maintenanceData.sort((a, b) => {
-                // Create Date objects. If a date is invalid or missing, treat it as a very old date.
-                const dateA = a.Reported ? new Date(a.Reported) : new Date(0);
-                const dateB = b.Reported ? new Date(b.Reported) : new Date(0);
+            // Sort data by reported timestamp (most recent first)
+            unitData.sort((a, b) => {
+                // Get milliseconds from timestamp, default to 0 if null/undefined
+                const timeA = a.reported?.toMillis() || 0;
+                const timeB = b.reported?.toMillis() || 0;
                 
-                // For descending order, subtract dateA from dateB.
-                // This places more recent dates (larger timestamps) before older ones.
-                return dateB - dateA;
+                // Sort descending (newest first)
+                return timeB - timeA;
             });
 
-            maintenanceData.forEach(item => {
+            unitData.forEach(item => {
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-white/5 transition-colors duration-200';
                 row.innerHTML = `
-                    <td class="px-6 py-5 font-medium text-white whitespace-nowrap">${item.Unit || ''}</td>
-                    <td class="px-6 py-5">${getStatusIndicator(item.Status)}</td>
-                    <td class="px-6 py-5 whitespace-nowrap">${item.Location || ''}</td>
-                    <td class="px-6 py-5 text-gray-300">${item.Comments || ''}</td>
-                    <td class="px-6 py-5 text-right text-gray-400 whitespace-nowrap">${item.Reported || ''}</td>
+                    <td class="px-6 py-5 font-medium text-white whitespace-nowrap">${item.unit || ''}</td>
+                    <td class="px-6 py-5">${getStatusIndicator(item.status)}</td>
+                    <td class="px-6 py-5 whitespace-nowTBA">${item.location || ''}</td>
+                    <td class="px-6 py-5 text-gray-300">${item.comments || ''}</td>
+                    <td class="px-6 py-5 text-right text-gray-400 whitespace-nowrap">${formatFirestoreTimestamp(item.reported)}</td>
                 `;
                 tableBody.appendChild(row);
             });
-            updateTimestamp();
+            // updateTimestamp function was removed
         }
-        
+
         /**
-         * Updates the "Last updated" timestamp in the footer.
+         * Sets up the real-time listener for unit status.
          */
-        function updateTimestamp() {
-            const el = document.getElementById('last-updated');
-            if (el) {
-                const now = new Date();
-                const options = {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                };
-                const dateTimeString = now.toLocaleString(navigator.language, options);
-                el.textContent = `Last updated: ${dateTimeString}`;
+        async function loadData() {
+            try {
+                // Sign in anonymously
+                await signInAnonymously(auth);
+
+                const unitStatusCollectionRef = collection(db, 'unitStatus');
+                const q = query(unitStatusCollectionRef);
+
+                onSnapshot(q, (querySnapshot) => {
+                    const allUnits = [];
+                    querySnapshot.forEach((doc) => {
+                        allUnits.push(doc.data());
+                    });
+                    displayData(allUnits); // Render the data
+                
+                }, (error) => {
+                    // Handle Firestore errors
+                    console.error('Error listening to unit status:', error);
+                    const tableBody = document.getElementById('table-body');
+                    tableBody.innerHTML = `
+                        <tr class="bg-transparent">
+                            <td colspan="5" class="text-center p-12 text-red-400 text-2xl">
+                                <h3 class="font-medium text-red-300">Connection Error</h3>
+                                <p class="mt-2 text-xl text-red-500">Could not load live data. ${error.message}</p>
+                            </td>
+                        </tr>`;
+                });
+
+            } catch (error) {
+                // Handle initial auth or setup errors
+                console.error('Error loading data:', error);
+                 const tableBody = document.getElementById('table-body');
+                    tableBody.innerHTML = `
+                        <tr class="bg-transparent">
+                            <td colspan="5" class="text-center p-12 text-red-400 text-2xl">
+                                <h3 class="font-medium text-red-300">Initialization Error</h3>
+                                <p class="mt-2 text-xl text-red-500">${error.message}</p>
+                            </td>
+                        </tr>`;
             }
         }
 
-        /**
-         * Wrapper function to load data from the sheet.
-         */
-        function refreshData() {
-            // Assumes loadSheetData is defined in common.js as in the original file
-            loadSheetData(CONFIG.maintenanceSheetUrl, 'maintenanceData', displayData, 5);
-        }
-
-        // Initial data load and periodic refresh
-        document.addEventListener('DOMContentLoaded', refreshData);
-        setInterval(refreshData, (CONFIG.cacheDurationMinutes || 5) * 60 * 1000);
+        // Initial data load
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
