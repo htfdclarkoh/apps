@@ -17,7 +17,11 @@
             },
         }
     </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display.swap" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
         /* Simple fade-in animation for task cards */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -34,146 +38,173 @@
         
         <!-- Header -->
         <header class="p-6 mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100">Daily Tasks</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100">DAILY TASKS</h1>
+            <!-- This element will be populated by JS -->
             <p id="current-day" class="text-2xl text-blue-600 dark:text-blue-400 font-semibold mt-1"></p>
         </header>
 
-        <!-- Task Board -->
-        <div id="task-board" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+        <!-- Task Board - NOW A GRID -->
+        <main id="task-board" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
             <!-- Tasks will be dynamically inserted here -->
-        </div>
-
+        </main>
+        
         <!-- Loading / No Tasks Message -->
-        <div id="message-container" class="text-center p-10">
-            <p id="message" class="text-xl text-gray-500 dark:text-gray-400">Loading tasks...</p>
+        <div id="message-container" class="text-center p-10 hidden">
+            <p id="message-text" class="text-xl text-gray-500 dark:text-gray-400">Loading tasks...</p>
         </div>
 
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1754390165&single=true&output=csv';
-            
-            const taskBoard = document.getElementById('task-board');
-            const messageEl = document.getElementById('message');
-            const currentDayEl = document.getElementById('current-day');
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import Firebase services
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            /**
-             * Gets the current day of the week as a string.
-             * @returns {string} The full name of the current day (e.g., "Monday").
-             */
-            function getCurrentDay() {
-                const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-                const today = new Date();
-                return days[today.getDay()];
-            }
+        // Your Firebase configuration object
+        const firebaseConfig = {
+          apiKey: "AIzaSyCqqW_fryqigzg7zDWgEsuADhBkPYcHQMo",
+          authDomain: "db2-2f64c.firebaseapp.com",
+          projectId: "db2-2f64c",
+          storageBucket: "db2-2f64c.firebasestorage.app",
+          messagingSenderId: "234811583682",
+          appId: "1:234811583682:web:aa2bd4e29296207c0d5f5b",
+          measurementId: "G-38MS80C490"
+        };
 
-            /**
-             * Parses raw CSV text into an array of task objects.
-             * Assumes a simple CSV structure.
-             * @param {string} csvText - The raw CSV data as a string.
-             * @returns {Array<Object>} An array of task objects.
-             */
-            function parseCSV(csvText) {
-                const lines = csvText.trim().split(/\r\n|\n/);
-                
-                // Handle potential empty input
-                if (lines.length < 2) return [];
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-                // Extract headers and find column indices
-                const headers = lines[0].split(',').map(h => h.trim());
-                const taskIndex = headers.indexOf("Task");
-                const assigneeIndex = headers.indexOf("Assignee");
-                const dayIndex = headers.indexOf("Day to appear");
+        // DOM Elements
+        const taskBoard = document.getElementById('task-board');
+        const messageContainer = document.getElementById('message-container');
+        const messageText = document.getElementById('message-text');
+        const currentDayEl = document.getElementById('current-day'); // Added for the new header
 
-                // Check if all required headers are present
-                if (taskIndex === -1 || assigneeIndex === -1 || dayIndex === -1) {
-                    console.error("CSV headers are incorrect. Expected 'Task', 'Assignee', 'Day to appear'.");
-                    return [];
-                }
-
-                const tasks = [];
-                for (let i = 1; i < lines.length; i++) {
-                    const values = lines[i].split(',').map(v => v.trim());
-                    if (values.length === headers.length) {
-                        const task = {
-                            Task: values[taskIndex],
-                            Assignee: values[assigneeIndex],
-                            DayToAppear: values[dayIndex]
-                        };
-                        tasks.push(task);
-                    }
-                }
-                return tasks;
-            }
-
-            /**
-             * Creates and appends a task card to the board.
-             * @param {Object} task - The task object to display.
-             */
-            function createTaskCard(task) {
-                const card = document.createElement('div');
-                card.className = 'task-card bg-white dark:bg-gray-800 p-5 rounded-lg shadow-md border-l-4 border-blue-500';
-                
-                card.innerHTML = `
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">${task.Task}</h3>
-                    <p class="text-lg text-gray-700 dark:text-gray-300">
-                        Assigned to: <span class="font-semibold text-blue-700 dark:text-blue-400">${task.Assignee}</span>
-                    </p>
-                `;
-                
-                taskBoard.appendChild(card);
-            }
-
-            /**
-             * Main function to fetch, parse, and display tasks.
-             */
-            async function loadTasks() {
-                const today = getCurrentDay();
-                currentDayEl.textContent = `Tasks for ${today}`;
-
+        // --- Authentication ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in (anonymously)
+                console.log("Authenticated anonymously:", user.uid);
+                // Now that we're signed in, set up the task listener
+                setupTaskListener();
+            } else {
+                // No user, try to sign in
+                console.log("No user, signing in anonymously...");
                 try {
-                    const response = await fetch(dataUrl);
-                    if (!response.ok) {
-                        throw new Error(`Network response was not ok: ${response.statusText}`);
-                    }
-                    
-                    const csvText = await response.text();
-                    const allTasks = parseCSV(csvText);
-
-                    if (allTasks.length === 0 && csvText.length > 0) {
-                         messageEl.textContent = "Could not parse tasks. Please check CSV format.";
-                         return;
-                    }
-                    
-                    const todayTasks = allTasks.filter(task => 
-                        task.DayToAppear.toLowerCase() === today.toLowerCase()
-                    );
-
-                    // Clear loading message
-                    messageEl.parentElement.style.display = 'none';
-
-                    if (todayTasks.length === 0) {
-                        // Show "no tasks" message if board is empty
-                        messageEl.textContent = "No tasks for today. Enjoy your day!";
-                        messageEl.parentElement.style.display = 'block';
-                    } else {
-                        // Display each task
-                        todayTasks.forEach(createTaskCard);
-                    }
-
-                } catch (error)
- {
-                    console.error('Failed to load tasks:', error);
-                    messageEl.textContent = 'Failed to load tasks. Please check the console for details.';
-                    messageEl.classList.add('text-red-500', 'dark:text-red-400');
+                    // Always use anonymous sign-in for this view-only page
+                    await signInAnonymously(auth);
+                    // onAuthStateChanged will be called again once signed in
+                } catch (error) {
+                    console.error("Anonymous sign-in failed:", error);
+                    showMessage("Error: Could not authenticate to view data.");
                 }
             }
-
-            // Run the app
-            loadTasks();
         });
+
+
+        // --- Firestore Data Listener ---
+        function setupTaskListener() {
+            showMessage("Loading tasks...", false);
+
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = days[new Date().getDay()];
+            
+            // Set the header text
+            if (currentDayEl) {
+                currentDayEl.textContent = `Tasks for ${today}`;
+            }
+            
+            // Point to the correct 'dailyTasks' collection (same as admin panel)
+            const collectionPath = 'dailyTasks';
+            const tasksCollectionRef = collection(db, collectionPath);
+            
+            // We will query all tasks and filter in JavaScript
+            const q = query(tasksCollectionRef);
+
+            onSnapshot(q, (querySnapshot) => {
+                taskBoard.innerHTML = ''; // Clear board
+                
+                const allTasks = [];
+                querySnapshot.forEach((doc) => {
+                    allTasks.push(doc.data());
+                });
+
+                // === MODIFICATION: Filter based on array ===
+                // Filter in JavaScript to find tasks where 'day' array
+                // includes today OR "Daily"
+                const todayTasks = allTasks.filter(task => 
+                    Array.isArray(task.day) && (task.day.includes(today) || task.day.includes("Daily"))
+                );
+                // === END MODIFICATION ===
+
+                if (todayTasks.length === 0) {
+                    showMessage("No tasks for today. Enjoy your day!", false);
+                } else {
+                    messageContainer.classList.add('hidden'); // Hide message box
+                    todayTasks.forEach(createTaskCard);
+                }
+
+            }, (error) => {
+                console.error("Error fetching tasks: ", error);
+                // This is where a permission error would show up
+                if (error.code === 'permission-denied') {
+                    showMessage("Error: You don't have permission to view these tasks. Check Firestore rules.");
+                } else {
+                    showMessage("Error loading tasks. Check console for details.");
+                }
+            });
+        }
+
+        // --- UI Functions ---
+
+        /**
+         * Creates a task card and adds it to the board using the new style.
+         * @param {object} task - The task data from Firestore.
+         */
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            // Added new styling from your example
+            card.className = 'task-card bg-white dark:bg-gray-800 p-5 rounded-lg shadow-md border-l-4 border-blue-500';
+            
+            card.innerHTML = `
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">${escapeHTML(task.task)}</h3>
+                <p class="text-lg text-gray-700 dark:text-gray-300">
+                    Assigned to: <span class="font-semibold text-blue-700 dark:text-blue-400">${escapeHTML(task.assignee)}</span>
+                </p>
+            `;
+            taskBoard.appendChild(card);
+        }
+
+        /**
+         * Shows a message in the message container.
+         * @param {string} message - The text to display.
+         * @param {boolean} [isError=true] - Styles the message as an error.
+         */
+        function showMessage(message, isError = true) {
+            messageText.textContent = message;
+            messageText.classList.toggle('text-red-500', isError);
+            messageText.classList.toggle('dark:text-red-400', isError);
+            messageText.classList.toggle('text-gray-500', !isError);
+            messageText.classList.toggle('dark:text-gray-400', !isError);
+            messageContainer.classList.remove('hidden');
+        }
+
+        /**
+         * Sanitizes a string to prevent XSS.
+         * @param {string} str - The string to escape.
+         * @returns {string} - The escaped string.
+         */
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
     </script>
 </body>
 </html>
-
