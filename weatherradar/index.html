@@ -44,10 +44,61 @@
     <!-- LeafletJS JavaScript -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
-    <script src="config.js"></script>
     <script>
+        // --- EMBEDDED CONFIGURATION ---
+        const CONFIG = {
+            // NWS Alert Zone (from index.html)
+            nwsAlertZone: 'OHZ053',
+
+            // Google Slides Dynamic Configuration
+            googleSlides: {
+                scriptUrl: 'https://script.google.com/macros/s/AKfycbwfA3HYH78pvZrSB3BdNmBxdJj1JPEFl1_jCJlELOhsPIrjXiEx7zwOxcIpmeH5QHas/exec',
+                embedUrlBase: 'https://docs.google.com/presentation/d/e/2PACX-1vSwcRaDaFHcBYOPvLNlsNATIDRqoApsB1UX11rVQFwUcRkKrqxb12k4PaiV_IFS1I8LvI_uVw2uqY82/embed?start=true&loop=true&rm=minimal',
+                delayPerSlideSeconds: 15.5,
+                refreshIntervalMinutes: 15
+            },
+
+            // Google Sheet URLs
+            maintenanceSheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1918136459&single=true&output=csv',
+            googleSheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1149820120&single=true&output=csv',
+            trainingSheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1034894331&single=true&output=csv',
+            statsSheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1511491703&single=true&output=csv',
+            newsSheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=1982591100&single=true&output=csv',
+
+            // Cache duration in minutes for Google Sheet data
+            cacheDurationMinutes: 5,
+
+            // Weather settings
+            weatherConfig: {
+                latitude: 39.95,        // Latitude for weather forecast and radar
+                longitude: -83.6,       // Longitude for weather forecast and radar
+                locationName: "South Vienna, OH", // Display name for the location
+                radarZoom: 12.25,       // Default zoom level for the weather radar map
+                refreshIntervalMinutes: 15 // How often to refresh weather data
+            },
+            
+            // Column headers for the news feed (news.html)
+            newsColumnHeaders: {
+                title: 'Title',
+                description: 'Description',
+                publishedDate: 'Published Date',
+                publishedBy: 'Published By',
+                pinned: 'Pinned Message?'
+            },
+
+            // Firebase Configuration for Remote Alerts
+            firebaseConfig: {
+                apiKey: "AIzaSyBiIW8o26uosvT647wcF_EDHomQZsaxIpo",
+                authDomain: "htfd-alerts.firebaseapp.com",
+                projectId: "htfd-alerts",
+                storageBucket: "htfd-alerts.firebasestorage.app",
+                messagingSenderId: "736925438012",
+                appId: "1:736925438012:web:0076dec733690b70df7339",
+            }
+        };
+
         // --- Initial Map Setup ---
-        // Map coordinates and zoom level are now managed in config.js
+        // Map coordinates and zoom level are now managed within the embedded CONFIG
         const mapCoordinates = [CONFIG.weatherConfig.latitude, CONFIG.weatherConfig.longitude];
         const defaultZoom = CONFIG.weatherConfig.radarZoom;
 
