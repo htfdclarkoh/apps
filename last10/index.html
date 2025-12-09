@@ -34,131 +34,150 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Load PapaParse library from jsdelivr CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js" crossorigin="anonymous"></script>
-    
-    <script>
-        // Wait for the DOM to be fully loaded before running the script
-        document.addEventListener('DOMContentLoaded', function() {
-            // Google Sheet URL
-            const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT0VotPZTFkALWoh6U6g6WnfqsVeltkkjCkd5CBVAHh60e-A63h5HdzaSVamSjkcxveTOfycKZ2K66r/pub?gid=515267348&single=true&output=csv';
+    <!-- Firebase Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            // Get elements
-            const runsList = document.getElementById('runs-list');
-            const runsListContainer = document.getElementById('runs-list-container');
-            const loadingMessage = document.getElementById('loading-message');
-            const errorMessage = document.getElementById('error-message');
-            const errorText = document.getElementById('error-text');
+        // Configuration matching runtracker.html
+        const firebaseConfig = {
+            apiKey: "AIzaSyCqqW_fryqigzg7zDWgEsuADhBkPYcHQMo",
+            authDomain: "db2-2f64c.firebaseapp.com",
+            projectId: "db2-2f64c",
+            storageBucket: "db2-2f64c.firebasestorage.app",
+            messagingSenderId: "234811583682",
+            appId: "1:234811583682:web:aa2bd4e29296207c0d5f5b",
+            measurementId: "G-38MS80C490"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Elements
+        let runsList, runsListContainer, loadingMessage, errorMessage, errorText;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            runsList = document.getElementById('runs-list');
+            runsListContainer = document.getElementById('runs-list-container');
+            loadingMessage = document.getElementById('loading-message');
+            errorMessage = document.getElementById('error-message');
+            errorText = document.getElementById('error-text');
             
-            // Define the specific headers we need
-            const headersToDisplay = {
-                "Incident Number": "Incident Number",
-                "Reported": "Reported",
-                "Nature": "Nature",
-                "Incident Address": "Incident Address"
-            };
-
-            // Check if PapaParse is loaded
-            if (typeof Papa === 'undefined') {
-                console.error("PapaParse library is not loaded.");
-                loadingMessage.style.display = 'none';
-                errorText.textContent = 'Error: Could not load data parsing library. Please check your internet connection or ad blocker.';
-                errorMessage.style.display = 'block';
-                return; // Stop execution
-            }
-
-            // Use PapaParse to fetch and parse the CSV
-            Papa.parse(csvUrl, {
-                download: true,
-                header: true, // Use the first row as headers
-                skipEmptyLines: true,
-                complete: function(results) {
-                    try {
-                        let data = results.data;
-                        
-                        // Check if data was loaded and headers exist
-                        if (!data || data.length === 0) {
-                            throw new Error("No data found in the CSV.");
-                        }
-
-                        // Verify that our required headers are present
-                        const csvHeaders = results.meta.fields;
-                        for (const key in headersToDisplay) {
-                            if (!csvHeaders.includes(key)) {
-                                throw new Error(`Missing required header: "${key}"`);
-                            }
-                        }
-
-                        // --- Data sorting logic ---
-                        data.sort((a, b) => {
-                            const dateA = new Date(a.Reported);
-                            const dateB = new Date(b.Reported);
-                            if (isNaN(dateA)) return 1;
-                            if (isNaN(dateB)) return -1;
-                            return dateB - dateA; // Sort descending (most recent first)
-                        });
-                        // --- End sorting logic ---
-
-                        // Get the first 10 rows from the *sorted* data
-                        const last10Runs = data.slice(0, 10);
-
-                        // Clear the list
-                        runsList.innerHTML = '';
-
-                        // --- MODIFICATION: Populate the list with cards (DARK THEME) ---
-                        last10Runs.forEach((run, index) => {
-                            const card = document.createElement('div');
-                            // Card styling - Dark theme, new hover effect, animation
-                            card.className = 'bg-slate-800 p-3 rounded-lg shadow border border-slate-700 transition-colors duration-200 hover:bg-slate-700 float-up-animation';
-                            // Add animation delay for a staggered effect
-                            card.style.animationDelay = `${index * 0.05}s`;
-                            
-                            const runNumber = run[headersToDisplay['Incident Number']] || 'N/A';
-                            const reported = run[headersToDisplay['Reported']] || 'N/A';
-                            const nature = run[headersToDisplay['Nature']] || 'N/A';
-                            const address = run[headersToDisplay['Incident Address']] || 'N/A';
-
-                            // --- FONT SIZE INCREASED ---
-                            // Card inner HTML structure - Updated text colors for dark theme
-                            card.innerHTML = `
-                                <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-1 pb-1 border-b border-slate-700">
-                                    <div class="text-3xl font-semibold text-slate-400">
-                                        RUN #${runNumber}
-                                    </div>
-                                    <div class="text-3xl text-slate-400 mt-1 sm:mt-0">
-                                        ${reported}
-                                    </div>
-                                </div>
-                                <div>
-                                    <h3 class="text-4xl font-semibold text-red-500 mb-1">${nature}</h3>
-                                    <p class="text-3xl text-slate-300">${address}</p>
-                                </div>
-                            `;
-                            // --- END FONT SIZE INCREASE ---
-                            
-                            runsList.appendChild(card);
-                        });
-                        // --- END MODIFICATION ---
-
-                        // Hide loading message and show the list
-                        loadingMessage.style.display = 'none';
-                        runsListContainer.style.display = 'block';
-
-                    } catch (error) {
-                        console.error('Error processing data:', error);
-                        loadingMessage.style.display = 'none';
-                        errorText.textContent = `Error: ${error.message}`;
-                        errorMessage.style.display = 'block';
-                    }
-                },
-                error: function(error, file) {
-                    console.error('Error fetching or parsing CSV:', error);
-                    loadingMessage.style.display = 'none';
-                    errorText.textContent = 'Error: Could not load data from the specified URL.';
-                    errorMessage.style.display = 'block';
-                }
-            });
+            // Initialize Auth
+            initApp();
         });
+
+        async function initApp() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                showError("Authentication failed.");
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setupRealtimeListener();
+            }
+        });
+
+        function setupRealtimeListener() {
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'calls');
+
+            onSnapshot(q, (snapshot) => {
+                const calls = [];
+                snapshot.forEach((doc) => {
+                    calls.push(doc.data());
+                });
+
+                if (calls.length === 0) {
+                    loadingMessage.style.display = 'none';
+                    showError("No calls found in database.");
+                    return;
+                }
+
+                // Sort descending (Newest first)
+                // Logic matches runtracker: Year desc, then Sequence desc
+                calls.sort((a, b) => {
+                    if (b.year !== a.year) return b.year - a.year;
+                    return b.sequence - a.sequence;
+                });
+
+                // Take top 10
+                const last10Runs = calls.slice(0, 10);
+                
+                renderRuns(last10Runs);
+
+            }, (error) => {
+                console.error("Firestore Error:", error);
+                showError("Could not load data from database.");
+            });
+        }
+
+        function renderRuns(data) {
+            runsList.innerHTML = '';
+
+            data.forEach((run, index) => {
+                const card = document.createElement('div');
+                // Card styling - Dark theme, new hover effect, animation
+                card.className = 'bg-slate-800 p-3 rounded-lg shadow border border-slate-700 transition-colors duration-200 hover:bg-slate-700 float-up-animation';
+                // Add animation delay for a staggered effect
+                card.style.animationDelay = `${index * 0.05}s`;
+                
+                const runNumber = run.incidentNumber || 'N/A';
+                
+                // Format Date: YYYY-MM-DD + HH:MM -> MM/DD/YYYY HH:MM
+                let reported = 'N/A';
+                if (run.dispatchDate && run.dispatchTime) {
+                    try {
+                        const [y, m, d] = run.dispatchDate.split('-');
+                        reported = `${m}/${d}/${y} ${run.dispatchTime}`;
+                    } catch(e) {
+                        reported = `${run.dispatchDate} ${run.dispatchTime}`;
+                    }
+                }
+
+                const nature = run.callNature || 'N/A';
+                const address = run.address || 'N/A';
+
+                // --- FONT SIZE INCREASED (Matches previous version) ---
+                card.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-1 pb-1 border-b border-slate-700">
+                        <div class="text-3xl font-semibold text-slate-400">
+                            RUN #${runNumber}
+                        </div>
+                        <div class="text-3xl text-slate-400 mt-1 sm:mt-0">
+                            ${reported}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-4xl font-semibold text-red-500 mb-1">${nature}</h3>
+                        <p class="text-3xl text-slate-300">${address}</p>
+                    </div>
+                `;
+                
+                runsList.appendChild(card);
+            });
+
+            // Hide loading message and show the list
+            loadingMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+            runsListContainer.style.display = 'block';
+        }
+
+        function showError(msg) {
+            loadingMessage.style.display = 'none';
+            errorText.textContent = msg;
+            errorMessage.style.display = 'block';
+        }
     </script>
 </head>
 <!-- DARK THEME: Updated background and default text color -->
