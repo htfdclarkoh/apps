@@ -147,7 +147,15 @@
                     <!-- Address -->
                     <div>
                         <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
-                        <input type="text" id="address" oninput="forceCaps(this)" required placeholder="1234 MAIN ST..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                        <!-- Custom Relative Container for Dropdown -->
+                        <div class="relative">
+                            <input type="text" id="address" oninput="forceCaps(this)" required placeholder="1234 MAIN ST..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase" autocomplete="off">
+                            
+                            <!-- Custom Suggestion Dropdown (Hidden by default) -->
+                            <div id="addressSuggestions" class="absolute w-full bg-gray-800 border border-gray-600 rounded-lg shadow-2xl z-50 hidden mt-1 max-h-48 overflow-y-auto">
+                                <!-- Items injected via JS -->
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Units -->
@@ -441,7 +449,7 @@
                 <!-- Address -->
                 <div>
                     <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
-                    <input type="text" id="edit_address" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                    <input type="text" id="edit_address" list="addressHistory" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase" autocomplete="off">
                 </div>
 
                 <!-- Units -->
@@ -1238,10 +1246,82 @@
                 calculateNextIncidentId();
                 populateYearSelect(); // Populate years based on data
                 updateStats();
+                updateAddressHistory(); // NEW: Update address suggestions data
                 renderTable();
             }, (error) => {
                 console.error("Firestore Error:", error);
                 showToast("ERROR LOADING DATA", true);
+            });
+        }
+        
+        // --- ADDRESS HISTORY SUGGESTION LOGIC ---
+        let sortedAddressList = []; // New global var to hold sorted addresses
+
+        function updateAddressHistory() {
+            const addressCounts = {};
+            
+            // Count frequency of all addresses in history
+            allCalls.forEach(call => {
+                if (call.address) {
+                    const addr = call.address.trim().toUpperCase();
+                    if (addr && addr !== 'UNKNOWN') {
+                        addressCounts[addr] = (addressCounts[addr] || 0) + 1;
+                    }
+                }
+            });
+
+            // Sort by frequency (highest count first)
+            sortedAddressList = Object.entries(addressCounts)
+                .sort((a, b) => b[1] - a[1]) // Descending sort by count
+                .map(entry => entry[0]);
+        }
+
+        // Add Event Listeners for Address Input
+        const addrInput = document.getElementById('address');
+        const suggestionBox = document.getElementById('addressSuggestions');
+
+        if(addrInput && suggestionBox) {
+            addrInput.addEventListener('input', function() {
+                const val = this.value.toUpperCase();
+                
+                // Hide if empty or short
+                if (val.length < 2) {
+                    suggestionBox.classList.add('hidden');
+                    return;
+                }
+                
+                // Filter matches
+                const matches = sortedAddressList.filter(a => a.includes(val)).slice(0, 5);
+                
+                if (matches.length === 0) {
+                    suggestionBox.classList.add('hidden');
+                    return;
+                }
+                
+                // Render Matches
+                suggestionBox.innerHTML = '';
+                matches.forEach(addr => {
+                    const div = document.createElement('div');
+                    div.className = "px-4 py-2 hover:bg-gray-700 cursor-pointer text-sm text-gray-300 border-b border-gray-700 last:border-0 uppercase font-medium";
+                    // Highlight match
+                    const regex = new RegExp(`(${val})`, 'gi');
+                    const highlighted = addr.replace(regex, '<span class="text-blue-400 font-bold">$1</span>');
+                    div.innerHTML = highlighted;
+                    
+                    div.onclick = () => {
+                        addrInput.value = addr;
+                        suggestionBox.classList.add('hidden');
+                    };
+                    suggestionBox.appendChild(div);
+                });
+                suggestionBox.classList.remove('hidden');
+            });
+
+            // Hide when clicking outside
+            document.addEventListener('click', function(e) {
+                if (e.target !== addrInput && !suggestionBox.contains(e.target)) {
+                    suggestionBox.classList.add('hidden');
+                }
             });
         }
 
