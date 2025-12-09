@@ -137,6 +137,7 @@
                                     <option value="NO PATIENT">NO PATIENT</option>
                                     <option value="NO CREW/MA">NO CREW/MA</option>
                                     <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                    <option value="75 COVERAGE">75 COVERAGE</option>
                                     <option value="CANCELLED">CANCELLED</option>
                                 </select>
                             </div>
@@ -267,10 +268,24 @@
         <!-- STATISTICS TAB -->
         <div id="tab-stats" class="hidden fade-in space-y-6">
             
+            <!-- Year Selector Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-xl font-bold text-white uppercase tracking-wide flex items-center">
+                    <i class="fa-solid fa-chart-pie mr-2 text-red-500"></i>
+                    <span id="statsTitle">2025 Statistics</span>
+                </h2>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs text-gray-400 uppercase font-bold">Select Year:</label>
+                    <select id="statsYearSelect" onchange="handleStatsYearChange(this)" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block p-2 uppercase font-bold min-w-[100px]">
+                        <!-- Options injected via JS -->
+                    </select>
+                </div>
+            </div>
+
             <!-- Summary Stats Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
-                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">YTD Calls</h3>
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">Total Calls</h3>
                     <p class="text-3xl font-bold text-white mt-1" id="stat-total">0</p>
                 </div>
                 <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
@@ -295,9 +310,18 @@
                     </div>
                 </div>
 
+                <!-- Top Addresses (NEW) -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Top Addresses</h3>
+                    <div id="stats-addresses" class="space-y-3">
+                        <!-- Populated by JS -->
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
                 <!-- Mutual Aid Stats -->
                 <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Mutual Aid Breakdown</h3>
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Mutual Aid Breakdown</h3>
                     <div class="grid grid-cols-2 gap-4 mb-6">
                         <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
                             <span class="block text-gray-400 text-xs uppercase font-bold">Given (To)</span>
@@ -316,7 +340,7 @@
 
                 <!-- Crew Breakdown Stats -->
                 <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Crew Analysis</h3>
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Crew Analysis</h3>
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
                             <span class="block text-gray-400 text-xs uppercase font-bold">Day Crew</span>
@@ -337,7 +361,7 @@
 
                 <!-- Volunteer Disposition Stats -->
                 <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Volunteer Dispositions</h3>
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Volunteer Dispositions</h3>
                     <div id="stats-vol-dispo" class="space-y-3">
                         <div class="text-gray-500 text-sm italic">No data available</div>
                     </div>
@@ -407,6 +431,7 @@
                                 <option value="NO PATIENT">NO PATIENT</option>
                                 <option value="NO CREW/MA">NO CREW/MA</option>
                                 <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                <option value="75 COVERAGE">75 COVERAGE</option>
                                 <option value="CANCELLED">CANCELLED</option>
                             </select>
                         </div>
@@ -505,6 +530,7 @@
         let allCalls = [];
         let nextIncidentData = { id: '...', seq: 1, year: new Date().getFullYear() };
         let currentUser = null;
+        let currentStatsYear = new Date().getFullYear(); // State for selected year
         
         // --- Auth & Init ---
         async function initApp() {
@@ -878,8 +904,18 @@
                 return;
             }
 
-            // Define Headers
-            const headers = ['Incident Number', 'Reported', 'Nature', 'Incident Address', 'Fire/EMS/Both', 'Mutual Aid to', 'Mutual Aid From', 'NOTES'];
+            // Define Headers exactly matching the Call Log Table
+            const headers = [
+                'Incident #', 
+                'Date/Time', 
+                'Nature', 
+                'Address', 
+                'Type', 
+                'Units', 
+                'Mutual Aid', 
+                'Disposition', 
+                'Notes'
+            ];
             
             // Format Data
             const rows = allCalls.map(c => {
@@ -892,12 +928,12 @@
                     } catch(e) {}
                 }
 
-                // Handle Mutual Aid
-                let maTo = '';
-                let maFrom = '';
+                // Handle Mutual Aid (Combined String like table)
+                let mutualAidStr = '';
                 if (c.mutualAid) {
-                    if (c.mutualAidType === 'Given') maTo = c.mutualAidDept || '';
-                    if (c.mutualAidType === 'Received') maFrom = c.mutualAidDept || '';
+                    const type = c.mutualAidType ? c.mutualAidType.toUpperCase() : 'UNKNOWN';
+                    const dept = c.mutualAidDept ? c.mutualAidDept : '';
+                    mutualAidStr = `${type} - ${dept}`;
                 }
 
                 // Handle Commas/Quotes in text fields
@@ -916,8 +952,9 @@
                     escapeCsv(c.callNature),
                     escapeCsv(c.address),
                     c.responseType === 'Fire' ? 'FIRE' : (c.responseType === 'EMS' ? 'EMS' : 'BOTH'),
-                    escapeCsv(maTo),
-                    escapeCsv(maFrom),
+                    escapeCsv(c.units),
+                    escapeCsv(mutualAidStr),
+                    escapeCsv(c.emsDisposition),
                     escapeCsv(c.notes)
                 ].join(',');
             });
@@ -979,7 +1016,24 @@
                             const reported = row[1]?.trim(); 
                             const nature = row[2]?.trim().toUpperCase();
                             const address = row[3]?.trim().toUpperCase();
+                            // Old exports had columns: [Inc, Rep, Nat, Add, Type, MA To, MA From, Notes]
+                            // New export has columns: [Inc, Rep, Nat, Add, Type, Units, Mutual Aid, Disp, Notes]
+                            
+                            // Check header row (row 0) or infer based on length/content
+                            // For backward compatibility, this simple importer might need adjustments if
+                            // you plan to import files generated by the NEW exporter.
+                            // Assuming STANDARD OLD FORMAT for now or simple positional logic.
+                            
+                            // Let's try to grab based on standard indices, but be aware of the shift.
+                            // If you re-import a file exported with the NEW system, the indices change.
+                            // This importer is currently hardcoded for a specific layout.
+                            // For safety, I'll stick to the previous import logic but note that
+                            // re-importing the NEW format might need logic updates if columns shifted.
+                            // Given the prompt was just to change EXPORT, I will leave IMPORT logic alone 
+                            // unless you specifically ask to update the importer to match the new export format.
+                            
                             const typeRaw = row[4]?.trim().toUpperCase(); 
+                            // Logic assumes old format [Inc, Date, Nature, Addr, Type, MA To, MA From, Notes]
                             const maTo = row[5]?.trim().toUpperCase();
                             const maFrom = row[6]?.trim().toUpperCase();
                             const notes = row[7]?.trim().toUpperCase();
@@ -1182,12 +1236,54 @@
 
                 allCalls = calls;
                 calculateNextIncidentId();
+                populateYearSelect(); // Populate years based on data
                 updateStats();
                 renderTable();
             }, (error) => {
                 console.error("Firestore Error:", error);
                 showToast("ERROR LOADING DATA", true);
             });
+        }
+
+        // --- Logic: Year Selection & Population ---
+        window.populateYearSelect = function() {
+            const select = document.getElementById('statsYearSelect');
+            const years = new Set(allCalls.map(c => c.year));
+            const currentYear = new Date().getFullYear();
+            
+            // Ensure current year is always available
+            years.add(currentYear);
+            
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            
+            // Save current selection if possible, else default to latest
+            const existingSelection = select.value ? parseInt(select.value) : currentStatsYear;
+            
+            select.innerHTML = '';
+            sortedYears.forEach(year => {
+                const opt = document.createElement('option');
+                opt.value = year;
+                opt.textContent = year;
+                if (year === existingSelection) opt.selected = true;
+                select.appendChild(opt);
+            });
+            
+            // If the previously selected year isn't in data anymore (unlikely but possible), revert to current
+            if (!years.has(existingSelection)) {
+                select.value = sortedYears[0];
+                currentStatsYear = sortedYears[0];
+            } else {
+                currentStatsYear = existingSelection;
+            }
+            
+            // Update title initially
+            document.getElementById('statsTitle').textContent = `${currentStatsYear} Statistics`;
+        }
+
+        window.handleStatsYearChange = function(el) {
+            currentStatsYear = parseInt(el.value);
+            document.getElementById('statsTitle').textContent = `${currentStatsYear} Statistics`;
+            updateStats();
         }
 
         // --- Logic: Incident ID ---
@@ -1364,10 +1460,8 @@
         }
 
         function updateStats() {
-            const now = new Date();
-            const currentYear = now.getFullYear();
-            
-            const thisYearCalls = allCalls.filter(c => c.year === currentYear);
+            // Filter by the currently selected year state
+            const thisYearCalls = allCalls.filter(c => c.year === currentStatsYear);
             
             // 1. Basic Counts
             document.getElementById('stat-total').textContent = thisYearCalls.length;
@@ -1414,12 +1508,58 @@
                 });
             }
 
-            // 3. Mutual Aid Breakdown
+            // 3. Top Addresses (NEW LOGIC)
+            const addressCounts = {};
+            thisYearCalls.forEach(c => {
+                let addr = c.address ? c.address.trim().toUpperCase() : 'UNKNOWN';
+                
+                // Special handling for I 70 normalization
+                if (addr.includes('I 70')) {
+                    addr = 'I 70'; 
+                }
+                
+                if (addr !== 'UNKNOWN' && addr !== '') {
+                    addressCounts[addr] = (addressCounts[addr] || 0) + 1;
+                }
+            });
+
+            const sortedAddresses = Object.entries(addressCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5); // Top 5
+
+            const addrListEl = document.getElementById('stats-addresses');
+            addrListEl.innerHTML = '';
+
+            if (sortedAddresses.length === 0) {
+                 addrListEl.innerHTML = '<div class="text-gray-500 text-sm italic">No data available</div>';
+            } else {
+                 const maxAddrCount = sortedAddresses[0][1];
+                 sortedAddresses.forEach(([addr, count]) => {
+                    const barWidth = (count / maxAddrCount) * 100;
+                    const row = document.createElement('div');
+                    row.innerHTML = `
+                        <div class="flex justify-between text-xs mb-1 uppercase font-semibold">
+                            <span class="truncate pr-2" title="${addr}">${addr}</span>
+                            <span>${count}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: ${barWidth}%"></div>
+                        </div>
+                    `;
+                    addrListEl.appendChild(row);
+                 });
+            }
+
+
+            // 4. Mutual Aid Breakdown
             let givenCount = 0;
             let receivedCount = 0;
             const maDepts = {};
 
             thisYearCalls.forEach(c => {
+                // EXCLUDE FIRE CALLS per user request
+                if (c.responseType === 'Fire') return;
+
                 if (c.mutualAid) {
                     if (c.mutualAidType === 'Given') givenCount++;
                     if (c.mutualAidType === 'Received') receivedCount++;
@@ -1449,13 +1589,13 @@
                 deptListEl.appendChild(li);
             });
 
-            // 4. Crew Analysis & 5. Volunteer Disposition Stats
+            // 5. Crew Analysis & 6. Volunteer Disposition Stats
             let dayCrewCount = 0;
             let volunteerCount = 0;
             const volDispCounts = {};
 
             thisYearCalls.forEach(c => {
-                // NEW: Exclude Fire calls from crew & vol stats
+                // Exclude Fire calls from crew & vol stats
                 if (c.responseType === 'Fire') return;
 
                 if (c.dispatchDate && c.dispatchTime) {
