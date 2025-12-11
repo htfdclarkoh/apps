@@ -125,6 +125,39 @@
         function renderRuns(data) {
             runsList.innerHTML = '';
 
+            // --- EMS FILTER LIST ---
+            // Add or remove natures here. Case insensitive (we convert to uppercase for checking).
+            const emsNatures = [
+                "FALL",
+                "SICK",
+                "RESP",
+                "BACK",
+                "PERUNCON",
+                "ABDOM",
+                "CARDIAC",
+                "BLEEDING",
+                "SEIZURE",
+                "STROKE",
+                "TRAUMA",
+                "DEATH",
+                "EXPOSURE",
+                "ALRMED",
+                "CHESPAIN",
+                "ALRCO",
+                "DIABETIC",
+                "HEADACHE",
+                "OD",
+                "SUICTHRT",
+                "EDP",
+                "ASSAULT",
+                "SUICIDE",
+                "DISORD",
+                "ALLERGIC",
+                "DVA",
+                "WEAPON",
+                "RESPARR"
+            ];
+
             data.forEach((run, index) => {
                 const card = document.createElement('div');
                 // Card styling - Dark theme, new hover effect, animation
@@ -145,8 +178,13 @@
                     }
                 }
 
-                const nature = run.callNature || 'N/A';
+                let nature = run.callNature || 'N/A';
                 const address = run.address || 'N/A';
+
+                // --- CHECK AND REPLACE NATURE ---
+                if (nature !== 'N/A' && emsNatures.includes(nature.toUpperCase())) {
+                    nature = "EMS CALL";
+                }
 
                 // --- FONT SIZE INCREASED (Matches previous version) ---
                 card.innerHTML = `
