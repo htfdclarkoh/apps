@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fire/EMS Call Tracker</title>
-    <link rel="apple-touch-icon" href="https://i.ibb.co/6cwN2fbb/icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://i.ibb.co/6cwN2fbb/icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="HARMONY">
@@ -336,13 +336,35 @@
                 <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
                     <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Mutual Aid Breakdown</h3>
                     <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
-                            <span class="block text-gray-400 text-xs uppercase font-bold">Given (To)</span>
+                        <!-- Given Box -->
+                        <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Given (To)</span>
                             <span id="stat-ma-given" class="text-2xl font-bold text-yellow-400">0</span>
+                            <div class="grid grid-cols-2 gap-2 mt-2 border-t border-gray-700 pt-2 text-xs">
+                                <div>
+                                    <span class="block text-gray-500 font-bold">DAY</span>
+                                    <span id="stat-ma-given-day" class="text-white font-mono">0</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-bold">VOL</span>
+                                    <span id="stat-ma-given-vol" class="text-white font-mono">0</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
-                            <span class="block text-gray-400 text-xs uppercase font-bold">Received (From)</span>
+                        <!-- Received Box -->
+                        <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Received (From)</span>
                             <span id="stat-ma-received" class="text-2xl font-bold text-green-400">0</span>
+                            <div class="grid grid-cols-2 gap-2 mt-2 border-t border-gray-700 pt-2 text-xs">
+                                <div>
+                                    <span class="block text-gray-500 font-bold">DAY</span>
+                                    <span id="stat-ma-received-day" class="text-white font-mono">0</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-bold">VOL</span>
+                                    <span id="stat-ma-received-vol" class="text-white font-mono">0</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <h4 class="text-xs text-gray-400 uppercase font-bold mb-2">Most Frequent Depts</h4>
@@ -362,6 +384,8 @@
                         <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
                             <span class="block text-gray-400 text-xs uppercase font-bold">Volunteer</span>
                             <span id="stat-crew-vol" class="text-2xl font-bold text-orange-400">0</span>
+                            <!-- Percentage added -->
+                            <span id="stat-crew-vol-pct" class="block text-xs text-gray-500 font-bold mt-1">0%</span>
                         </div>
                     </div>
                     <div class="bg-gray-900/30 p-3 rounded border border-gray-700 text-xs text-gray-400">
@@ -1544,6 +1568,28 @@
             });
         }
 
+        // Helper to check shift type
+        function getShiftType(dateStr, timeStr) {
+            if (!dateStr || !timeStr) return 'Unknown';
+            try {
+                const [y, m, d] = dateStr.split('-').map(Number);
+                const [h, min] = timeStr.split(':').map(Number);
+                const dateObj = new Date(y, m - 1, d, h, min);
+                const day = dateObj.getDay(); 
+                const hour = h;
+
+                // M-F (1-5): 06:00 - 18:00
+                if (day >= 1 && day <= 5) {
+                    if (hour >= 6 && hour < 18) return 'Day';
+                } 
+                // S-S (0, 6): 08:00 - 18:00
+                else {
+                    if (hour >= 8 && hour < 18) return 'Day';
+                }
+                return 'Volunteer';
+            } catch(e) { return 'Unknown'; }
+        }
+
         function updateStats() {
             // Filter by the currently selected year state
             const thisYearCalls = allCalls.filter(c => c.year === currentStatsYear);
@@ -1639,6 +1685,10 @@
             // 4. Mutual Aid Breakdown
             let givenCount = 0;
             let receivedCount = 0;
+            let givenDay = 0;
+            let givenVol = 0;
+            let recDay = 0;
+            let recVol = 0;
             const maDepts = {};
 
             thisYearCalls.forEach(c => {
@@ -1646,8 +1696,18 @@
                 if (c.responseType === 'Fire') return;
 
                 if (c.mutualAid) {
-                    if (c.mutualAidType === 'Given') givenCount++;
-                    if (c.mutualAidType === 'Received') receivedCount++;
+                    const shift = getShiftType(c.dispatchDate, c.dispatchTime);
+
+                    if (c.mutualAidType === 'Given') {
+                        givenCount++;
+                        if (shift === 'Day') givenDay++;
+                        else givenVol++; // Count 'Unknown' as Vol or ignore? Assuming Vol fallback for now if simple
+                    }
+                    if (c.mutualAidType === 'Received') {
+                        receivedCount++;
+                        if (shift === 'Day') recDay++;
+                        else recVol++;
+                    }
                     
                     if (c.mutualAidDept) {
                         const depts = c.mutualAidDept.split(',').map(s => s.trim());
@@ -1659,7 +1719,14 @@
             });
 
             document.getElementById('stat-ma-given').textContent = givenCount;
+            document.getElementById('stat-ma-given-day').textContent = givenDay;
+            document.getElementById('stat-ma-given-vol').textContent = givenVol;
+
             document.getElementById('stat-ma-received').textContent = receivedCount;
+            document.getElementById('stat-ma-received-day').textContent = recDay;
+            document.getElementById('stat-ma-received-vol').textContent = recVol;
+            
+            // Removed pct calculation here
 
             const sortedDepts = Object.entries(maDepts)
                 .sort((a, b) => b[1] - a[1])
@@ -1683,47 +1750,28 @@
                 // Exclude Fire calls from crew & vol stats
                 if (c.responseType === 'Fire') return;
 
-                if (c.dispatchDate && c.dispatchTime) {
-                    try {
-                        const [y, m, d] = c.dispatchDate.split('-').map(Number);
-                        const [h, min] = c.dispatchTime.split(':').map(Number);
-                        
-                        const dateObj = new Date(y, m - 1, d, h, min);
-                        const day = dateObj.getDay(); 
-                        const hour = h;
+                const shift = getShiftType(c.dispatchDate, c.dispatchTime);
 
-                        let isDayCrew = false;
-
-                        // M-F (1-5): 06:00 - 18:00 (hours 6 through 17)
-                        if (day >= 1 && day <= 5) {
-                            if (hour >= 6 && hour < 18) {
-                                isDayCrew = true;
-                            }
-                        } 
-                        // S-S (0, 6): 08:00 - 18:00 (hours 8 through 17)
-                        else {
-                            if (hour >= 8 && hour < 18) {
-                                isDayCrew = true;
-                            }
-                        }
-
-                        if (isDayCrew) {
-                            dayCrewCount++;
-                        } else {
-                            volunteerCount++;
-                            // Track disposition for volunteer calls only
-                            const disp = c.emsDisposition || 'NOT RECORDED';
-                            volDispCounts[disp] = (volDispCounts[disp] || 0) + 1;
-                        }
-
-                    } catch (e) {
-                        console.error("Error parsing date/time for crew stats", e);
-                    }
+                if (shift === 'Day') {
+                    dayCrewCount++;
+                } else if (shift === 'Volunteer') {
+                    volunteerCount++;
+                    // Track disposition for volunteer calls only
+                    const disp = c.emsDisposition || 'NOT RECORDED';
+                    volDispCounts[disp] = (volDispCounts[disp] || 0) + 1;
                 }
             });
 
             document.getElementById('stat-crew-day').textContent = dayCrewCount;
             document.getElementById('stat-crew-vol').textContent = volunteerCount;
+            
+            // Calc & Set Volunteer Percentage (Volunteer / Total Crew Classified Runs)
+            // Calc & Set Volunteer Percentage: (Vol Runs - MA Received (Vol Only)) / Vol Runs
+            let volPct = "0.0";
+            if (volunteerCount > 0) {
+                volPct = (((volunteerCount - recVol) / volunteerCount) * 100).toFixed(1);
+            }
+            document.getElementById('stat-crew-vol-pct').textContent = `${volPct}% Handled`;
 
             // Render Volunteer Disposition Stats
             const volDispListEl = document.getElementById('stats-vol-dispo');
