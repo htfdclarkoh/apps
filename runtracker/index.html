@@ -252,9 +252,8 @@
                 
                 <div class="overflow-auto flex-grow">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-gray-900 text-gray-400 text-xs uppercase sticky top-0">
+                        <thead class="bg-gray-900 text-gray-400 text-xs uppercase sticky top-0 z-10">
                             <tr>
-                                <!-- REMOVED ACTION COLUMN HEADER -->
                                 <th id="th-incident" class="p-4 font-medium tracking-wider">Incident #</th>
                                 <th id="th-datetime" class="p-4 font-medium tracking-wider">Date/Time</th>
                                 <th id="th-nature" class="p-4 font-medium tracking-wider">Nature</th>
@@ -417,7 +416,8 @@
             <div class="p-6 border-b border-gray-700 bg-gray-850 flex justify-between items-center">
                 <div>
                     <h2 class="text-xl font-bold text-white uppercase">Edit Incident</h2>
-                    <p id="modalIncidentId" class="text-yellow-400 font-mono text-sm font-bold mt-1">...</p>
+                    <!-- MODIFIED: Changed from text to Input for editing -->
+                    <input type="text" id="edit_incidentNumber" class="bg-gray-900 text-yellow-400 font-mono text-sm font-bold mt-1 border border-gray-600 rounded px-2 py-1 w-32 uppercase focus:ring-1 focus:ring-yellow-400 outline-none">
                 </div>
                 <button onclick="closeEditModal()" class="text-gray-400 hover:text-white transition">
                     <i class="fa-solid fa-xmark text-2xl"></i>
@@ -611,7 +611,7 @@
 
             // Populate Modal Fields
             document.getElementById('edit_docId').value = id;
-            document.getElementById('modalIncidentId').textContent = call.incidentNumber;
+            document.getElementById('edit_incidentNumber').value = call.incidentNumber; // Now Editable
             document.getElementById('edit_dispatchDate').value = call.dispatchDate;
             document.getElementById('edit_dispatchTime').value = call.dispatchTime;
             document.getElementById('edit_callNature').value = call.callNature;
@@ -661,7 +661,33 @@
                     ? document.getElementById('edit_emsDisposition').value 
                     : null;
                 
+                // --- NEW INCIDENT ID SORTING LOGIC ---
+                const newId = document.getElementById('edit_incidentNumber').value.toUpperCase();
+                let newYear = 0;
+                let newSeq = 0;
+                
+                // Try to parse standard format YYHT#####
+                // This ensures sorting remains correct if ID changes
+                const idMatch = newId.match(/^(\d{2})HT(\d+)$/);
+                if (idMatch) {
+                    newYear = 2000 + parseInt(idMatch[1]);
+                    newSeq = parseInt(idMatch[2]);
+                } else {
+                    // Fallback: If format is broken, try to keep existing year/seq 
+                    // or it will sort at the bottom/top depending on values.
+                    const oldCall = allCalls.find(c => c.id === id);
+                    if (oldCall) {
+                        newYear = oldCall.year;
+                        newSeq = oldCall.sequence;
+                    } else {
+                        newYear = new Date().getFullYear(); // fallback
+                    }
+                }
+
                 const callData = {
+                    incidentNumber: newId,
+                    year: newYear,
+                    sequence: newSeq,
                     dispatchDate: document.getElementById('edit_dispatchDate').value,
                     dispatchTime: document.getElementById('edit_dispatchTime').value,
                     callNature: document.getElementById('edit_callNature').value.toUpperCase(),
@@ -1044,36 +1070,31 @@
 
                     for (let i = 1; i < rows.length; i++) {
                         const row = rows[i];
-                        if (row.length < 5) continue; 
+                        if (row.length < 2) continue; // Basic check
 
                         try {
+                            // Column Indices based on Export Format (and Table Headers)
+                            // 0: Incident #
+                            // 1: Date/Time
+                            // 2: Nature
+                            // 3: Address
+                            // 4: Type
+                            // 5: Units
+                            // 6: Mutual Aid
+                            // 7: Disposition
+                            // 8: Notes
+
                             const incNum = row[0]?.trim().toUpperCase();
                             if (!incNum) continue;
 
                             const reported = row[1]?.trim(); 
                             const nature = row[2]?.trim().toUpperCase();
                             const address = row[3]?.trim().toUpperCase();
-                            // Old exports had columns: [Inc, Rep, Nat, Add, Type, MA To, MA From, Notes]
-                            // New export has columns: [Inc, Rep, Nat, Add, Type, Units, Mutual Aid, Disp, Notes]
-                            
-                            // Check header row (row 0) or infer based on length/content
-                            // For backward compatibility, this simple importer might need adjustments if
-                            // you plan to import files generated by the NEW exporter.
-                            // Assuming STANDARD OLD FORMAT for now or simple positional logic.
-                            
-                            // Let's try to grab based on standard indices, but be aware of the shift.
-                            // If you re-import a file exported with the NEW system, the indices change.
-                            // This importer is currently hardcoded for a specific layout.
-                            // For safety, I'll stick to the previous import logic but note that
-                            // re-importing the NEW format might need logic updates if columns shifted.
-                            // Given the prompt was just to change EXPORT, I will leave IMPORT logic alone 
-                            // unless you specifically ask to update the importer to match the new export format.
-                            
                             const typeRaw = row[4]?.trim().toUpperCase(); 
-                            // Logic assumes old format [Inc, Date, Nature, Addr, Type, MA To, MA From, Notes]
-                            const maTo = row[5]?.trim().toUpperCase();
-                            const maFrom = row[6]?.trim().toUpperCase();
-                            const notes = row[7]?.trim().toUpperCase();
+                            const units = row[5]?.trim().toUpperCase();
+                            const mutualAidCombined = row[6]?.trim(); // "Type - Dept"
+                            const disposition = row[7]?.trim().toUpperCase();
+                            const notes = row[8]?.trim().toUpperCase();
 
                             // 1. Parse Date/Time
                             let formattedDate = '';
@@ -1088,10 +1109,11 @@
                                 }
                             }
 
-                            // 2. Parse ID for sequencing
+                            // 2. Parse ID for sequencing (Support HT/PL)
                             const yearShort = incNum.substring(0, 2); 
                             const yearFull = 2000 + parseInt(yearShort);
-                            const seqStr = incNum.replace(yearShort + 'HT', '');
+                            // Strip known prefixes to find sequence
+                            const seqStr = incNum.replace(yearShort + 'HT', '').replace(yearShort + 'PL', '');
                             const seqNum = parseInt(seqStr);
 
                             // 3. Normalize Type
@@ -1099,19 +1121,28 @@
                             if (typeRaw === 'FIRE') finalType = 'Fire';
                             if (typeRaw === 'EMS') finalType = 'EMS';
 
-                            // 4. Mutual Aid Logic
+                            // 4. Mutual Aid Logic (Parse "Given - Dept")
                             let isMa = false;
                             let maType = null;
                             let maDept = null;
 
-                            if (maTo) {
+                            if (mutualAidCombined && mutualAidCombined.length > 2) {
                                 isMa = true;
-                                maType = 'Given';
-                                maDept = maTo;
-                            } else if (maFrom) {
-                                isMa = true;
-                                maType = 'Received';
-                                maDept = maFrom;
+                                if (mutualAidCombined.toUpperCase().includes('GIVEN')) {
+                                    maType = 'Given';
+                                } else if (mutualAidCombined.toUpperCase().includes('RECEIVED')) {
+                                    maType = 'Received';
+                                } else {
+                                    // Fallback if parsing fails but content exists
+                                    maType = 'Given'; 
+                                }
+
+                                // Try to extract Dept (everything after " - ")
+                                if (mutualAidCombined.includes(' - ')) {
+                                    maDept = mutualAidCombined.split(' - ')[1]?.trim().toUpperCase() || '';
+                                } else {
+                                    maDept = '';
+                                }
                             }
 
                             const recordData = {
@@ -1123,11 +1154,12 @@
                                 callNature: nature,
                                 responseType: finalType,
                                 address: address,
-                                units: '', // Not in CSV
+                                units: units || '',
                                 mutualAid: isMa,
                                 mutualAidType: maType,
                                 mutualAidDept: maDept,
-                                notes: notes,
+                                emsDisposition: disposition || '',
+                                notes: notes || '',
                                 imported: true
                             };
 
@@ -1265,7 +1297,10 @@
                 snapshot.forEach((doc) => {
                     calls.push({ id: doc.id, ...doc.data() });
                 });
-
+                
+                // === ENFORCED SORTING ===
+                // Sort Descending by Year, then Descending by Sequence
+                // This ensures most recent calls are ALWAYS at top
                 calls.sort((a, b) => {
                     if (b.year !== a.year) return b.year - a.year;
                     return b.sequence - a.sequence;
