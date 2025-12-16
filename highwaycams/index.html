@@ -3,132 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ohio Traffic Cameras - Display Board</title>
+    <title>Ohio Traffic Cameras</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Force hide cursor on EVERYTHING */
-        * {
-            cursor: none !important;
-        }
-
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* Dark background outside the canvas */
-            margin: 0;
-            height: 100vh;
-            width: 100vw;
+        }
+        /* Container for the image to handle aspect ratio and background */
+        .camera-view {
+            position: relative;
+            background-color: #0f172a; /* Slate 900 background for empty state */
+            min-height: 200px;
             display: flex;
             align-items: center;
             justify-content: center;
-            
-            /* STRICTLY Hide scrollbars */
-            overflow: hidden; 
-            
-            /* Backup scrollbar hiding techniques */
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
-        }
-
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        body::-webkit-scrollbar {
-            display: none;
         }
         
-        /* The specific 1670x1080 Canvas */
-        #display-canvas {
-            width: 1670px;
-            height: 1080px;
-            /* Ensure fixed size */
-            min-width: 1670px;
-            min-height: 1080px;
-            max-width: 1670px;
-            max-height: 1080px;
-            
-            background-color: #1e293b; /* Slate-800 equivalent for canvas bg */
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid #334155;
-            position: relative;
-            overflow: hidden;
-            
-            /* Flex layout to center content inside the canvas */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        /* Loading spinner animation */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #38bdf8; /* Sky 400 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            z-index: 1;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        /* Style for broken image placeholders */
-        img::before {
-            content: 'Image not available';
-            display: block;
-            text-align: center;
-            font-weight: 500;
-            line-height: 1.5;
-            color: #94a3b8;
-            background-color: #0f172a;
-            border-radius: 0.5rem;
-            height: 100%;
+        /* Ensure image sits on top of spinner */
+        .camera-img {
+            position: relative;
+            z-index: 2;
             width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            height: auto;
+            display: block;
+            opacity: 1;
+            transition: opacity 0.3s ease;
         }
     </style>
 </head>
-<body class="text-slate-200">
+<body class="bg-slate-900 text-slate-200">
 
-    <!-- Fixed 1670x1080 Canvas -->
-    <div id="display-canvas">
-        
-        <div class="w-full max-w-[1400px] flex flex-col items-center space-y-12">
-            
-            <header class="text-center">
-                <div class="inline-flex items-center justify-center gap-3">
-                    <h1 class="text-5xl font-bold text-slate-50 tracking-wide">I-70 TRAFFIC CAMERAS</h1>
-                </div>
-                <p class="text-slate-400 mt-4 text-xl">Live Feed • <span id="timestamp">Updating...</span></p>
-            </header>
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-10">
+            <div class="inline-flex items-center justify-center gap-3 mb-2">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-50">I-70 TRAFFIC CAMERAS</h1>
+            </div>
+            <p class="text-slate-400 text-sm">Live feeds update automatically approximately every 5 seconds</p>
+        </header>
 
-            <main id="camera-container" class="w-full grid grid-cols-1 md:grid-cols-2 gap-12 px-8">
-                <!-- Loading placeholder -->
-                <div id="loading" class="col-span-1 md:col-span-2 text-center text-slate-400 py-20">
-                    <p class="text-2xl animate-pulse">Loading camera feeds...</p>
-                </div>
-                <!-- Error message placeholder -->
-                 <div id="error" class="hidden col-span-1 md:col-span-2 text-center text-red-300 bg-red-900/50 border border-red-700 p-8 rounded-xl">
-                    <p class="text-xl">Could not fetch camera data. Please check the console for more details.</p>
-                </div>
-            </main>
+        <main id="camera-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8">
+            <!-- Loading placeholder -->
+            <div id="loading" class="col-span-1 md:col-span-2 text-center text-slate-400 py-16">
+                <p class="text-lg animate-pulse">Initializing camera feeds...</p>
+            </div>
+            <!-- Error message placeholder -->
+             <div id="error" class="hidden col-span-1 md:col-span-2 text-center text-red-300 bg-red-900/50 border border-red-700 p-4 rounded-lg">
+                <p>Could not fetch camera data. Please check the console for more details.</p>
+            </div>
+        </main>
 
-            <footer class="text-center border-t border-slate-700/50 pt-6 w-full max-w-2xl">
-                <p class="text-slate-500 text-lg">Data provided by <a href="https://ohgo.com/" target="_blank" class="text-sky-400 hover:underline">OHGO</a></p>
-            </footer>
-
-        </div>
+        <footer class="text-center mt-16 pt-8 border-t border-slate-700 text-slate-500 text-sm">
+            <p>Data provided by <a href="https://ohgo.com/" target="_blank" class="text-sky-400 hover:underline">OHGO</a></p>
+        </footer>
     </div>
 
     <script>
         const cameraContainer = document.getElementById('camera-container');
         const loadingIndicator = document.getElementById('loading');
         const errorIndicator = document.getElementById('error');
-        const timestampSpan = document.getElementById('timestamp');
-
-        // IMPORTANT: Replace this with your own Bearer Token from Ohgo
+        
+        // Configuration
         const bearerToken = '2bd6a482-97de-478e-812d-50b245075206';
-        // Using the user-specified API URL
         const apiUrl = `https://publicapi.ohgo.com/api/v1/cameras/00000000000226%2C00000000000638?page-size=2&page-all=all`;
+        
+        // Update frequency in milliseconds (2 seconds is faster than the camera update rate 
+        // to ensures we catch the new frame as soon as it exists)
+        const REFRESH_RATE = 2000; 
 
-        function updateTimestamp() {
-            const now = new Date();
-            timestampSpan.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
+        // Store camera data to avoid re-fetching metadata constantly
+        let activeCameras = [];
 
-        // Function to fetch and display camera data
-        async function fetchCameras() {
+        // 1. Initialize: Fetch camera metadata and build DOM structure ONCE
+        async function initCameras() {
             try {
                 errorIndicator.classList.add('hidden');
-                updateTimestamp();
                 
                 const response = await fetch(apiUrl, {
                     headers: {
@@ -140,7 +106,7 @@
                 if (!response.ok) {
                     let errorText = `API request failed with status ${response.status}: ${response.statusText}.`;
                     if (response.status === 401 || response.status === 403) {
-                        errorText += " This commonly means the Bearer Token is invalid or has expired. Please obtain a new one from the Ohgo API provider.";
+                        errorText += " Token invalid/expired.";
                     }
                     throw new Error(errorText);
                 }
@@ -148,68 +114,108 @@
                 const result = await response.json();
                 const cameras = result.results;
 
-                // Hide loading indicator once data is fetched
-                if (loadingIndicator) {
-                    loadingIndicator.style.display = 'none';
-                }
-
-                // Clear existing cameras before adding new ones on refresh
-                const existingCameras = cameraContainer.querySelectorAll('.camera-card');
-                existingCameras.forEach(cam => cam.remove());
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
 
                 if (cameras && cameras.length > 0) {
-                    cameras.forEach(camera => {
-                        // Correctly extract the image URL from the nested cameraViews array
-                        const cameraView = camera.cameraViews && camera.cameraViews.length > 0 ? camera.cameraViews[0] : null;
-                        const imageUrl = cameraView ? cameraView.largeUrl : null;
-                        
-                        // Check if we successfully found an imageUrl
-                        if (imageUrl) {
-                            const cameraCard = document.createElement('div');
-                            cameraCard.className = 'camera-card bg-slate-800/80 rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 border border-slate-600';
-                            
-                            // Add a timestamp to the URL to bypass browser cache and get a fresh image
-                            const imageUrlWithTimestamp = `${imageUrl}?t=${new Date().getTime()}`;
+                    // Filter for valid cameras only
+                    activeCameras = cameras.filter(camera => 
+                        camera.cameraViews && 
+                        camera.cameraViews.length > 0 && 
+                        camera.cameraViews[0].largeUrl
+                    );
 
-                            cameraCard.innerHTML = `
-                                <div class="p-5 text-center bg-slate-900/50 border-b border-slate-700/50">
-                                    <h2 class="text-2xl font-semibold text-slate-100 truncate" title="${camera.description}">${camera.description}</h2>
-                                </div>
-                                <div class="relative aspect-video bg-black">
-                                    <img id="img-${camera.id}" src="${imageUrlWithTimestamp}" alt="Traffic camera feed for ${camera.description}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/4a5568?text=Image+Unavailable';">
-                                </div>
-                            `;
-                            cameraContainer.appendChild(cameraCard);
-                        } else {
-                            // Log a warning if a camera object doesn't have a usable view or URL
-                            console.warn('Skipping camera because a valid cameraView with a largeUrl was not found:', camera);
-                        }
-                    });
-                } else {
-                     if (!cameraContainer.querySelector('.no-data')) {
-                        const noDataMessage = document.createElement('div');
-                        noDataMessage.className = 'col-span-1 md:col-span-2 text-center text-slate-400 no-data text-xl';
-                        noDataMessage.textContent = 'API returned no camera feeds. The camera ID may be incorrect or offline.';
-                        cameraContainer.appendChild(noDataMessage);
+                    if (activeCameras.length === 0) {
+                        showNoDataMessage();
+                        return;
                     }
+
+                    // Build the DOM elements for each camera
+                    activeCameras.forEach(camera => {
+                        const cameraView = camera.cameraViews[0];
+                        const baseImageUrl = cameraView.largeUrl;
+                        
+                        const cameraCard = document.createElement('div');
+                        cameraCard.className = 'camera-card bg-slate-800/50 rounded-lg shadow-lg overflow-hidden border border-slate-700';
+                        
+                        // We use a data attribute to store the base URL for easy access later
+                        cameraCard.innerHTML = `
+                            <div class="p-3 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
+                                <h2 class="font-semibold text-slate-100 truncate flex-1" title="${camera.description}">
+                                    ${camera.description}
+                                </h2>
+                                <span class="text-xs text-sky-400 font-mono px-2 py-1 bg-sky-900/30 rounded">LIVE</span>
+                            </div>
+                            <div class="camera-view">
+                                <div class="spinner"></div>
+                                <img 
+                                    id="img-${camera.id}" 
+                                    data-base-url="${baseImageUrl}" 
+                                    src="${baseImageUrl}?t=${Date.now()}" 
+                                    alt="${camera.description}" 
+                                    class="camera-img"
+                                    onerror="this.style.display='none'; this.parentElement.querySelector('.spinner').style.display='none';"
+                                    onload="this.parentElement.querySelector('.spinner').style.display='none';"
+                                >
+                            </div>
+                        `;
+                        cameraContainer.appendChild(cameraCard);
+                    });
+
+                    // Start the rapid refresh loop
+                    startLiveFeed();
+
+                } else {
+                    showNoDataMessage();
                 }
 
             } catch (error) {
-                console.error('Error fetching camera data:', error);
-                if (loadingIndicator) {
-                    loadingIndicator.style.display = 'none';
-                }
-                const errorMessageElement = errorIndicator.querySelector('p');
-                errorMessageElement.textContent = error.message;
+                console.error('Error initializing cameras:', error);
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
+                errorIndicator.querySelector('p').textContent = error.message;
                 errorIndicator.classList.remove('hidden');
             }
         }
 
-        // Initial fetch on page load
-        fetchCameras();
+        function showNoDataMessage() {
+            const msg = document.createElement('div');
+            msg.className = 'col-span-1 md:col-span-2 text-center text-slate-400 no-data py-8';
+            msg.textContent = 'No active camera feeds found.';
+            cameraContainer.appendChild(msg);
+        }
 
-        // Set an interval to refresh the camera images every 10 seconds
-        setInterval(fetchCameras, 10000);
+        // 2. The Loop: Update only images, without touching the DOM structure
+        function startLiveFeed() {
+            setInterval(() => {
+                activeCameras.forEach(camera => {
+                    const imgElement = document.getElementById(`img-${camera.id}`);
+                    if (imgElement) {
+                        updateCameraImage(imgElement);
+                    }
+                });
+            }, REFRESH_RATE);
+        }
+
+        // 3. Smooth Update: Preload image in background to prevent flickering
+        function updateCameraImage(imgElement) {
+            const baseUrl = imgElement.getAttribute('data-base-url');
+            // Add timestamp to bypass browser cache
+            const newSrc = `${baseUrl}?t=${Date.now()}`;
+            
+            // Create a temporary image in memory
+            const tempImage = new Image();
+            
+            tempImage.onload = () => {
+                // Only swap the source once the new image is fully downloaded
+                imgElement.src = newSrc;
+            };
+            
+            // Start downloading
+            tempImage.src = newSrc;
+        }
+
+        // Start everything
+        initCameras();
+
     </script>
 
 </body>
