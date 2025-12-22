@@ -3,55 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMS Crew Schedule</title>
-    <!-- Tailwind CSS for styling -->
+    <title>Crew Schedule</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        glass: 'rgba(255, 255, 255, 0.03)',
+                        glassBorder: 'rgba(255, 255, 255, 0.08)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* Custom font */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* slate-900 */
-            background-image: radial-gradient(circle at top left, rgba(79, 70, 229, 0.2), transparent 30%),
-                              radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.15), transparent 40%);
+            background-color: #09090b; /* Zinc 950 */
+            /* Dynamic background mesh */
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
+            overflow: hidden; 
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e4e4e7; /* Zinc 200 */
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+        /* Glass Card Styles */
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Animations */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .schedule-card {
-            animation: fadeIn 0.5s ease-out forwards;
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; /* Start hidden for animation */
         }
 
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+        /* Stagger animations for cards */
+        .schedule-card:nth-child(1) { animation-delay: 0.1s; }
+        .schedule-card:nth-child(2) { animation-delay: 0.15s; }
+        .schedule-card:nth-child(3) { animation-delay: 0.2s; }
+        .schedule-card:nth-child(4) { animation-delay: 0.25s; }
+        .schedule-card:nth-child(5) { animation-delay: 0.3s; }
+        .schedule-card:nth-child(6) { animation-delay: 0.35s; }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0.2); }
+            50% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2); }
+        }
+        
+        .today-glow {
+            animation: pulse-glow 2s infinite;
+        }
+
+        /* Scrollbar hiding */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-slate-900 text-gray-300 min-h-screen">
+<body class="selection:bg-indigo-500/30">
 
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="text-center mb-10">
-            <h1 class="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-                EMS DAY SCHEDULE
-            </h1>
-            <p class="mt-2 text-lg text-slate-400">Upcoming Crew Assignments</p>
+    <!-- CONSTRAINT: Fixed container size 1670x1080 -->
+    <div class="w-full h-full max-w-[1670px] max-h-[1080px] p-8 flex flex-col gap-6 relative">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-end flex-shrink-0 pb-2 border-b border-white/5">
+            <div>
+                <h1 class="text-6xl font-black tracking-tight text-white mb-2">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">CREW</span> SCHEDULE
+                </h1>
+                <p class="text-xl text-zinc-400 font-light tracking-wide">Operational Assignments Dashboard</p>
+            </div>
+            
+            <!-- Live Clock Component -->
+            <div class="text-right">
+                <div id="clock-time" class="text-5xl font-mono font-bold text-white/90 tracking-tighter">00:00</div>
+                <div id="clock-date" class="text-lg text-indigo-400 font-medium uppercase tracking-widest mt-1">LOADING DATE</div>
+            </div>
         </header>
 
-        <div id="schedule-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div id="loading-state" class="col-span-1 md:col-span-2 lg:col-span-3 text-center p-12">
-                 <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-                 <p class="mt-4 text-slate-400 text-lg">Connecting to live database...</p>
+        <!-- CONSTRAINT: Grid for 6 boxes (3 cols x 2 rows) -->
+        <div id="schedule-container" class="flex-1 grid grid-cols-3 grid-rows-2 gap-6 min-h-0">
+            <!-- Loading State -->
+            <div id="loading-state" class="col-span-3 row-span-2 flex flex-col items-center justify-center glass-panel rounded-3xl">
+                <div class="relative w-20 h-20">
+                    <div class="absolute inset-0 border-4 border-indigo-500/20 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
+                </div>
+                <p class="mt-6 text-zinc-400 text-xl font-light animate-pulse">Synchronizing with Firebase...</p>
             </div>
         </div>
         
-        <div class="mt-12 text-center">
-            <a href="./schedule_admin.html" class="text-slate-600 hover:text-indigo-400 text-sm transition-colors">Admin Login</a>
-        </div>
     </div>
 
     <script type="module">
@@ -59,6 +125,102 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
+        // --- Holiday Data (Late 2025 - Early 2026) ---
+        const HOLIDAYS = {
+            // December 2025
+            '2025-12-22': 'National Cookie Exchange Day',
+            '2025-12-23': 'Festivus',
+            '2025-12-24': 'Christmas Eve',
+            '2025-12-25': 'Christmas Day',
+            '2025-12-26': 'Kwanzaa Begins',
+            '2025-12-27': 'National Fruitcake Day',
+            '2025-12-28': 'Card Playing Day',
+            '2025-12-29': 'Tick Tock Day',
+            '2025-12-30': 'National Bacon Day',
+            '2025-12-31': 'New Year\'s Eve',
+            
+            // January 2026
+            '2026-01-01': 'New Year\'s Day',
+            '2026-01-02': 'Science Fiction Day',
+            '2026-01-03': 'Festival of Sleep Day',
+            '2026-01-04': 'National Trivia Day',
+            '2026-01-05': 'National Bird Day',
+            '2026-01-06': 'Three Kings Day',
+            '2026-01-07': 'National Tempura Day',
+            '2026-01-08': 'Bubble Bath Day',
+            '2026-01-09': 'National Apricot Day',
+            '2026-01-10': 'Houseplant Appreciation Day',
+            '2026-01-11': 'National Milk Day',
+            '2026-01-12': 'Kiss A Ginger Day',
+            '2026-01-13': 'Rubber Ducky Day',
+            '2026-01-14': 'Dress Up Your Pet Day',
+            '2026-01-15': 'National Hat Day',
+            '2026-01-16': 'National Nothing Day',
+            '2026-01-17': 'Ditch Resolutions Day',
+            '2026-01-18': 'Thesaurus Day',
+            '2026-01-19': 'Martin Luther King Jr. Day',
+            '2026-01-20': 'Cheese Lover\'s Day',
+            '2026-01-21': 'National Hugging Day',
+            '2026-01-22': 'Blonde Brownie Day',
+            '2026-01-23': 'National Pie Day',
+            '2026-01-24': 'Peanut Butter Day',
+            '2026-01-25': 'Opposite Day',
+            '2026-01-26': 'Spouses Day',
+            '2026-01-27': 'Chocolate Cake Day',
+            '2026-01-28': 'National Lego Day',
+            '2026-01-29': 'National Puzzle Day',
+            '2026-01-30': 'National Croissant Day',
+            '2026-01-31': 'Hot Chocolate Day',
+
+            // February 2026 (Just in case)
+            '2026-02-01': 'Dark Chocolate Day',
+            '2026-02-02': 'Groundhog Day',
+            '2026-02-14': 'Valentine\'s Day'
+        };
+
+        function getHoliday(dateStr) {
+            return HOLIDAYS[dateStr] || null;
+        }
+
+        // --- Clock Logic ---
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            
+            document.getElementById('clock-time').textContent = timeStr;
+            document.getElementById('clock-date').textContent = dateStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Avatar Helper ---
+        function getInitials(name) {
+            return name
+                .split(' ')
+                .map(n => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase();
+        }
+
+        function getColorForName(name) {
+            const colors = [
+                'bg-red-500', 'bg-orange-500', 'bg-amber-500', 
+                'bg-green-500', 'bg-emerald-500', 'bg-teal-500', 
+                'bg-cyan-500', 'bg-sky-500', 'bg-blue-500', 
+                'bg-indigo-500', 'bg-violet-500', 'bg-purple-500', 
+                'bg-fuchsia-500', 'bg-pink-500', 'bg-rose-500'
+            ];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        // --- Firebase Logic ---
+        // Using your original configuration to ensure you see YOUR data
         const firebaseConfig = {
             apiKey: "AIzaSyCqqW_fryqigzg7zDWgEsuADhBkPYcHQMo",
             authDomain: "db2-2f64c.firebaseapp.com",
@@ -88,12 +250,22 @@
 
         initAuth();
 
-        const formatDate = (dateString) => {
-            if(!dateString) return 'N/A';
+        const formatDateObj = (dateString) => {
+            if(!dateString) return { day: '00', month: 'NAN', weekday: 'N/A' };
             const [year, month, day] = dateString.split('-').map(Number);
             const date = new Date(year, month - 1, day); 
-            const options = { weekday: 'long', month: 'short', day: 'numeric' };
-            return date.toLocaleDateString(undefined, options);
+            return {
+                day: String(date.getDate()).padStart(2, '0'),
+                month: date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+                weekday: date.toLocaleDateString('en-US', { weekday: 'long' })
+            };
+        };
+
+        const getLocalDateString = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         };
 
         onAuthStateChanged(auth, (user) => {
@@ -102,88 +274,131 @@
                 
                 onSnapshot(scheduleRef, (snapshot) => {
                     const container = document.getElementById('schedule-container');
-                    container.innerHTML = ''; 
+                    const groupedDates = {};
                     
-                    // 1. Group individual entries by Date + Time
-                    const groupedShifts = {};
-                    const todayStr = new Date().toISOString().split('T')[0];
+                    const todayDate = new Date();
+                    const todayStr = getLocalDateString(todayDate);
+                    
+                    const yesterdayDate = new Date(todayDate);
+                    yesterdayDate.setDate(todayDate.getDate() - 1);
+                    const yesterdayStr = getLocalDateString(yesterdayDate);
 
                     snapshot.forEach(doc => {
                         const d = doc.data();
-                        
-                        // Only process future/today shifts
-                        if (d.date >= todayStr) {
-                            const key = `${d.date}_${d.time}`;
-                            if (!groupedShifts[key]) {
-                                groupedShifts[key] = {
-                                    date: d.date,
-                                    time: d.time,
-                                    names: []
-                                };
+                        if (d.date >= yesterdayStr) {
+                            if (!groupedDates[d.date]) {
+                                groupedDates[d.date] = { date: d.date, shifts: {} };
                             }
                             
-                            // Handle both new 'name' field and legacy fields just in case
-                            if (d.name) {
-                                groupedShifts[key].names.push(d.name);
-                            } else {
-                                // Fallback for old schema
-                                if (d.crewMember1) groupedShifts[key].names.push(d.crewMember1);
-                                if (d.crewMember2) groupedShifts[key].names.push(d.crewMember2);
-                                if (d.trainee) groupedShifts[key].names.push(`${d.trainee} (Trainee)`);
+                            const timeKey = d.time || 'Unspecified';
+                            if (!groupedDates[d.date].shifts[timeKey]) {
+                                groupedDates[d.date].shifts[timeKey] = [];
                             }
+
+                            const names = [];
+                            if (d.name) {
+                                names.push(d.name);
+                            } else {
+                                if (d.crewMember1) names.push(d.crewMember1);
+                                if (d.crewMember2) names.push(d.crewMember2);
+                                if (d.trainee) names.push(d.trainee);
+                            }
+                            groupedDates[d.date].shifts[timeKey].push(...names);
                         }
                     });
 
-                    // 2. Convert Map to Array and Sort
-                    const displayShifts = Object.values(groupedShifts).sort((a, b) => {
-                        const dateComp = a.date.localeCompare(b.date);
-                        if (dateComp !== 0) return dateComp;
-                        return a.time.localeCompare(b.time);
-                    });
+                    const displayDays = Object.values(groupedDates).sort((a, b) => a.date.localeCompare(b.date));
+                    const slicedDays = displayDays.slice(0, 6);
 
-                    // Limit to 9 items
-                    const slicedShifts = displayShifts.slice(0, 9);
+                    container.innerHTML = ''; 
 
-                    if (slicedShifts.length === 0) {
-                         container.innerHTML = '<p class="col-span-full text-center text-slate-400 text-lg">No upcoming shifts scheduled.</p>';
+                    if (slicedDays.length === 0) {
+                         container.innerHTML = `
+                            <div class="col-span-3 row-span-2 flex flex-col items-center justify-center glass-panel rounded-3xl">
+                                <svg class="w-16 h-16 text-zinc-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <p class="text-zinc-500 text-2xl font-light">No upcoming shifts scheduled.</p>
+                            </div>`;
                          return;
                     }
 
-                    // 3. Render Cards
-                    slicedShifts.forEach(row => {
-                        const isToday = row.date === todayStr;
+                    slicedDays.forEach((dayGroup, index) => {
+                        const isToday = dayGroup.date === todayStr;
+                        const isYesterday = dayGroup.date === yesterdayStr;
+                        const dateObj = formatDateObj(dayGroup.date);
+                        const holidayName = getHoliday(dayGroup.date);
                         
-                        // Sort names alphabetically within the shift
-                        row.names.sort();
+                        const sortedTimes = Object.keys(dayGroup.shifts).sort();
 
-                        const card = `
-                            <div class="schedule-card bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl shadow-lg transition-all duration-300 hover:border-indigo-500 hover:shadow-indigo-500/20 hover:-translate-y-1 ${isToday ? 'border-2 border-green-500 shadow-green-500/20' : ''}">
-                                <div class="p-6">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div>
-                                            <p class="text-2xl font-bold text-white">${formatDate(row.date)}</p>
-                                            ${isToday ? '<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200 mt-1">Today</span>' : ''}
-                                        </div>
-                                        <div class="flex-shrink-0 flex items-center text-md font-medium text-slate-300 bg-slate-700/50 px-3 py-1 rounded-full">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                            ${row.time || 'N/A'}
-                                        </div>
+                        let shiftsHtml = '';
+                        sortedTimes.forEach((time, tIndex) => {
+                            const crewNames = dayGroup.shifts[time].sort();
+                            const isLast = tIndex === sortedTimes.length - 1;
+                            
+                            shiftsHtml += `
+                                <div class="relative pl-6 pb-6 ${isLast ? '' : 'border-l-2 border-zinc-700/50'} ml-2">
+                                    <!-- Timeline Dot -->
+                                    <div class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-4 border-[#18181b] ${isToday ? 'bg-green-500' : 'bg-indigo-500'}"></div>
+                                    
+                                    <!-- Time Header -->
+                                    <div class="flex items-center mb-3">
+                                        <span class="text-sm font-mono font-bold text-zinc-400 bg-zinc-800/50 px-2 py-0.5 rounded border border-zinc-700/50">
+                                            ${time}
+                                        </span>
                                     </div>
-                                    <div class="border-t border-slate-700 my-4"></div>
-                                    <div class="space-y-4 text-slate-300 text-lg">
-                                        <p class="text-sm uppercase font-semibold text-indigo-400">Assigned Personnel</p>
-                                        
-                                        ${row.names.map(name => `
-                                            <div class="flex items-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                                                <span>${name}</span>
+
+                                    <!-- Crew List -->
+                                    <div class="space-y-2">
+                                        ${crewNames.map(name => `
+                                            <div class="flex items-center group">
+                                                <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg ${getColorForName(name)} mr-3 ring-2 ring-[#18181b]">
+                                                    ${getInitials(name)}
+                                                </div>
+                                                <span class="text-lg font-medium text-zinc-200 group-hover:text-white transition-colors truncate">${name}</span>
                                             </div>
                                         `).join('')}
-                                        
-                                        ${row.names.length === 0 ? '<span class="text-slate-500 italic">No crew assigned</span>' : ''}
+                                        ${crewNames.length === 0 ? '<span class="text-zinc-600 italic text-sm">No crew assigned</span>' : ''}
                                     </div>
+                                </div>
+                            `;
+                        });
+
+                        const borderClass = isToday ? 'ring-2 ring-green-500 shadow-[0_0_30px_rgba(34,197,94,0.15)]' : 
+                                          isYesterday ? 'ring-2 ring-orange-500/50' : '';
+                        
+                        const bgClass = isToday ? 'bg-gradient-to-br from-zinc-800/60 to-zinc-900/60' : '';
+
+                        const card = `
+                            <div class="schedule-card glass-panel rounded-3xl flex flex-col overflow-hidden relative ${borderClass} ${bgClass}">
+                                ${isToday ? '<div class="absolute top-0 right-0 p-3"><span class="flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span></div>' : ''}
+                                
+                                <!-- Card Header -->
+                                <div class="p-6 pb-4 flex justify-between items-start border-b border-white/5 bg-white/[0.02]">
+                                    <div class="flex flex-col w-full">
+                                        <div class="flex items-baseline justify-between w-full">
+                                            <div class="flex items-baseline gap-2">
+                                                <span class="text-5xl font-bold text-white tracking-tighter">${dateObj.day}</span>
+                                                <span class="text-lg font-bold text-zinc-500">${dateObj.month}</span>
+                                            </div>
+                                            <!-- Holiday Badge (if exists) -->
+                                            ${holidayName ? 
+                                                `<div class="max-w-[120px] text-right">
+                                                    <span class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-300 text-[10px] font-bold uppercase tracking-wide border border-indigo-500/20 leading-tight inline-block text-right">
+                                                        ${holidayName}
+                                                    </span>
+                                                </div>` 
+                                            : ''}
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-indigo-400 font-medium tracking-wide uppercase text-sm">${dateObj.weekday}</span>
+                                            ${isToday ? '<span class="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[10px] font-bold uppercase tracking-wider border border-green-500/30">Today</span>' : ''}
+                                            ${isYesterday ? '<span class="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-bold uppercase tracking-wider border border-orange-500/30">Yesterday</span>' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card Body -->
+                                <div class="p-6 pt-6 flex-1 overflow-y-auto no-scrollbar">
+                                    ${shiftsHtml}
                                 </div>
                             </div>
                         `;
@@ -193,7 +408,11 @@
                 }, (error) => {
                     console.error("Data Listen Error:", error);
                     const container = document.getElementById('schedule-container');
-                    container.innerHTML = '<div class="text-red-400 text-center col-span-full">Error loading schedule.</div>';
+                    container.innerHTML = `
+                        <div class="col-span-3 row-span-2 flex flex-col items-center justify-center text-red-400 glass-panel rounded-3xl border-red-500/30">
+                            <svg class="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <span class="text-xl font-medium">Unable to load live schedule</span>
+                        </div>`;
                 });
             }
         });
