@@ -3,223 +3,633 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crew Schedule</title>
+    <title>Fire/EMS Call Tracker</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://i.ibb.co/6cwN2fbb/icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="HARMONY">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        glass: 'rgba(255, 255, 255, 0.03)',
-                        glassBorder: 'rgba(255, 255, 255, 0.08)',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #09090b; /* Zinc 950 */
-            /* Dynamic background mesh */
-            background-image: 
-                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 100% 0%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
-            overflow: hidden; 
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #e4e4e7; /* Zinc 200 */
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
-
-        /* Glass Card Styles */
-        .glass-panel {
-            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        ::-webkit-scrollbar-track {
+            background: #1f2937; 
         }
-
-        /* Animations */
-        @keyframes slideUpFade {
-            from { opacity: 0; transform: translateY(30px); }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; 
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        .schedule-card {
-            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0; /* Start hidden for animation */
+        /* Chips for units */
+        .unit-chip {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
         }
-
-        /* Stagger animations for cards */
-        .schedule-card:nth-child(1) { animation-delay: 0.1s; }
-        .schedule-card:nth-child(2) { animation-delay: 0.15s; }
-        .schedule-card:nth-child(3) { animation-delay: 0.2s; }
-        .schedule-card:nth-child(4) { animation-delay: 0.25s; }
-        .schedule-card:nth-child(5) { animation-delay: 0.3s; }
-        .schedule-card:nth-child(6) { animation-delay: 0.35s; }
-
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0.2); }
-            50% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2); }
+        .unit-chip:active {
+            transform: scale(0.95);
         }
-        
-        .today-glow {
-            animation: pulse-glow 2s infinite;
+        /* Sortable Headers */
+        th.sortable {
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
-
-        /* Scrollbar hiding */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        th.sortable:hover {
+            background-color: #374151;
+        }
     </style>
 </head>
-<body class="selection:bg-indigo-500/30">
+<body class="bg-gray-900 text-gray-100 font-sans min-h-screen flex flex-col">
 
-    <!-- CONSTRAINT: Fixed container size 1670x1080 -->
-    <div class="w-full h-full max-w-[1670px] max-h-[1080px] p-8 flex flex-col gap-6 relative">
-        
-        <!-- Header -->
-        <header class="flex justify-between items-end flex-shrink-0 pb-2 border-b border-white/5">
-            <div>
-                <h1 class="text-6xl font-black tracking-tight text-white mb-2">
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">DAYCREW</span> SCHEDULE
-                </h1>
-            </div>
-            
-            <!-- Live Clock Component -->
-            <div class="text-right">
-                <div id="clock-time" class="text-5xl font-mono font-bold text-white/90 tracking-tighter">00:00</div>
-                <div id="clock-date" class="text-lg text-indigo-400 font-medium uppercase tracking-widest mt-1">LOADING DATE</div>
-            </div>
-        </header>
-
-        <!-- CONSTRAINT: Grid for 6 boxes (3 cols x 2 rows) -->
-        <div id="schedule-container" class="flex-1 grid grid-cols-3 grid-rows-2 gap-6 min-h-0">
-            <!-- Loading State -->
-            <div id="loading-state" class="col-span-3 row-span-2 flex flex-col items-center justify-center glass-panel rounded-3xl">
-                <div class="relative w-20 h-20">
-                    <div class="absolute inset-0 border-4 border-indigo-500/20 rounded-full"></div>
-                    <div class="absolute inset-0 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
+    <!-- Navbar -->
+    <nav class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-[95%] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-truck-medical text-red-500 text-2xl"></i>
+                <div>
+                    <h1 class="font-bold text-xl tracking-wide uppercase">RMS Call Tracker</h1>
+                    <div id="connectionStatus" class="text-xs text-yellow-500 flex items-center gap-1">
+                        <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Connecting...
+                    </div>
                 </div>
-                <p class="mt-6 text-zinc-400 text-xl font-light animate-pulse">Synchronizing with Firebase...</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="switchTab('entry')" id="btn-entry" class="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition shadow-md border border-red-500 uppercase text-sm tracking-wider">
+                    <i class="fa-solid fa-plus mr-1"></i> New Call
+                </button>
+                <button onclick="switchTab('history')" id="btn-history" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 font-medium hover:bg-gray-600 transition border border-gray-600 uppercase text-sm tracking-wider">
+                    <i class="fa-solid fa-list mr-1"></i> History
+                </button>
+                <button onclick="switchTab('stats')" id="btn-stats" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 font-medium hover:bg-gray-600 transition border border-gray-600 uppercase text-sm tracking-wider">
+                    <i class="fa-solid fa-chart-pie mr-1"></i> Statistics
+                </button>
             </div>
         </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 max-w-[95%] mx-auto w-full">
         
+        <!-- ENTRY FORM TAB -->
+        <div id="tab-entry" class="fade-in max-w-2xl mx-auto">
+            <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
+                <div class="bg-gray-750 p-6 border-b border-gray-700 flex justify-between items-center bg-gradient-to-r from-gray-800 to-gray-750">
+                    <h2 class="text-xl font-semibold text-white uppercase tracking-wide"><i class="fa-solid fa-pen-to-square mr-2 text-red-500"></i>Enter Incident</h2>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-400 block uppercase tracking-wider">Next Incident ID</span>
+                        <span id="previewIncidentId" class="text-2xl font-mono font-bold text-green-400">Loading...</span>
+                    </div>
+                </div>
+                
+                <form id="callForm" class="p-6 space-y-6">
+                    
+                    <!-- Date & Time Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Date</label>
+                            <input type="date" id="dispatchDate" required class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Time (24h)</label>
+                            <input type="text" id="dispatchTime" required placeholder="HH:MM" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition font-mono tracking-wider">
+                            <p class="text-xs text-gray-500 mt-1 uppercase">Format: HH:MM (00:00 - 23:59)</p>
+                        </div>
+                    </div>
+
+                    <!-- Nature & Type Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Call Nature</label>
+                            <input list="natures" id="callNature" oninput="forceCaps(this)" required placeholder="SELECT OR TYPE..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                            <!-- Populated dynamically now -->
+                            <datalist id="natures"></datalist>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Response Type</label>
+                                <!-- Button Group for Response Type -->
+                                <div class="grid grid-cols-3 gap-3">
+                                    <button type="button" onclick="selectType('EMS')" id="btn-ems" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase">
+                                        <i class="fa-solid fa-star-of-life mr-2"></i>EMS
+                                    </button>
+                                    <button type="button" onclick="selectType('Fire')" id="btn-fire" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-red-500 bg-red-600 text-white shadow-lg shadow-red-900/50 transform scale-[1.02] transition uppercase">
+                                        <i class="fa-solid fa-fire mr-2"></i>Fire
+                                    </button>
+                                    <button type="button" onclick="selectType('Both')" id="btn-both" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-purple-500 bg-purple-600 text-white shadow-lg shadow-purple-900/50 transform scale-[1.02] transition uppercase">
+                                        <i class="fa-solid fa-layer-group mr-2"></i>Both
+                                    </button>
+                                </div>
+                                <!-- Hidden input to store value for form submission -->
+                                <input type="hidden" id="responseType" value="EMS">
+                            </div>
+
+                            <!-- EMS Disposition (Hidden by default) -->
+                            <div id="emsDispositionSection" class="hidden animate-fade-in-down">
+                                <label class="block text-sm font-medium text-blue-400 mb-1 uppercase tracking-wider">EMS Disposition</label>
+                                <select id="emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
+                                    <option value="">SELECT DISPOSITION</option>
+                                    <option value="TRANSPORT">TRANSPORT</option>
+                                    <option value="REFUSAL">REFUSAL</option>
+                                    <option value="NO PATIENT">NO PATIENT</option>
+                                    <option value="NO CREW/MA">NO CREW/MA</option>
+                                    <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                    <option value="75 COVERAGE">75 COVERAGE</option>
+                                    <option value="CANCELLED">CANCELLED</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
+                        <!-- Custom Relative Container for Dropdown -->
+                        <div class="relative">
+                            <input type="text" id="address" oninput="forceCaps(this)" required placeholder="1234 MAIN ST..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase" autocomplete="off">
+                            
+                            <!-- Custom Suggestion Dropdown (Hidden by default) -->
+                            <div id="addressSuggestions" class="absolute w-full bg-gray-800 border border-gray-600 rounded-lg shadow-2xl z-50 hidden mt-1 max-h-48 overflow-y-auto">
+                                <!-- Items injected via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Units -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Units Responded</label>
+                        <!-- Quick Select Chips -->
+                        <div id="unitChips" class="flex flex-wrap gap-2 mb-2 uppercase">
+                            <!-- Injected by JS -->
+                        </div>
+                        <input type="text" id="units" oninput="forceCaps(this)" placeholder="E.G. E1, M2, C501..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                        <p class="text-xs text-gray-500 mt-1 uppercase">Tap chips above to add, or type manually.</p>
+                    </div>
+
+                    <!-- Mutual Aid Section -->
+                    <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <div class="flex items-center gap-3 mb-4">
+                            <input type="checkbox" id="mutualAid" class="w-5 h-5 text-red-600 rounded focus:ring-red-500 border-gray-600 bg-gray-800" onchange="toggleMutualAid()">
+                            <label for="mutualAid" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Mutual Aid Involved?</label>
+                        </div>
+
+                        <div id="mutualAidFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pl-8 border-l-2 border-red-500/30">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Direction</label>
+                                <select id="mutualAidType" onchange="handleMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
+                                    <option value="Given">Given (To)</option>
+                                    <option value="Received">Received (From)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Department</label>
+                                <!-- Chips for Depts (Hidden unless Received) -->
+                                <div id="deptChips" class="hidden flex flex-wrap gap-2 mb-2 transition-all uppercase">
+                                    <!-- Injected by JS -->
+                                </div>
+                                <input list="maDepts" type="text" id="mutualAidDept" oninput="forceCaps(this)" placeholder="DEPARTMENT NAME" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
+                                <datalist id="maDepts"></datalist>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Notes (Optional)</label>
+                        <textarea id="notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase"></textarea>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="pt-4 flex items-center justify-end gap-4 border-t border-gray-700">
+                        <button type="button" onclick="resetForm()" class="text-gray-400 hover:text-white text-sm uppercase">Clear Form</button>
+                        <button type="submit" id="submitBtn" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transform active:scale-95 transition flex items-center gap-2 uppercase tracking-wide">
+                            <span>Save Call Record</span>
+                            <i class="fa-solid fa-save"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- HISTORY TAB -->
+        <div id="tab-history" class="hidden fade-in space-y-4">
+            
+            <!-- Filter & Search Panel -->
+            <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 shadow-lg flex flex-col gap-4">
+                
+                <!-- Top Row: Global Search & Actions -->
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gray-700 pb-4">
+                    <div class="flex-grow w-full md:w-auto relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-500"></i>
+                        <input type="text" id="searchInput" oninput="forceCaps(this)" placeholder="SEARCH ADDRESS, NOTES, OR ID..." onkeyup="renderTable()" class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg pl-10 pr-4 py-2.5 w-full focus:ring-1 focus:ring-red-500 outline-none uppercase tracking-wide">
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto justify-end">
+                        <button onclick="resetFilters()" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium px-4 py-2 rounded-lg border border-gray-600 transition flex items-center gap-2 uppercase whitespace-nowrap">
+                            <i class="fa-solid fa-filter-circle-xmark"></i> Reset
+                        </button>
+                        <button onclick="exportToCSV()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg border border-blue-500 transition flex items-center gap-2 uppercase shadow-md whitespace-nowrap">
+                            <i class="fa-solid fa-download"></i> Export
+                        </button>
+                         <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2 rounded-lg border border-gray-600 transition flex items-center gap-2 uppercase whitespace-nowrap">
+                            <i class="fa-solid fa-file-csv"></i> Import
+                            <input type="file" id="csvInput" accept=".csv" class="hidden" onchange="handleFileUpload(this)">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs uppercase font-medium text-gray-400">
+                    
+                    <!-- Date Range Start -->
+                    <div class="flex flex-col gap-1">
+                        <label>Start Date</label>
+                        <input type="date" id="filterStartDate" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white focus:border-red-500 outline-none">
+                    </div>
+
+                    <!-- Date Range End -->
+                    <div class="flex flex-col gap-1">
+                        <label>End Date</label>
+                        <input type="date" id="filterEndDate" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white focus:border-red-500 outline-none">
+                    </div>
+
+                    <!-- Type -->
+                    <div class="flex flex-col gap-1">
+                        <label>Type</label>
+                        <select id="filterType" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white focus:border-red-500 outline-none uppercase">
+                            <option value="">ALL</option>
+                            <option value="EMS">EMS</option>
+                            <option value="Fire">Fire</option>
+                            <option value="Both">Both</option>
+                        </select>
+                    </div>
+
+                    <!-- Disposition -->
+                    <div class="flex flex-col gap-1">
+                        <label>Disposition</label>
+                        <select id="filterDisposition" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white focus:border-red-500 outline-none uppercase">
+                            <option value="">ALL</option>
+                            <option value="TRANSPORT">TRANSPORT</option>
+                            <option value="REFUSAL">REFUSAL</option>
+                            <option value="NO PATIENT">NO PATIENT</option>
+                            <option value="NO CREW/MA">NO CREW/MA</option>
+                            <option value="OTHER EMS XPORT">OTHER</option>
+                            <option value="CANCELLED">CANCELLED</option>
+                        </select>
+                    </div>
+
+                     <!-- Mutual Aid -->
+                    <div class="flex flex-col gap-1">
+                        <label>Mutual Aid</label>
+                        <select id="filterMutualAid" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white focus:border-red-500 outline-none uppercase">
+                            <option value="">ALL</option>
+                            <option value="Yes">INVOLVED</option>
+                            <option value="No">NONE</option>
+                            <option value="Given">GIVEN (TO)</option>
+                            <option value="Received">RECEIVED (FROM)</option>
+                        </select>
+                    </div>
+
+                    <!-- Nature / Units Text -->
+                    <div class="flex flex-col gap-1">
+                        <label>Nature / Units</label>
+                         <input type="text" id="filterNatureUnits" onkeyup="renderTable()" oninput="forceCaps(this)" placeholder="NATURE OR UNIT..." class="bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white focus:border-red-500 outline-none uppercase">
+                    </div>
+
+                </div>
+                 <span id="importStatus" class="text-xs text-gray-400 italic uppercase"></span>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg overflow-hidden flex flex-col h-[600px]">
+                
+                <div class="overflow-auto flex-grow">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-900 text-gray-400 text-xs uppercase sticky top-0 z-10 shadow-md">
+                            <tr>
+                                <th onclick="sortCalls('incidentNumber')" class="sortable p-4 font-medium tracking-wider group select-none">
+                                    Incident # <i class="fa-solid fa-sort ml-1 text-gray-600 group-hover:text-white"></i>
+                                </th>
+                                <th onclick="sortCalls('date')" class="sortable p-4 font-medium tracking-wider group select-none">
+                                    Date/Time <i class="fa-solid fa-sort ml-1 text-gray-600 group-hover:text-white"></i>
+                                </th>
+                                <th onclick="sortCalls('callNature')" class="sortable p-4 font-medium tracking-wider group select-none">
+                                    Nature <i class="fa-solid fa-sort ml-1 text-gray-600 group-hover:text-white"></i>
+                                </th>
+                                <th onclick="sortCalls('address')" class="sortable p-4 font-medium tracking-wider group select-none">
+                                    Address <i class="fa-solid fa-sort ml-1 text-gray-600 group-hover:text-white"></i>
+                                </th>
+                                <th onclick="sortCalls('responseType')" class="sortable p-4 font-medium tracking-wider group select-none">
+                                    Type <i class="fa-solid fa-sort ml-1 text-gray-600 group-hover:text-white"></i>
+                                </th>
+                                <th class="p-4 font-medium tracking-wider">Units</th>
+                                <th onclick="sortCalls('mutualAid')" class="sortable p-4 font-medium tracking-wider group select-none">
+                                    MA <i class="fa-solid fa-sort ml-1 text-gray-600 group-hover:text-white"></i>
+                                </th>
+                                <th onclick="sortCalls('emsDisposition')" class="sortable p-4 font-medium tracking-wider group select-none">
+                                    Disposition <i class="fa-solid fa-sort ml-1 text-gray-600 group-hover:text-white"></i>
+                                </th>
+                                <th class="p-4 font-medium tracking-wider">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-gray-700 text-sm text-gray-300 uppercase cursor-pointer">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                    <div id="emptyState" class="hidden p-10 text-center text-gray-500">
+                        <i class="fa-solid fa-filter text-4xl mb-3 opacity-50"></i>
+                        <p class="uppercase">No calls found with filters.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATISTICS TAB -->
+        <div id="tab-stats" class="hidden fade-in space-y-6">
+            
+            <!-- Year Selector Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-xl font-bold text-white uppercase tracking-wide flex items-center">
+                    <i class="fa-solid fa-chart-pie mr-2 text-red-500"></i>
+                    <span id="statsTitle">2025 Statistics</span>
+                </h2>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs text-gray-400 uppercase font-bold">Select Year:</label>
+                    <select id="statsYearSelect" onchange="handleStatsYearChange(this)" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block p-2 uppercase font-bold min-w-[100px]">
+                        <!-- Options injected via JS -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Summary Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">Total Calls</h3>
+                    <p class="text-3xl font-bold text-white mt-1" id="stat-total">0</p>
+                </div>
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">Fire Runs</h3>
+                    <p class="text-3xl font-bold text-red-500 mt-1" id="stat-fire">0</p>
+                </div>
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">EMS Runs</h3>
+                    <p class="text-3xl font-bold text-blue-400 mt-1" id="stat-ems">0</p>
+                </div>
+            </div>
+
+            <!-- Detailed Stats Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Top Natures -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Top Call Natures</h3>
+                    <div id="stats-natures" class="space-y-3">
+                        <!-- Populated by JS -->
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+                <!-- Top Addresses (NEW) -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Top Addresses</h3>
+                    <div id="stats-addresses" class="space-y-3">
+                        <!-- Populated by JS -->
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+                <!-- Mutual Aid Stats -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Mutual Aid Breakdown</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <!-- Given Box -->
+                        <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Given (To)</span>
+                            <span id="stat-ma-given" class="text-2xl font-bold text-yellow-400">0</span>
+                            <div class="grid grid-cols-2 gap-2 mt-2 border-t border-gray-700 pt-2 text-xs">
+                                <div>
+                                    <span class="block text-gray-500 font-bold">DAY</span>
+                                    <span id="stat-ma-given-day" class="text-white font-mono">0</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-bold">VOL</span>
+                                    <span id="stat-ma-given-vol" class="text-white font-mono">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Received Box -->
+                        <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Received (From)</span>
+                            <span id="stat-ma-received" class="text-2xl font-bold text-green-400">0</span>
+                            <div class="grid grid-cols-2 gap-2 mt-2 border-t border-gray-700 pt-2 text-xs">
+                                <div>
+                                    <span class="block text-gray-500 font-bold">DAY</span>
+                                    <span id="stat-ma-received-day" class="text-white font-mono">0</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-bold">VOL</span>
+                                    <span id="stat-ma-received-vol" class="text-white font-mono">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h4 class="text-xs text-gray-400 uppercase font-bold mb-2">Most Frequent Depts</h4>
+                    <ul id="stats-ma-depts" class="text-sm space-y-1 text-gray-300">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+
+                <!-- Crew Breakdown Stats -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Crew Analysis</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold">Day Crew</span>
+                            <span id="stat-crew-day" class="text-2xl font-bold text-blue-400">0</span>
+                        </div>
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold">Volunteer</span>
+                            <span id="stat-crew-vol" class="text-2xl font-bold text-orange-400">0</span>
+                            <!-- Percentage added -->
+                            <span id="stat-crew-vol-pct" class="block text-xs text-gray-500 font-bold mt-1">0%</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900/30 p-3 rounded border border-gray-700 text-xs text-gray-400">
+                        <p class="font-bold mb-1">SCHEDULE (EMS/BOTH ONLY):</p>
+                        <p>M-F: 06:00 - 18:00 (Day Crew)</p>
+                        <p>S-S: 08:00 - 18:00 (Day Crew)</p>
+                        <p>All other times: Volunteer</p>
+                    </div>
+                </div>
+
+                <!-- Volunteer Disposition Stats -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Volunteer Dispositions</h3>
+                    <div id="stats-vol-dispo" class="space-y-3">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- EDIT MODAL -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-gray-800 w-full max-w-2xl rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
+            
+            <div class="p-6 border-b border-gray-700 bg-gray-850 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-white uppercase">Edit Incident</h2>
+                    <!-- MODIFIED: Changed from text to Input for editing -->
+                    <input type="text" id="edit_incidentNumber" class="bg-gray-900 text-yellow-400 font-mono text-sm font-bold mt-1 border border-gray-600 rounded px-2 py-1 w-32 uppercase focus:ring-1 focus:ring-yellow-400 outline-none">
+                </div>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-2xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6">
+                
+                <!-- ID Hidden -->
+                <input type="hidden" id="edit_docId">
+
+                <!-- Date & Time Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Date</label>
+                        <input type="date" id="edit_dispatchDate" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Time (24h)</label>
+                        <input type="text" id="edit_dispatchTime" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-mono tracking-wider">
+                    </div>
+                </div>
+
+                <!-- Nature & Type Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Call Nature</label>
+                        <input list="natures" id="edit_callNature" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Response Type</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button type="button" onclick="selectEditType('EMS')" id="edit_btn-ems" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">EMS</button>
+                                <button type="button" onclick="selectEditType('Fire')" id="edit_btn-fire" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">Fire</button>
+                                <button type="button" onclick="selectEditType('Both')" id="edit_btn-both" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">Both</button>
+                            </div>
+                            <input type="hidden" id="edit_responseType">
+                        </div>
+
+                        <!-- Edit EMS Disposition (Hidden by default) -->
+                        <div id="edit_emsDispositionSection" class="hidden animate-fade-in-down">
+                            <label class="block text-sm font-medium text-blue-400 mb-1 uppercase tracking-wider">EMS Disposition</label>
+                            <select id="edit_emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
+                                <option value="">SELECT DISPOSITION</option>
+                                <option value="TRANSPORT">TRANSPORT</option>
+                                <option value="REFUSAL">REFUSAL</option>
+                                <option value="NO PATIENT">NO PATIENT</option>
+                                <option value="NO CREW/MA">NO CREW/MA</option>
+                                <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                <option value="75 COVERAGE">75 COVERAGE</option>
+                                <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
+                    <input type="text" id="edit_address" list="addressHistory" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase" autocomplete="off">
+                </div>
+
+                <!-- Units -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Units Responded</label>
+                    <!-- Quick Select Chips for Edit -->
+                    <div id="edit_unitChips" class="flex flex-wrap gap-2 mb-2 uppercase">
+                        <!-- Populated by JS -->
+                    </div>
+                    <input type="text" id="edit_units" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                </div>
+
+                <!-- Mutual Aid Section -->
+                <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                    <div class="flex items-center gap-3 mb-4">
+                        <input type="checkbox" id="edit_mutualAid" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-600 bg-gray-800" onchange="toggleEditMutualAid()">
+                        <label for="edit_mutualAid" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Mutual Aid Involved?</label>
+                    </div>
+
+                    <div id="edit_mutualAidFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pl-8 border-l-2 border-blue-500/30">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Direction</label>
+                            <select id="edit_mutualAidType" onchange="handleEditMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 uppercase">
+                                <option value="Given">Given (To)</option>
+                                <option value="Received">Received (From)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Department</label>
+                            <div id="edit_deptChips" class="hidden flex flex-wrap gap-2 mb-2 transition-all uppercase">
+                                <!-- Injected by JS -->
+                            </div>
+                            <input list="maDepts" type="text" id="edit_mutualAidDept" oninput="forceCaps(this)" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 uppercase">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Notes</label>
+                    <textarea id="edit_notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase"></textarea>
+                </div>
+
+            </div>
+
+            <div class="p-6 border-t border-gray-700 bg-gray-850 flex justify-end gap-3">
+                <button onclick="closeEditModal()" class="px-6 py-2 rounded-lg bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition uppercase">Cancel</button>
+                <button onclick="saveEdit()" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg transition uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-save"></i> Save Changes
+                </button>
+            </div>
+
+        </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i class="fa-solid fa-check-circle"></i>
+        <span id="toastMessage" class="uppercase font-bold text-sm">Action Successful</span>
+    </div>
+
+    <!-- Firebase Scripts -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, getDoc, writeBatch, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Holiday Data (Late 2025 - Early 2026) ---
-        const HOLIDAYS = {
-            // December 2025
-            '2025-12-22': 'National Cookie Exchange Day',
-            '2025-12-23': 'Festivus',
-            '2025-12-24': 'Christmas Eve',
-            '2025-12-25': 'Christmas Day',
-            '2025-12-26': 'Kwanzaa Begins',
-            '2025-12-27': 'National Fruitcake Day',
-            '2025-12-28': 'Card Playing Day',
-            '2025-12-29': 'Tick Tock Day',
-            '2025-12-30': 'National Bacon Day',
-            '2025-12-31': 'New Year\'s Eve',
-            
-            // January 2026
-            '2026-01-01': 'New Year\'s Day',
-            '2026-01-02': 'Science Fiction Day',
-            '2026-01-03': 'Festival of Sleep Day',
-            '2026-01-04': 'National Trivia Day',
-            '2026-01-05': 'National Bird Day',
-            '2026-01-06': 'Three Kings Day',
-            '2026-01-07': 'National Tempura Day',
-            '2026-01-08': 'Bubble Bath Day',
-            '2026-01-09': 'National Apricot Day',
-            '2026-01-10': 'Houseplant Appreciation Day',
-            '2026-01-11': 'National Milk Day',
-            '2026-01-12': 'Kiss A Ginger Day',
-            '2026-01-13': 'Rubber Ducky Day',
-            '2026-01-14': 'Dress Up Your Pet Day',
-            '2026-01-15': 'National Hat Day',
-            '2026-01-16': 'National Nothing Day',
-            '2026-01-17': 'Ditch Resolutions Day',
-            '2026-01-18': 'Thesaurus Day',
-            '2026-01-19': 'Martin Luther King Jr. Day',
-            '2026-01-20': 'Cheese Lover\'s Day',
-            '2026-01-21': 'National Hugging Day',
-            '2026-01-22': 'Blonde Brownie Day',
-            '2026-01-23': 'National Pie Day',
-            '2026-01-24': 'Peanut Butter Day',
-            '2026-01-25': 'Opposite Day',
-            '2026-01-26': 'Spouses Day',
-            '2026-01-27': 'Chocolate Cake Day',
-            '2026-01-28': 'National Lego Day',
-            '2026-01-29': 'National Puzzle Day',
-            '2026-01-30': 'National Croissant Day',
-            '2026-01-31': 'Hot Chocolate Day',
-
-            // February 2026 (Just in case)
-            '2026-02-01': 'Dark Chocolate Day',
-            '2026-02-02': 'Groundhog Day',
-            '2026-02-14': 'Valentine\'s Day'
-        };
-
-        function getHoliday(dateStr) {
-            return HOLIDAYS[dateStr] || null;
-        }
-
-        // --- Clock Logic ---
-        function updateClock() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-            
-            document.getElementById('clock-time').textContent = timeStr;
-            document.getElementById('clock-date').textContent = dateStr;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // --- Avatar Helper ---
-        function getInitials(name) {
-            return name
-                .split(' ')
-                .map(n => n[0])
-                .slice(0, 2)
-                .join('')
-                .toUpperCase();
-        }
-
-        function getColorForName(name) {
-            const colors = [
-                'bg-red-500', 'bg-orange-500', 'bg-amber-500', 
-                'bg-green-500', 'bg-emerald-500', 'bg-teal-500', 
-                'bg-cyan-500', 'bg-sky-500', 'bg-blue-500', 
-                'bg-indigo-500', 'bg-violet-500', 'bg-purple-500', 
-                'bg-fuchsia-500', 'bg-pink-500', 'bg-rose-500'
-            ];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) {
-                hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            return colors[Math.abs(hash) % colors.length];
-        }
-
-        // --- Firebase Logic ---
-        // Using your original configuration to ensure you see YOUR data
+        // --- Config ---
+        // Using user provided config
         const firebaseConfig = {
             apiKey: "AIzaSyCqqW_fryqigzg7zDWgEsuADhBkPYcHQMo",
             authDomain: "db2-2f64c.firebaseapp.com",
@@ -235,7 +645,17 @@
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        const initAuth = async () => {
+        // --- State ---
+        let allCalls = [];
+        let nextIncidentData = { id: '...', seq: 1, year: new Date().getFullYear() };
+        let currentUser = null;
+        let currentStatsYear = new Date().getFullYear();
+        
+        // Sorting State
+        let currentSort = { field: 'incidentNumber', dir: 'desc' };
+
+        // --- Auth & Init ---
+        async function initApp() {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -243,178 +663,1318 @@
                     await signInAnonymously(auth);
                 }
             } catch (error) {
-                console.error("Auth Error:", error);
+                console.error("Auth error:", error);
+                document.getElementById('connectionStatus').innerHTML = '<span class="text-red-500 uppercase">Auth Error</span>';
             }
-        };
-
-        initAuth();
-
-        const formatDateObj = (dateString) => {
-            if(!dateString) return { day: '00', month: 'NAN', weekday: 'N/A' };
-            const [year, month, day] = dateString.split('-').map(Number);
-            const date = new Date(year, month - 1, day); 
-            return {
-                day: String(date.getDate()).padStart(2, '0'),
-                month: date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
-                weekday: date.toLocaleDateString('en-US', { weekday: 'long' })
-            };
-        };
-
-        const getLocalDateString = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
+        }
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                const scheduleRef = collection(db, 'artifacts', appId, 'public', 'data', 'emsSchedule');
-                
-                onSnapshot(scheduleRef, (snapshot) => {
-                    const container = document.getElementById('schedule-container');
-                    const groupedDates = {};
-                    
-                    const todayDate = new Date();
-                    const todayStr = getLocalDateString(todayDate);
-                    
-                    const yesterdayDate = new Date(todayDate);
-                    yesterdayDate.setDate(todayDate.getDate() - 1);
-                    const yesterdayStr = getLocalDateString(yesterdayDate);
-
-                    snapshot.forEach(doc => {
-                        const d = doc.data();
-                        if (d.date >= yesterdayStr) {
-                            if (!groupedDates[d.date]) {
-                                groupedDates[d.date] = { date: d.date, shifts: {} };
-                            }
-                            
-                            const timeKey = d.time || 'Unspecified';
-                            if (!groupedDates[d.date].shifts[timeKey]) {
-                                groupedDates[d.date].shifts[timeKey] = [];
-                            }
-
-                            const names = [];
-                            if (d.name) {
-                                names.push(d.name);
-                            } else {
-                                if (d.crewMember1) names.push(d.crewMember1);
-                                if (d.crewMember2) names.push(d.crewMember2);
-                                if (d.trainee) names.push(d.trainee);
-                            }
-                            groupedDates[d.date].shifts[timeKey].push(...names);
-                        }
-                    });
-
-                    const displayDays = Object.values(groupedDates).sort((a, b) => a.date.localeCompare(b.date));
-                    const slicedDays = displayDays.slice(0, 6);
-
-                    container.innerHTML = ''; 
-
-                    if (slicedDays.length === 0) {
-                         container.innerHTML = `
-                            <div class="col-span-3 row-span-2 flex flex-col items-center justify-center glass-panel rounded-3xl">
-                                <svg class="w-16 h-16 text-zinc-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                <p class="text-zinc-500 text-2xl font-light">No upcoming shifts scheduled.</p>
-                            </div>`;
-                         return;
-                    }
-
-                    slicedDays.forEach((dayGroup, index) => {
-                        const isToday = dayGroup.date === todayStr;
-                        const isYesterday = dayGroup.date === yesterdayStr;
-                        const dateObj = formatDateObj(dayGroup.date);
-                        const holidayName = getHoliday(dayGroup.date);
-                        
-                        const sortedTimes = Object.keys(dayGroup.shifts).sort();
-
-                        let shiftsHtml = '';
-                        sortedTimes.forEach((time, tIndex) => {
-                            const crewNames = dayGroup.shifts[time].sort();
-                            const isLast = tIndex === sortedTimes.length - 1;
-                            
-                            shiftsHtml += `
-                                <div class="relative pl-6 pb-6 ${isLast ? '' : 'border-l-2 border-zinc-700/50'} ml-2">
-                                    <!-- Timeline Dot -->
-                                    <div class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-4 border-[#18181b] ${isToday ? 'bg-green-500' : 'bg-indigo-500'}"></div>
-                                    
-                                    <!-- Time Header -->
-                                    <div class="flex items-center mb-3">
-                                        <span class="text-sm font-mono font-bold text-zinc-400 bg-zinc-800/50 px-2 py-0.5 rounded border border-zinc-700/50">
-                                            ${time}
-                                        </span>
-                                    </div>
-
-                                    <!-- Crew List -->
-                                    <div class="space-y-2">
-                                        ${crewNames.map(name => `
-                                            <div class="flex items-center group">
-                                                <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg ${getColorForName(name)} mr-3 ring-2 ring-[#18181b]">
-                                                    ${getInitials(name)}
-                                                </div>
-                                                <span class="text-lg font-medium text-zinc-200 group-hover:text-white transition-colors truncate">${name}</span>
-                                            </div>
-                                        `).join('')}
-                                        ${crewNames.length === 0 ? '<span class="text-zinc-600 italic text-sm">No crew assigned</span>' : ''}
-                                    </div>
-                                </div>
-                            `;
-                        });
-
-                        const borderClass = isToday ? 'ring-2 ring-green-500 shadow-[0_0_30px_rgba(34,197,94,0.15)]' : 
-                                          isYesterday ? 'ring-2 ring-orange-500/50' : '';
-                        
-                        const bgClass = isToday ? 'bg-gradient-to-br from-zinc-800/60 to-zinc-900/60' : '';
-
-                        const card = `
-                            <div class="schedule-card glass-panel rounded-3xl flex flex-col overflow-hidden relative ${borderClass} ${bgClass}">
-                                ${isToday ? '<div class="absolute top-0 right-0 p-3"><span class="flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span></div>' : ''}
-                                
-                                <!-- Card Header -->
-                                <div class="p-6 pb-4 flex justify-between items-start border-b border-white/5 bg-white/[0.02]">
-                                    <div class="flex flex-col w-full">
-                                        <div class="flex items-baseline justify-between w-full">
-                                            <div class="flex items-baseline gap-2">
-                                                <span class="text-5xl font-bold text-white tracking-tighter">${dateObj.day}</span>
-                                                <span class="text-lg font-bold text-zinc-500">${dateObj.month}</span>
-                                            </div>
-                                            <!-- Holiday Badge (if exists) -->
-                                            ${holidayName ? 
-                                                `<div class="max-w-[120px] text-right">
-                                                    <span class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-300 text-[10px] font-bold uppercase tracking-wide border border-indigo-500/20 leading-tight inline-block text-right">
-                                                        ${holidayName}
-                                                    </span>
-                                                </div>` 
-                                            : ''}
-                                        </div>
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span class="text-indigo-400 font-medium tracking-wide uppercase text-sm">${dateObj.weekday}</span>
-                                            ${isToday ? '<span class="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[10px] font-bold uppercase tracking-wider border border-green-500/30">Today</span>' : ''}
-                                            ${isYesterday ? '<span class="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-bold uppercase tracking-wider border border-orange-500/30">Yesterday</span>' : ''}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Card Body -->
-                                <div class="p-6 pt-6 flex-1 overflow-y-auto no-scrollbar">
-                                    ${shiftsHtml}
-                                </div>
-                            </div>
-                        `;
-                        container.insertAdjacentHTML('beforeend', card);
-                    });
-
-                }, (error) => {
-                    console.error("Data Listen Error:", error);
-                    const container = document.getElementById('schedule-container');
-                    container.innerHTML = `
-                        <div class="col-span-3 row-span-2 flex flex-col items-center justify-center text-red-400 glass-panel rounded-3xl border-red-500/30">
-                            <svg class="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                            <span class="text-xl font-medium">Unable to load live schedule</span>
-                        </div>`;
-                });
+                currentUser = user;
+                document.getElementById('connectionStatus').innerHTML = '<span class="text-green-500 font-bold uppercase">Online</span>';
+                setupRealtimeListener();
+                loadConfiguration(); 
+                selectType('EMS');
             }
         });
+
+        initApp();
+
+        // --- FORCE UPPERCASE HELPER ---
+        window.forceCaps = function(el) {
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            el.value = el.value.toUpperCase();
+            el.setSelectionRange(start, end);
+        }
+
+        // --- MODAL & EDIT LOGIC ---
+        window.openEditModal = function(id) {
+            const call = allCalls.find(c => c.id === id);
+            if (!call) return;
+
+            document.getElementById('edit_docId').value = id;
+            document.getElementById('edit_incidentNumber').value = call.incidentNumber; 
+            document.getElementById('edit_dispatchDate').value = call.dispatchDate;
+            document.getElementById('edit_dispatchTime').value = call.dispatchTime;
+            document.getElementById('edit_callNature').value = call.callNature;
+            document.getElementById('edit_address').value = call.address;
+            document.getElementById('edit_units').value = call.units || '';
+            document.getElementById('edit_notes').value = call.notes || '';
+            document.getElementById('edit_emsDisposition').value = call.emsDisposition || '';
+            
+            selectEditType(call.responseType || 'EMS');
+
+            const maCheckbox = document.getElementById('edit_mutualAid');
+            maCheckbox.checked = call.mutualAid || false;
+            toggleEditMutualAid();
+            
+            if (call.mutualAid) {
+                document.getElementById('edit_mutualAidType').value = call.mutualAidType;
+                handleEditMutualAidTypeChange();
+                document.getElementById('edit_mutualAidDept').value = call.mutualAidDept || '';
+            }
+
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        window.closeEditModal = function() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        window.saveEdit = async function() {
+            const id = document.getElementById('edit_docId').value;
+            if(!id) return;
+
+            const timeInput = document.getElementById('edit_dispatchTime');
+            validateTime(timeInput);
+            if (timeInput.classList.contains('border-red-500')) {
+                showToast("INVALID TIME IN EDIT FORM", true);
+                return;
+            }
+
+            try {
+                const isMutualAid = document.getElementById('edit_mutualAid').checked;
+                const responseType = document.getElementById('edit_responseType').value;
+                const emsDisp = (responseType === 'EMS' || responseType === 'Both') 
+                    ? document.getElementById('edit_emsDisposition').value 
+                    : null;
+                
+                const newId = document.getElementById('edit_incidentNumber').value.toUpperCase();
+                let newYear = 0;
+                let newSeq = 0;
+                
+                const idMatch = newId.match(/^(\d{2})HT(\d+)$/);
+                if (idMatch) {
+                    newYear = 2000 + parseInt(idMatch[1]);
+                    newSeq = parseInt(idMatch[2]);
+                } else {
+                    const oldCall = allCalls.find(c => c.id === id);
+                    if (oldCall) {
+                        newYear = oldCall.year;
+                        newSeq = oldCall.sequence;
+                    } else {
+                        newYear = new Date().getFullYear(); 
+                    }
+                }
+
+                const callData = {
+                    incidentNumber: newId,
+                    year: newYear,
+                    sequence: newSeq,
+                    dispatchDate: document.getElementById('edit_dispatchDate').value,
+                    dispatchTime: document.getElementById('edit_dispatchTime').value,
+                    callNature: document.getElementById('edit_callNature').value.toUpperCase(),
+                    responseType: responseType,
+                    emsDisposition: emsDisp,
+                    address: document.getElementById('edit_address').value.toUpperCase(),
+                    units: document.getElementById('edit_units').value.toUpperCase(),
+                    mutualAid: isMutualAid,
+                    mutualAidType: isMutualAid ? document.getElementById('edit_mutualAidType').value : null,
+                    mutualAidDept: isMutualAid ? document.getElementById('edit_mutualAidDept').value.toUpperCase() : null,
+                    notes: document.getElementById('edit_notes').value.toUpperCase(),
+                    lastModified: new Date().toISOString(),
+                    lastModifiedBy: currentUser.uid
+                };
+
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'calls', id);
+                await updateDoc(docRef, callData);
+                
+                closeEditModal();
+                showToast(`CALL UPDATED SUCCESSFULLY!`);
+
+            } catch (e) {
+                console.error("Update Error:", e);
+                showToast("FAILED TO UPDATE CALL", true);
+            }
+        }
+
+        // --- EDIT MODAL HELPERS ---
+        window.selectEditType = function(type) {
+            document.getElementById('edit_responseType').value = type;
+            
+            const btnEms = document.getElementById('edit_btn-ems');
+            const btnFire = document.getElementById('edit_btn-fire');
+            const btnBoth = document.getElementById('edit_btn-both');
+            const dispSection = document.getElementById('edit_emsDispositionSection');
+            const baseClass = "flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs";
+            
+            btnEms.className = baseClass;
+            btnFire.className = baseClass;
+            btnBoth.className = baseClass;
+            
+            if(type === 'EMS') {
+                btnEms.className = "flex items-center justify-center py-2.5 rounded-lg font-bold border border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-900/50 transform scale-[1.02] transition uppercase text-xs";
+                dispSection.classList.remove('hidden');
+            } else if (type === 'Fire') {
+                btnFire.className = "flex items-center justify-center py-2.5 rounded-lg font-bold border border-red-500 bg-red-600 text-white shadow-lg shadow-red-900/50 transform scale-[1.02] transition uppercase text-xs";
+                dispSection.classList.add('hidden');
+            } else if (type === 'Both') {
+                btnBoth.className = "flex items-center justify-center py-2.5 rounded-lg font-bold border border-purple-500 bg-purple-600 text-white shadow-lg shadow-purple-900/50 transform scale-[1.02] transition uppercase text-xs";
+                dispSection.classList.remove('hidden');
+            }
+        }
+
+        window.toggleEditMutualAid = function() {
+            const chk = document.getElementById('edit_mutualAid');
+            const fields = document.getElementById('edit_mutualAidFields');
+            if (chk.checked) {
+                fields.classList.remove('hidden');
+                handleEditMutualAidTypeChange(); 
+            } else {
+                fields.classList.add('hidden');
+            }
+        }
+
+        window.handleEditMutualAidTypeChange = function() {
+            const type = document.getElementById('edit_mutualAidType').value;
+            const chips = document.getElementById('edit_deptChips');
+            const input = document.getElementById('edit_mutualAidDept');
+
+            if (type === 'Received') {
+                chips.classList.remove('hidden');
+                input.placeholder = "SELECT/TYPE MULTIPLE";
+            } else {
+                chips.classList.add('hidden');
+                input.placeholder = "DEPARTMENT NAME";
+            }
+        }
+
+        window.addUnitToEditInput = function(unitName) {
+            const input = document.getElementById('edit_units');
+            const currentVal = input.value.trim();
+            if (currentVal.length === 0) input.value = unitName;
+            else if (!currentVal.includes(unitName)) input.value = currentVal + ", " + unitName;
+        }
+
+        window.addDeptToEditInput = function(deptName) {
+            const input = document.getElementById('edit_mutualAidDept');
+            const currentVal = input.value.trim();
+            if (currentVal.length === 0) input.value = deptName;
+            else if (!currentVal.includes(deptName)) input.value = currentVal + ", " + deptName;
+        }
+
+        // --- LOAD DYNAMIC OPTIONS ---
+        async function loadConfiguration() {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'callTrackerConfig', 'options');
+                const snap = await getDoc(docRef);
+                
+                if (snap.exists()) {
+                    const data = snap.data();
+                    
+                    // Populate Call Nature Datalist
+                    const natureList = document.getElementById('natures');
+                    natureList.innerHTML = '';
+                    if (data.natures && Array.isArray(data.natures)) {
+                        data.natures.forEach(n => {
+                            const opt = document.createElement('option');
+                            opt.value = n.toUpperCase();
+                            natureList.appendChild(opt);
+                        });
+                    }
+
+                    // Populate Mutual Aid Depts Datalist
+                    const maList = document.getElementById('maDepts');
+                    maList.innerHTML = '';
+                    if (data.depts && Array.isArray(data.depts)) {
+                        data.depts.forEach(d => {
+                            const opt = document.createElement('option');
+                            opt.value = d.toUpperCase();
+                            maList.appendChild(opt);
+                        });
+                    }
+
+                    // Populate Unit Chips
+                    const populateChips = (containerId, items, clickHandler) => {
+                        const container = document.getElementById(containerId);
+                        if(!container) return;
+                        container.innerHTML = '';
+                        items.forEach(u => {
+                            const chip = document.createElement('span');
+                            chip.className = "unit-chip bg-gray-800 border border-gray-600 px-3 py-1 rounded-full text-xs font-medium text-gray-300 hover:bg-gray-700 hover:border-blue-500 hover:text-white uppercase";
+                            chip.textContent = u.toUpperCase();
+                            chip.onclick = () => clickHandler(u.toUpperCase());
+                            container.appendChild(chip);
+                        });
+                    };
+
+                    if (data.units && Array.isArray(data.units)) {
+                        populateChips('unitChips', data.units, addUnitToInput);
+                        populateChips('edit_unitChips', data.units, addUnitToEditInput);
+                    }
+
+                    if (data.depts && Array.isArray(data.depts)) {
+                        populateChips('deptChips', data.depts, addDeptToInput);
+                        populateChips('edit_deptChips', data.depts, addDeptToEditInput);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load config options", e);
+            }
+        }
+
+        window.addUnitToInput = function(unitName) {
+            const input = document.getElementById('units');
+            const currentVal = input.value.trim();
+            if (currentVal.length === 0) {
+                input.value = unitName;
+            } else {
+                if (!currentVal.includes(unitName)) {
+                    input.value = currentVal + ", " + unitName;
+                }
+            }
+        }
+
+        window.addDeptToInput = function(deptName) {
+            const input = document.getElementById('mutualAidDept');
+            const currentVal = input.value.trim();
+            if (currentVal.length === 0) {
+                input.value = deptName;
+            } else {
+                if (!currentVal.includes(deptName)) {
+                    input.value = currentVal + ", " + deptName;
+                }
+            }
+        }
+
+        window.handleMutualAidTypeChange = function() {
+            const type = document.getElementById('mutualAidType').value;
+            const chips = document.getElementById('deptChips');
+            const input = document.getElementById('mutualAidDept');
+
+            if (type === 'Received') {
+                chips.classList.remove('hidden');
+                input.placeholder = "SELECT/TYPE MULTIPLE";
+            } else {
+                chips.classList.add('hidden');
+                input.placeholder = "DEPARTMENT NAME";
+            }
+        }
+
+        // --- BUTTON SELECTION LOGIC ---
+        window.selectType = function(type) {
+            document.getElementById('responseType').value = type;
+            
+            const btnEms = document.getElementById('btn-ems');
+            const btnFire = document.getElementById('btn-fire');
+            const btnBoth = document.getElementById('btn-both');
+            const dispSection = document.getElementById('emsDispositionSection');
+            const baseClass = "flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase";
+            
+            btnEms.className = baseClass;
+            btnFire.className = baseClass;
+            btnBoth.className = baseClass;
+            
+            if(type === 'EMS') {
+                btnEms.className = "flex items-center justify-center py-2.5 rounded-lg font-bold border border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-900/50 transform scale-[1.02] transition uppercase";
+                dispSection.classList.remove('hidden');
+            } else if (type === 'Fire') {
+                btnFire.className = "flex items-center justify-center py-2.5 rounded-lg font-bold border border-red-500 bg-red-600 text-white shadow-lg shadow-red-900/50 transform scale-[1.02] transition uppercase";
+                dispSection.classList.add('hidden');
+            } else if (type === 'Both') {
+                btnBoth.className = "flex items-center justify-center py-2.5 rounded-lg font-bold border border-purple-500 bg-purple-600 text-white shadow-lg shadow-purple-900/50 transform scale-[1.02] transition uppercase";
+                dispSection.classList.remove('hidden');
+            }
+        }
+
+        // --- Time Format Helpers ---
+        window.autoFormatTime = function(el) {
+            let v = el.value.replace(/\D/g, ''); 
+            if (v.length >= 3) {
+                v = v.slice(0, 2) + ':' + v.slice(2);
+            }
+            if (v.length > 5) v = v.slice(0, 5);
+            el.value = v;
+        }
+
+        window.validateTime = function(el) {
+            const regex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            
+            if (el.value && !regex.test(el.value)) {
+                showToast("INVALID TIME FORMAT. USE 24H HH:MM", true);
+                el.classList.add('border-red-500', 'ring-2', 'ring-red-500');
+                el.classList.remove('border-gray-600');
+            } else {
+                el.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+                el.classList.add('border-gray-600');
+                if(el.value.length === 4 && el.value.indexOf(':') === 1) {
+                     el.value = '0' + el.value;
+                }
+            }
+        }
+
+        // --- EXPORT CSV LOGIC ---
+        window.exportToCSV = function() {
+            if (!allCalls || allCalls.length === 0) {
+                showToast("NO DATA TO EXPORT", true);
+                return;
+            }
+
+            const headers = ['Incident #', 'Date/Time', 'Nature', 'Address', 'Type', 'Units', 'Mutual Aid', 'Disposition', 'Notes'];
+            
+            const rows = allCalls.map(c => {
+                let reported = '';
+                if (c.dispatchDate && c.dispatchTime) {
+                    try {
+                        const [y, m, d] = c.dispatchDate.split('-');
+                        reported = `${m}/${d}/${y} ${c.dispatchTime}`;
+                    } catch(e) {}
+                }
+
+                let mutualAidStr = '';
+                if (c.mutualAid) {
+                    const type = c.mutualAidType ? c.mutualAidType.toUpperCase() : 'UNKNOWN';
+                    const dept = c.mutualAidDept ? c.mutualAidDept : '';
+                    mutualAidStr = `${type} - ${dept}`;
+                }
+
+                const escapeCsv = (txt) => {
+                    if (!txt) return '';
+                    const str = String(txt);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                };
+
+                return [
+                    c.incidentNumber,
+                    reported,
+                    escapeCsv(c.callNature),
+                    escapeCsv(c.address),
+                    c.responseType === 'Fire' ? 'FIRE' : (c.responseType === 'EMS' ? 'EMS' : 'BOTH'),
+                    escapeCsv(c.units),
+                    escapeCsv(mutualAidStr),
+                    escapeCsv(c.emsDisposition),
+                    escapeCsv(c.notes)
+                ].join(',');
+            });
+
+            const csvContent = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `RMS_Export_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- CSV IMPORT LOGIC ---
+        window.handleFileUpload = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const statusEl = document.getElementById('importStatus');
+            statusEl.textContent = "READING FILE...";
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const text = e.target.result;
+                try {
+                    statusEl.textContent = "PARSING CSV...";
+                    const rows = parseCSV(text);
+                    
+                    if (rows.length < 2) {
+                        alert("CSV SEEMS EMPTY OR INVALID FORMAT.");
+                        statusEl.textContent = "";
+                        return;
+                    }
+
+                    const existingIncidents = new Map();
+                    allCalls.forEach(call => {
+                        if (call.incidentNumber) existingIncidents.set(call.incidentNumber, call.id);
+                    });
+
+                    const ops = [];
+                    let parseErrors = 0;
+
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (row.length < 2) continue;
+
+                        try {
+                            const incNum = row[0]?.trim().toUpperCase();
+                            if (!incNum) continue;
+
+                            const reported = row[1]?.trim(); 
+                            const nature = row[2]?.trim().toUpperCase();
+                            const address = row[3]?.trim().toUpperCase();
+                            const typeRaw = row[4]?.trim().toUpperCase(); 
+                            const units = row[5]?.trim().toUpperCase();
+                            const mutualAidCombined = row[6]?.trim();
+                            const disposition = row[7]?.trim().toUpperCase();
+                            const notes = row[8]?.trim().toUpperCase();
+
+                            let formattedDate = '';
+                            let formattedTime = '';
+                            if (reported && reported.includes(' ')) {
+                                const [datePart, timePart] = reported.split(' ');
+                                const [m, d, y] = datePart.split('/');
+                                formattedDate = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+                                formattedTime = timePart;
+                                if (timePart.length === 4 && timePart.indexOf(':') === 1) {
+                                    formattedTime = '0' + timePart;
+                                }
+                            }
+
+                            const yearShort = incNum.substring(0, 2); 
+                            const yearFull = 2000 + parseInt(yearShort);
+                            const seqStr = incNum.replace(yearShort + 'HT', '').replace(yearShort + 'PL', '');
+                            const seqNum = parseInt(seqStr);
+
+                            let finalType = 'Both';
+                            if (typeRaw === 'FIRE') finalType = 'Fire';
+                            if (typeRaw === 'EMS') finalType = 'EMS';
+
+                            let isMa = false;
+                            let maType = null;
+                            let maDept = null;
+
+                            if (mutualAidCombined && mutualAidCombined.length > 2) {
+                                isMa = true;
+                                if (mutualAidCombined.toUpperCase().includes('GIVEN')) {
+                                    maType = 'Given';
+                                } else if (mutualAidCombined.toUpperCase().includes('RECEIVED')) {
+                                    maType = 'Received';
+                                } else {
+                                    maType = 'Given'; 
+                                }
+
+                                if (mutualAidCombined.includes(' - ')) {
+                                    maDept = mutualAidCombined.split(' - ')[1]?.trim().toUpperCase() || '';
+                                } else {
+                                    maDept = '';
+                                }
+                            }
+
+                            const recordData = {
+                                incidentNumber: incNum,
+                                sequence: seqNum,
+                                year: yearFull,
+                                dispatchDate: formattedDate,
+                                dispatchTime: formattedTime,
+                                callNature: nature,
+                                responseType: finalType,
+                                address: address,
+                                units: units || '',
+                                mutualAid: isMa,
+                                mutualAidType: maType,
+                                mutualAidDept: maDept,
+                                emsDisposition: disposition || '',
+                                notes: notes || '',
+                                imported: true
+                            };
+
+                            if (existingIncidents.has(incNum)) {
+                                ops.push({
+                                    type: 'update',
+                                    id: existingIncidents.get(incNum),
+                                    data: {
+                                        ...recordData,
+                                        lastModified: new Date().toISOString(),
+                                        lastModifiedBy: currentUser.uid
+                                    }
+                                });
+                            } else {
+                                ops.push({
+                                    type: 'create',
+                                    data: {
+                                        ...recordData,
+                                        createdAt: new Date().toISOString(),
+                                        createdBy: currentUser.uid
+                                    }
+                                });
+                            }
+
+                        } catch (err) {
+                            parseErrors++;
+                        }
+                    }
+
+                    if (ops.length === 0) {
+                        alert("NO VALID ROWS FOUND TO IMPORT.");
+                        statusEl.textContent = "";
+                        return;
+                    }
+
+                    const updates = ops.filter(o => o.type === 'update').length;
+                    const creates = ops.filter(o => o.type === 'create').length;
+
+                    if (confirm(`IMPORT SUMMARY:\n- NEW RECORDS: ${creates}\n- UPDATING RECORDS: ${updates}\n\nPROCEED?`)) {
+                        statusEl.textContent = `PROCESSING...`;
+                        await batchUpload(ops);
+                        statusEl.textContent = "DONE!";
+                        showToast(`SUCCESS: ${creates} CREATED, ${updates} UPDATED!`);
+                        input.value = ''; 
+                    } else {
+                        statusEl.textContent = "CANCELLED.";
+                        input.value = '';
+                    }
+
+                } catch (e) {
+                    console.error("Import error:", e);
+                    statusEl.textContent = "ERROR PARSING FILE.";
+                    alert("ERROR PARSING CSV. CHECK CONSOLE.");
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        function parseCSV(text) {
+            const rows = [];
+            let currentRow = [];
+            let currentVal = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (inQuotes) {
+                    if (char === '"' && nextChar === '"') {
+                        currentVal += '"'; 
+                        i++;
+                    } else if (char === '"') {
+                        inQuotes = false;
+                    } else {
+                        currentVal += char;
+                    }
+                } else {
+                    if (char === '"') {
+                        inQuotes = true;
+                    } else if (char === ',') {
+                        currentRow.push(currentVal);
+                        currentVal = '';
+                    } else if (char === '\n' || char === '\r') {
+                        if (char === '\r' && nextChar === '\n') i++;
+                        if (currentVal || currentRow.length > 0) currentRow.push(currentVal);
+                        if (currentRow.length > 0) rows.push(currentRow);
+                        currentRow = [];
+                        currentVal = '';
+                    } else {
+                        currentVal += char;
+                    }
+                }
+            }
+            if (currentVal || currentRow.length > 0) {
+                currentRow.push(currentVal);
+                rows.push(currentRow);
+            }
+            return rows;
+        }
+
+        async function batchUpload(ops) {
+            const chunkSize = 400; 
+            const total = ops.length;
+            
+            for (let i = 0; i < total; i += chunkSize) {
+                const chunk = ops.slice(i, i + chunkSize);
+                const batch = writeBatch(db);
+                
+                chunk.forEach(op => {
+                    if (op.type === 'create') {
+                        const ref = doc(collection(db, 'artifacts', appId, 'public', 'data', 'calls'));
+                        batch.set(ref, op.data);
+                    } else {
+                        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'calls', op.id);
+                        batch.update(ref, op.data);
+                    }
+                });
+                
+                await batch.commit();
+                document.getElementById('importStatus').textContent = `PROCESSING ${Math.min(i + chunkSize, total)}/${total}...`;
+            }
+        }
+
+        // --- Firestore Listener ---
+        function setupRealtimeListener() {
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'calls');
+
+            onSnapshot(q, (snapshot) => {
+                const calls = [];
+                snapshot.forEach((doc) => {
+                    calls.push({ id: doc.id, ...doc.data() });
+                });
+                allCalls = calls;
+                calculateNextIncidentId();
+                populateYearSelect(); 
+                updateStats();
+                updateAddressHistory();
+                renderTable();
+            }, (error) => {
+                console.error("Firestore Error:", error);
+                showToast("ERROR LOADING DATA", true);
+            });
+        }
+        
+        // --- ADDRESS HISTORY SUGGESTION LOGIC ---
+        let sortedAddressList = []; 
+
+        function updateAddressHistory() {
+            const addressCounts = {};
+            allCalls.forEach(call => {
+                if (call.address) {
+                    const addr = call.address.trim().toUpperCase();
+                    if (addr && addr !== 'UNKNOWN') {
+                        addressCounts[addr] = (addressCounts[addr] || 0) + 1;
+                    }
+                }
+            });
+            sortedAddressList = Object.entries(addressCounts)
+                .sort((a, b) => b[1] - a[1]) 
+                .map(entry => entry[0]);
+        }
+
+        const addrInput = document.getElementById('address');
+        const suggestionBox = document.getElementById('addressSuggestions');
+
+        if(addrInput && suggestionBox) {
+            addrInput.addEventListener('input', function() {
+                const val = this.value.toUpperCase();
+                if (val.length < 2) {
+                    suggestionBox.classList.add('hidden');
+                    return;
+                }
+                const matches = sortedAddressList.filter(a => a.includes(val)).slice(0, 5);
+                
+                if (matches.length === 0) {
+                    suggestionBox.classList.add('hidden');
+                    return;
+                }
+                suggestionBox.innerHTML = '';
+                matches.forEach(addr => {
+                    const div = document.createElement('div');
+                    div.className = "px-4 py-2 hover:bg-gray-700 cursor-pointer text-sm text-gray-300 border-b border-gray-700 last:border-0 uppercase font-medium";
+                    const regex = new RegExp(`(${val})`, 'gi');
+                    const highlighted = addr.replace(regex, '<span class="text-blue-400 font-bold">$1</span>');
+                    div.innerHTML = highlighted;
+                    div.onclick = () => {
+                        addrInput.value = addr;
+                        suggestionBox.classList.add('hidden');
+                    };
+                    suggestionBox.appendChild(div);
+                });
+                suggestionBox.classList.remove('hidden');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (e.target !== addrInput && !suggestionBox.contains(e.target)) {
+                    suggestionBox.classList.add('hidden');
+                }
+            });
+        }
+
+        // --- Logic: Year Selection & Population ---
+        window.populateYearSelect = function() {
+            const select = document.getElementById('statsYearSelect');
+            const years = new Set(allCalls.map(c => c.year));
+            const currentYear = new Date().getFullYear();
+            years.add(currentYear);
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            
+            const existingSelection = select.value ? parseInt(select.value) : currentStatsYear;
+            
+            select.innerHTML = '';
+            sortedYears.forEach(year => {
+                const opt = document.createElement('option');
+                opt.value = year;
+                opt.textContent = year;
+                if (year === existingSelection) opt.selected = true;
+                select.appendChild(opt);
+            });
+            
+            if (!years.has(existingSelection)) {
+                select.value = sortedYears[0];
+                currentStatsYear = sortedYears[0];
+            } else {
+                currentStatsYear = existingSelection;
+            }
+            document.getElementById('statsTitle').textContent = `${currentStatsYear} Statistics`;
+        }
+
+        window.handleStatsYearChange = function(el) {
+            currentStatsYear = parseInt(el.value);
+            document.getElementById('statsTitle').textContent = `${currentStatsYear} Statistics`;
+            updateStats();
+        }
+
+        // --- Logic: Incident ID ---
+        function calculateNextIncidentId() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const yearShort = currentYear.toString().slice(-2);
+            const thisYearCalls = allCalls.filter(c => c.year === currentYear);
+            
+            let maxSeq = 0;
+            if (thisYearCalls.length > 0) {
+                maxSeq = Math.max(...thisYearCalls.map(c => c.sequence || 0));
+            }
+            
+            const nextSeq = maxSeq + 1;
+            const seqPadded = String(nextSeq).padStart(5, '0');
+            const nextId = `${yearShort}HT${seqPadded}`;
+
+            nextIncidentData = {
+                id: nextId,
+                seq: nextSeq,
+                year: currentYear
+            };
+
+            document.getElementById('previewIncidentId').textContent = nextId;
+        }
+
+        // --- Form Handling ---
+        const form = document.getElementById('callForm');
+
+        function setNowDefaults() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-CA');
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const timeStr = `${h}:${m}`;
+            
+            document.getElementById('dispatchDate').value = dateStr;
+            document.getElementById('dispatchTime').value = timeStr;
+        }
+        setNowDefaults();
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalBtnText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SAVING...';
+
+            try {
+                const timeInput = document.getElementById('dispatchTime');
+                validateTime(timeInput);
+                if (timeInput.classList.contains('border-red-500')) {
+                    throw new Error("Invalid Time");
+                }
+                calculateNextIncidentId();
+
+                const isMutualAid = document.getElementById('mutualAid').checked;
+                const responseType = document.getElementById('responseType').value;
+                const emsDisp = (responseType === 'EMS' || responseType === 'Both') 
+                    ? document.getElementById('emsDisposition').value 
+                    : null;
+                
+                const newCall = {
+                    incidentNumber: nextIncidentData.id,
+                    sequence: nextIncidentData.seq,
+                    year: nextIncidentData.year,
+                    dispatchDate: document.getElementById('dispatchDate').value,
+                    dispatchTime: document.getElementById('dispatchTime').value,
+                    callNature: document.getElementById('callNature').value.toUpperCase(),
+                    responseType: responseType,
+                    emsDisposition: emsDisp,
+                    address: document.getElementById('address').value.toUpperCase(),
+                    units: document.getElementById('units').value.toUpperCase(),
+                    mutualAid: isMutualAid,
+                    mutualAidType: isMutualAid ? document.getElementById('mutualAidType').value : null,
+                    mutualAidDept: isMutualAid ? document.getElementById('mutualAidDept').value.toUpperCase() : null,
+                    notes: document.getElementById('notes').value.toUpperCase(),
+                    createdAt: new Date().toISOString(),
+                    createdBy: currentUser.uid
+                };
+
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'calls'), newCall);
+                
+                showToast(`CALL ${newCall.incidentNumber} SAVED!`);
+                form.reset();
+                setNowDefaults();
+                document.getElementById('mutualAidFields').classList.add('hidden');
+                switchTab('history'); 
+
+            } catch (error) {
+                console.error("Save Error:", error);
+                if (error.message !== "Invalid Time") {
+                    showToast("FAILED TO SAVE CALL", true);
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnText;
+            }
+        });
+
+        // --- FILTER & SORT LOGIC ---
+        window.sortCalls = function(field) {
+            if (currentSort.field === field) {
+                currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.dir = 'asc'; // Default new sort to asc usually, or desc for dates
+                if(field === 'date' || field === 'incidentNumber') currentSort.dir = 'desc';
+            }
+            renderTable();
+        }
+
+        window.resetFilters = function() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterDisposition').value = '';
+            document.getElementById('filterMutualAid').value = '';
+            document.getElementById('filterNatureUnits').value = '';
+            currentSort = { field: 'incidentNumber', dir: 'desc' }; // Reset sort too
+            renderTable();
+        }
+
+        window.renderTable = function() {
+            const tbody = document.getElementById('historyTableBody');
+            
+            // 1. Get Filter Values
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const startVal = document.getElementById('filterStartDate').value;
+            const endVal = document.getElementById('filterEndDate').value;
+            const typeVal = document.getElementById('filterType').value;
+            const dispVal = document.getElementById('filterDisposition').value;
+            const maVal = document.getElementById('filterMutualAid').value;
+            const natureUnitVal = document.getElementById('filterNatureUnits').value.toLowerCase();
+
+            // 2. Filter Logic
+            let filtered = allCalls.filter(call => {
+                // Global Search (Address, Notes, ID)
+                const globalText = (call.incidentNumber + ' ' + call.address + ' ' + (call.notes || '')).toLowerCase();
+                if (searchVal && !globalText.includes(searchVal)) return false;
+
+                // Date Range
+                if (startVal && call.dispatchDate < startVal) return false;
+                if (endVal && call.dispatchDate > endVal) return false;
+
+                // Type
+                if (typeVal && call.responseType !== typeVal) return false;
+
+                // Disposition
+                if (dispVal && call.emsDisposition !== dispVal) return false;
+
+                // Mutual Aid
+                if (maVal) {
+                    if (maVal === 'Yes' && !call.mutualAid) return false;
+                    if (maVal === 'No' && call.mutualAid) return false;
+                    if (maVal === 'Given' && call.mutualAidType !== 'Given') return false;
+                    if (maVal === 'Received' && call.mutualAidType !== 'Received') return false;
+                }
+
+                // Nature OR Units
+                if (natureUnitVal) {
+                    const nuText = (call.callNature + ' ' + (call.units || '')).toLowerCase();
+                    if (!nuText.includes(natureUnitVal)) return false;
+                }
+
+                return true;
+            });
+
+            // 3. Sorting Logic
+            filtered.sort((a, b) => {
+                let valA, valB;
+
+                // Extract values based on field
+                switch (currentSort.field) {
+                    case 'incidentNumber':
+                        // Primary sort by year, then sequence
+                        if (a.year !== b.year) return currentSort.dir === 'asc' ? a.year - b.year : b.year - a.year;
+                        return currentSort.dir === 'asc' ? a.sequence - b.sequence : b.sequence - a.sequence;
+                    
+                    case 'date':
+                        valA = a.dispatchDate + (a.dispatchTime || '');
+                        valB = b.dispatchDate + (b.dispatchTime || '');
+                        break;
+                    
+                    case 'callNature':
+                        valA = a.callNature || '';
+                        valB = b.callNature || '';
+                        break;
+
+                    case 'address':
+                        valA = a.address || '';
+                        valB = b.address || '';
+                        break;
+
+                    case 'responseType':
+                        valA = a.responseType || '';
+                        valB = b.responseType || '';
+                        break;
+
+                    case 'mutualAid':
+                        // Sort by involved bool, then type
+                        valA = (a.mutualAid ? '1' : '0') + (a.mutualAidType || '');
+                        valB = (b.mutualAid ? '1' : '0') + (b.mutualAidType || '');
+                        break;
+
+                    case 'emsDisposition':
+                        valA = a.emsDisposition || '';
+                        valB = b.emsDisposition || '';
+                        break;
+
+                    default:
+                        valA = ''; valB = '';
+                }
+
+                // Generic string comparison for non-incident/date fields
+                if (valA < valB) return currentSort.dir === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // 4. Update UI Headers (Icons)
+            document.querySelectorAll('th.sortable i').forEach(icon => {
+                icon.className = 'fa-solid fa-sort ml-1 text-gray-600'; // reset
+            });
+            // Set active icon
+            const activeHeader = document.querySelector(`th[onclick="sortCalls('${currentSort.field}')"] i`);
+            if(activeHeader) {
+                activeHeader.className = `fa-solid fa-sort-${currentSort.dir === 'asc' ? 'up' : 'down'} ml-1 text-blue-400`;
+            }
+
+
+            // 5. Render Rows
+            tbody.innerHTML = '';
+            if (filtered.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+
+            filtered.forEach(call => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-750 transition uppercase cursor-pointer";
+                tr.onclick = () => openEditModal(call.id); 
+                
+                let typeBadge = '';
+                if(call.responseType === 'Fire') typeBadge = '<span class="bg-red-900 text-red-200 text-xs px-2 py-1 rounded">FIRE</span>';
+                else if(call.responseType === 'EMS') typeBadge = '<span class="bg-blue-900 text-blue-200 text-xs px-2 py-1 rounded">EMS</span>';
+                else typeBadge = '<span class="bg-purple-900 text-purple-200 text-xs px-2 py-1 rounded">BOTH</span>';
+
+                let dateDisplay = call.dispatchDate;
+                try {
+                    const [y, m, d] = call.dispatchDate.split('-');
+                    dateDisplay = `${m}/${d}/${y}`;
+                } catch(e) {}
+
+                let maDisplay = '<span class="text-gray-600">-</span>';
+                if (call.mutualAid) {
+                    const maColor = call.mutualAidType === 'Given' ? 'text-yellow-400' : 'text-green-400';
+                    const icon = call.mutualAidType === 'Given' ? 'fa-arrow-right' : 'fa-arrow-left';
+                    maDisplay = `<div class="text-xs">
+                        <span class="${maColor} font-bold"><i class="fa-solid ${icon}"></i> ${call.mutualAidType.toUpperCase()}</span>
+                        <div class="text-gray-400 truncate w-24" title="${call.mutualAidDept}">${call.mutualAidDept}</div>
+                    </div>`;
+                }
+                
+                let notesDisplay = call.notes || '';
+                if(notesDisplay.length > 50) notesDisplay = notesDisplay.substring(0,50) + '...';
+
+                let dispDisplay = call.emsDisposition || '<span class="text-gray-600">-</span>';
+
+                tr.innerHTML = `
+                    <td class="p-4 font-mono font-bold text-white">${call.incidentNumber}</td>
+                    <td class="p-4 text-gray-300">
+                        <div>${dateDisplay}</div>
+                        <div class="text-xs text-gray-500 font-mono tracking-wide">${call.dispatchTime}</div>
+                    </td>
+                    <td class="p-4 font-medium">${call.callNature}</td>
+                    <td class="p-4 text-gray-400 truncate max-w-[150px]" title="${call.address}">${call.address}</td>
+                    <td class="p-4">${typeBadge}</td>
+                    <td class="p-4 text-gray-400 text-xs truncate max-w-[100px]" title="${call.units}">${call.units}</td>
+                    <td class="p-4">${maDisplay}</td>
+                    <td class="p-4 text-gray-400 text-xs truncate max-w-[100px]" title="${call.emsDisposition || ''}">${dispDisplay}</td>
+                    <td class="p-4 text-gray-400 text-xs max-w-[200px]" title="${call.notes}">${notesDisplay}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Helper to check shift type
+        function getShiftType(dateStr, timeStr) {
+            if (!dateStr || !timeStr) return 'Unknown';
+            try {
+                const [y, m, d] = dateStr.split('-').map(Number);
+                const [h, min] = timeStr.split(':').map(Number);
+                const dateObj = new Date(y, m - 1, d, h, min);
+                const day = dateObj.getDay(); 
+                const hour = h;
+
+                if (day >= 1 && day <= 5) {
+                    if (hour >= 6 && hour < 18) return 'Day';
+                } 
+                else {
+                    if (hour >= 8 && hour < 18) return 'Day';
+                }
+                return 'Volunteer';
+            } catch(e) { return 'Unknown'; }
+        }
+
+        function updateStats() {
+            const thisYearCalls = allCalls.filter(c => c.year === currentStatsYear);
+            
+            document.getElementById('stat-total').textContent = thisYearCalls.length;
+            
+            const fireCount = thisYearCalls.filter(c => c.responseType === 'Fire' || c.responseType === 'Both').length;
+            const emsCount = thisYearCalls.filter(c => c.responseType === 'EMS' || c.responseType === 'Both').length;
+            
+            document.getElementById('stat-fire').textContent = fireCount;
+            document.getElementById('stat-ems').textContent = emsCount;
+
+            const natureCounts = {};
+            thisYearCalls.forEach(c => {
+                const n = c.callNature || 'UNKNOWN';
+                natureCounts[n] = (natureCounts[n] || 0) + 1;
+            });
+            
+            const sortedNatures = Object.entries(natureCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5); 
+
+            const natureListEl = document.getElementById('stats-natures');
+            natureListEl.innerHTML = '';
+            
+            if (sortedNatures.length === 0) {
+                natureListEl.innerHTML = '<div class="text-gray-500 text-sm italic">No data available</div>';
+            } else {
+                const maxCount = sortedNatures[0][1];
+                sortedNatures.forEach(([name, count]) => {
+                    const barWidth = (count / maxCount) * 100; 
+                    const row = document.createElement('div');
+                    row.innerHTML = `
+                        <div class="flex justify-between text-xs mb-1 uppercase font-semibold">
+                            <span>${name}</span>
+                            <span>${count}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: ${barWidth}%"></div>
+                        </div>
+                    `;
+                    natureListEl.appendChild(row);
+                });
+            }
+
+            const addressCounts = {};
+            thisYearCalls.forEach(c => {
+                let addr = c.address ? c.address.trim().toUpperCase() : 'UNKNOWN';
+                if (addr.includes('I 70')) {
+                    addr = 'I 70'; 
+                }
+                if (addr !== 'UNKNOWN' && addr !== '') {
+                    addressCounts[addr] = (addressCounts[addr] || 0) + 1;
+                }
+            });
+
+            const sortedAddresses = Object.entries(addressCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5); 
+
+            const addrListEl = document.getElementById('stats-addresses');
+            addrListEl.innerHTML = '';
+
+            if (sortedAddresses.length === 0) {
+                 addrListEl.innerHTML = '<div class="text-gray-500 text-sm italic">No data available</div>';
+            } else {
+                 const maxAddrCount = sortedAddresses[0][1];
+                 sortedAddresses.forEach(([addr, count]) => {
+                    const barWidth = (count / maxAddrCount) * 100;
+                    const row = document.createElement('div');
+                    row.innerHTML = `
+                        <div class="flex justify-between text-xs mb-1 uppercase font-semibold">
+                            <span class="truncate pr-2" title="${addr}">${addr}</span>
+                            <span>${count}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: ${barWidth}%"></div>
+                        </div>
+                    `;
+                    addrListEl.appendChild(row);
+                 });
+            }
+
+            let givenCount = 0;
+            let receivedCount = 0;
+            let givenDay = 0;
+            let givenVol = 0;
+            let recDay = 0;
+            let recVol = 0;
+            const maDepts = {};
+
+            thisYearCalls.forEach(c => {
+                if (c.responseType === 'Fire') return;
+
+                if (c.mutualAid) {
+                    const shift = getShiftType(c.dispatchDate, c.dispatchTime);
+
+                    if (c.mutualAidType === 'Given') {
+                        givenCount++;
+                        if (shift === 'Day') givenDay++;
+                        else givenVol++; 
+                    }
+                    if (c.mutualAidType === 'Received') {
+                        receivedCount++;
+                        if (shift === 'Day') recDay++;
+                        else recVol++;
+                    }
+                    
+                    if (c.mutualAidDept) {
+                        const depts = c.mutualAidDept.split(',').map(s => s.trim());
+                        depts.forEach(d => {
+                            if(d) maDepts[d] = (maDepts[d] || 0) + 1;
+                        });
+                    }
+                }
+            });
+
+            document.getElementById('stat-ma-given').textContent = givenCount;
+            document.getElementById('stat-ma-given-day').textContent = givenDay;
+            document.getElementById('stat-ma-given-vol').textContent = givenVol;
+
+            document.getElementById('stat-ma-received').textContent = receivedCount;
+            document.getElementById('stat-ma-received-day').textContent = recDay;
+            document.getElementById('stat-ma-received-vol').textContent = recVol;
+            
+            const sortedDepts = Object.entries(maDepts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5); 
+
+            const deptListEl = document.getElementById('stats-ma-depts');
+            deptListEl.innerHTML = '';
+            sortedDepts.forEach(([name, count]) => {
+                const li = document.createElement('li');
+                li.className = "flex justify-between border-b border-gray-700 py-1 last:border-0";
+                li.innerHTML = `<span>${name}</span> <span class="font-bold text-white">${count}</span>`;
+                deptListEl.appendChild(li);
+            });
+
+            let dayCrewCount = 0;
+            let volunteerCount = 0;
+            const volDispCounts = {};
+
+            thisYearCalls.forEach(c => {
+                if (c.responseType === 'Fire') return;
+
+                const shift = getShiftType(c.dispatchDate, c.dispatchTime);
+
+                if (shift === 'Day') {
+                    dayCrewCount++;
+                } else if (shift === 'Volunteer') {
+                    volunteerCount++;
+                    const disp = c.emsDisposition || 'NOT RECORDED';
+                    volDispCounts[disp] = (volDispCounts[disp] || 0) + 1;
+                }
+            });
+
+            document.getElementById('stat-crew-day').textContent = dayCrewCount;
+            document.getElementById('stat-crew-vol').textContent = volunteerCount;
+            
+            let volPct = "0.0";
+            if (volunteerCount > 0) {
+                volPct = (((volunteerCount - recVol) / volunteerCount) * 100).toFixed(1);
+            }
+            document.getElementById('stat-crew-vol-pct').textContent = `${volPct}% Handled`;
+
+            const volDispListEl = document.getElementById('stats-vol-dispo');
+            volDispListEl.innerHTML = '';
+            
+            const sortedVolDisps = Object.entries(volDispCounts)
+                .sort((a, b) => b[1] - a[1]);
+
+            if (sortedVolDisps.length === 0) {
+                volDispListEl.innerHTML = '<div class="text-gray-500 text-sm italic">No data available</div>';
+            } else {
+                const maxCount = sortedVolDisps[0][1];
+                sortedVolDisps.forEach(([name, count]) => {
+                    const barWidth = (count / maxCount) * 100;
+                    const row = document.createElement('div');
+                    row.innerHTML = `
+                        <div class="flex justify-between text-xs mb-1 uppercase font-semibold">
+                            <span>${name}</span>
+                            <span>${count}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-orange-500 h-2 rounded-full transition-all duration-500" style="width: ${barWidth}%"></div>
+                        </div>
+                    `;
+                    volDispListEl.appendChild(row);
+                });
+            }
+        }
+
+        // --- UI Utils ---
+        window.showToast = function(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toastMessage');
+            
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-xl transform transition-all duration-300 z-50 flex items-center gap-3 ${isError ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`;
+            msgEl.textContent = msg;
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        window.toggleMutualAid = function() {
+            const chk = document.getElementById('mutualAid');
+            const fields = document.getElementById('mutualAidFields');
+            const inputs = fields.querySelectorAll('input, select');
+            
+            if (chk.checked) {
+                fields.classList.remove('hidden');
+                inputs.forEach(i => i.required = true);
+                
+                handleMutualAidTypeChange(); 
+            } else {
+                fields.classList.add('hidden');
+                inputs.forEach(i => i.required = false);
+            }
+        }
+
+        window.switchTab = function(tabName) {
+            const entryTab = document.getElementById('tab-entry');
+            const historyTab = document.getElementById('tab-history');
+            const statsTab = document.getElementById('tab-stats');
+            
+            const btnEntry = document.getElementById('btn-entry');
+            const btnHistory = document.getElementById('btn-history');
+            const btnStats = document.getElementById('btn-stats');
+
+            entryTab.classList.add('hidden');
+            historyTab.classList.add('hidden');
+            statsTab.classList.add('hidden');
+
+            const inactiveClass = "px-4 py-2 rounded-lg bg-gray-700 text-gray-300 font-medium hover:bg-gray-600 transition border border-gray-600 uppercase text-sm tracking-wider";
+            const activeClass = "px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition shadow-md border border-red-500 uppercase text-sm tracking-wider";
+            
+            btnEntry.className = inactiveClass;
+            btnHistory.className = inactiveClass;
+            btnStats.className = inactiveClass;
+
+            if (tabName === 'entry') {
+                entryTab.classList.remove('hidden');
+                btnEntry.className = activeClass;
+            } else if (tabName === 'history') {
+                historyTab.classList.remove('hidden');
+                btnHistory.className = activeClass;
+                renderTable();
+            } else if (tabName === 'stats') {
+                statsTab.classList.remove('hidden');
+                btnStats.className = activeClass;
+                updateStats(); 
+            }
+        }
+        
+        window.resetForm = function() {
+            document.getElementById('callForm').reset();
+            setNowDefaults();
+            toggleMutualAid(); 
+            selectType('EMS'); 
+            calculateNextIncidentId(); 
+        }
+
     </script>
 </body>
 </html>
