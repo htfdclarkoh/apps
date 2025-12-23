@@ -391,6 +391,14 @@
                     <p class="text-3xl font-bold text-blue-400 mt-1" id="stat-ems">0</p>
                 </div>
             </div>
+            
+            <!-- Monthly Breakdown Grid (NEW) -->
+            <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                 <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Runs Per Month</h3>
+                 <div id="stats-monthly-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                     <!-- Populated by JS -->
+                 </div>
+            </div>
 
             <!-- Detailed Stats Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1714,6 +1722,7 @@
         function updateStats() {
             const thisYearCalls = allCalls.filter(c => c.year === currentStatsYear);
             
+            // --- SUMMARY CARDS ---
             document.getElementById('stat-total').textContent = thisYearCalls.length;
             
             const fireCount = thisYearCalls.filter(c => c.responseType === 'Fire' || c.responseType === 'Both').length;
@@ -1722,6 +1731,66 @@
             document.getElementById('stat-fire').textContent = fireCount;
             document.getElementById('stat-ems').textContent = emsCount;
 
+
+            // --- MONTHLY BREAKDOWN (NEW) ---
+            const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            const monthlyStats = Array(12).fill(0).map(() => ({ total: 0, fire: 0, ems: 0, both: 0 }));
+
+            thisYearCalls.forEach(c => {
+                if(!c.dispatchDate) return;
+                try {
+                     const [y, m, d] = c.dispatchDate.split('-').map(Number); // yyyy-mm-dd
+                     const monthIndex = m - 1; // 0-11
+                     if(monthIndex >= 0 && monthIndex < 12) {
+                         monthlyStats[monthIndex].total++;
+                         
+                         if(c.responseType === 'Fire') {
+                             monthlyStats[monthIndex].fire++;
+                         } else if(c.responseType === 'EMS') {
+                             monthlyStats[monthIndex].ems++;
+                         } else if(c.responseType === 'Both') {
+                             monthlyStats[monthIndex].both++;
+                         }
+                     }
+                } catch(e) {}
+            });
+
+            const monthlyGrid = document.getElementById('stats-monthly-grid');
+            monthlyGrid.innerHTML = '';
+            
+            months.forEach((month, idx) => {
+                const stats = monthlyStats[idx];
+                const isActive = stats.total > 0;
+                const opacityClass = isActive ? 'opacity-100' : 'opacity-40';
+                
+                const card = document.createElement('div');
+                card.className = `bg-gray-900 rounded-lg p-4 border border-gray-700 flex flex-col justify-between ${opacityClass}`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-gray-500 tracking-widest">${month}</span>
+                        <span class="text-xl font-bold text-white">${stats.total}</span>
+                    </div>
+                    <div class="space-y-1 mt-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400 font-semibold"><i class="fa-solid fa-fire text-red-500 mr-1"></i> FIRE</span>
+                            <span class="text-gray-300 font-mono">${stats.fire}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400 font-semibold"><i class="fa-solid fa-star-of-life text-blue-500 mr-1"></i> EMS</span>
+                            <span class="text-gray-300 font-mono">${stats.ems}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400 font-semibold"><i class="fa-solid fa-layer-group text-purple-500 mr-1"></i> BOTH</span>
+                            <span class="text-gray-300 font-mono">${stats.both}</span>
+                        </div>
+                    </div>
+                `;
+                monthlyGrid.appendChild(card);
+            });
+
+
+            // --- DETAILED STATS (Natures, etc) ---
             const natureCounts = {};
             thisYearCalls.forEach(c => {
                 const n = c.callNature || 'UNKNOWN';
