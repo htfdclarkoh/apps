@@ -1734,7 +1734,14 @@
 
             // --- MONTHLY BREAKDOWN (NEW) ---
             const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-            const monthlyStats = Array(12).fill(0).map(() => ({ total: 0, fire: 0, ems: 0, both: 0 }));
+            const monthlyStats = Array(12).fill(0).map(() => ({ 
+                total: 0, 
+                fire: 0, 
+                ems: 0, 
+                both: 0,
+                emsDay: 0, // NEW: EMS/Both runs during Day Crew
+                emsVol: 0  // NEW: EMS/Both runs during Volunteer
+            }));
 
             thisYearCalls.forEach(c => {
                 if(!c.dispatchDate) return;
@@ -1750,6 +1757,16 @@
                              monthlyStats[monthIndex].ems++;
                          } else if(c.responseType === 'Both') {
                              monthlyStats[monthIndex].both++;
+                         }
+                         
+                         // EMS + Both Breakdown logic
+                         if (c.responseType === 'EMS' || c.responseType === 'Both') {
+                             const shift = getShiftType(c.dispatchDate, c.dispatchTime);
+                             if (shift === 'Day') {
+                                 monthlyStats[monthIndex].emsDay++;
+                             } else {
+                                 monthlyStats[monthIndex].emsVol++;
+                             }
                          }
                      }
                 } catch(e) {}
@@ -1771,7 +1788,7 @@
                         <span class="text-xs font-bold text-gray-500 tracking-widest">${month}</span>
                         <span class="text-xl font-bold text-white">${stats.total}</span>
                     </div>
-                    <div class="space-y-1 mt-1">
+                    <div class="space-y-1 mt-1 border-b border-gray-700 pb-2 mb-2">
                         <div class="flex justify-between items-center text-xs">
                             <span class="text-gray-400 font-semibold"><i class="fa-solid fa-fire text-red-500 mr-1"></i> FIRE</span>
                             <span class="text-gray-300 font-mono">${stats.fire}</span>
@@ -1783,6 +1800,17 @@
                         <div class="flex justify-between items-center text-xs">
                             <span class="text-gray-400 font-semibold"><i class="fa-solid fa-layer-group text-purple-500 mr-1"></i> BOTH</span>
                             <span class="text-gray-300 font-mono">${stats.both}</span>
+                        </div>
+                    </div>
+                    <!-- New Day/Vol Breakdown for EMS/Both -->
+                    <div class="grid grid-cols-2 gap-1 text-[10px] uppercase">
+                        <div class="bg-blue-900/30 rounded px-1 py-0.5 text-center">
+                            <span class="block text-blue-400 font-bold">DAY</span>
+                            <span class="text-white font-mono">${stats.emsDay}</span>
+                        </div>
+                        <div class="bg-orange-900/30 rounded px-1 py-0.5 text-center">
+                            <span class="block text-orange-400 font-bold">VOL</span>
+                            <span class="text-white font-mono">${stats.emsVol}</span>
                         </div>
                     </div>
                 `;
