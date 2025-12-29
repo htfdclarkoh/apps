@@ -104,11 +104,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Date</label>
-                            <input type="date" id="dispatchDate" required class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                            <input type="date" id="dispatchDate" name="dispatchDate" required class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Time (24h)</label>
-                            <input type="text" id="dispatchTime" required placeholder="HH:MM" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition font-mono tracking-wider">
+                            <input type="text" id="dispatchTime" name="dispatchTime" required placeholder="HH:MM" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition font-mono tracking-wider">
                             <p class="text-xs text-gray-500 mt-1 uppercase">Format: HH:MM (00:00 - 23:59)</p>
                         </div>
                     </div>
@@ -117,7 +117,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Call Nature</label>
-                            <input list="natures" id="callNature" oninput="forceCaps(this)" required placeholder="SELECT OR TYPE..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                            <input list="natures" id="callNature" name="callNature" oninput="forceCaps(this)" required placeholder="SELECT OR TYPE..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
                             <!-- Populated dynamically now -->
                             <datalist id="natures"></datalist>
                         </div>
@@ -137,13 +137,13 @@
                                     </button>
                                 </div>
                                 <!-- Hidden input to store value for form submission -->
-                                <input type="hidden" id="responseType" value="EMS">
+                                <input type="hidden" id="responseType" name="responseType" value="EMS">
                             </div>
 
                             <!-- EMS Disposition (Hidden by default) -->
                             <div id="emsDispositionSection" class="hidden animate-fade-in-down">
                                 <label class="block text-sm font-medium text-blue-400 mb-1 uppercase tracking-wider">EMS Disposition</label>
-                                <select id="emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
+                                <select id="emsDisposition" name="emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
                                     <option value="">SELECT DISPOSITION</option>
                                     <option value="TRANSPORT">TRANSPORT</option>
                                     <option value="REFUSAL">REFUSAL</option>
@@ -162,7 +162,7 @@
                         <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
                         <!-- Custom Relative Container for Dropdown -->
                         <div class="relative">
-                            <input type="text" id="address" oninput="forceCaps(this)" required placeholder="1234 MAIN ST..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase" autocomplete="off">
+                            <input type="text" id="address" name="address" oninput="forceCaps(this)" required placeholder="1234 MAIN ST..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase" autocomplete="off">
                             
                             <!-- Custom Suggestion Dropdown (Hidden by default) -->
                             <div id="addressSuggestions" class="absolute w-full bg-gray-800 border border-gray-600 rounded-lg shadow-2xl z-50 hidden mt-1 max-h-48 overflow-y-auto">
@@ -178,21 +178,21 @@
                         <div id="unitChips" class="flex flex-wrap gap-2 mb-2 uppercase">
                             <!-- Injected by JS -->
                         </div>
-                        <input type="text" id="units" oninput="forceCaps(this)" placeholder="E.G. E1, M2, C501..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                        <input type="text" id="units" name="units" oninput="forceCaps(this)" placeholder="E.G. E1, M2, C501..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
                         <p class="text-xs text-gray-500 mt-1 uppercase">Tap chips above to add, or type manually.</p>
                     </div>
 
                     <!-- Mutual Aid Section -->
                     <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
                         <div class="flex items-center gap-3 mb-4">
-                            <input type="checkbox" id="mutualAid" class="w-5 h-5 text-red-600 rounded focus:ring-red-500 border-gray-600 bg-gray-800" onchange="toggleMutualAid()">
+                            <input type="checkbox" id="mutualAid" name="mutualAid" class="w-5 h-5 text-red-600 rounded focus:ring-red-500 border-gray-600 bg-gray-800" onchange="toggleMutualAid()">
                             <label for="mutualAid" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Mutual Aid Involved?</label>
                         </div>
 
                         <div id="mutualAidFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pl-8 border-l-2 border-red-500/30">
                             <div>
                                 <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Direction</label>
-                                <select id="mutualAidType" onchange="handleMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
+                                <select id="mutualAidType" name="mutualAidType" onchange="handleMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
                                     <option value="Given">Given (To)</option>
                                     <option value="Received">Received (From)</option>
                                 </select>
@@ -203,7 +203,7 @@
                                 <div id="deptChips" class="hidden flex flex-wrap gap-2 mb-2 transition-all uppercase">
                                     <!-- Injected by JS -->
                                 </div>
-                                <input list="maDepts" type="text" id="mutualAidDept" oninput="forceCaps(this)" placeholder="DEPARTMENT NAME" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
+                                <input list="maDepts" type="text" id="mutualAidDept" name="mutualAidDept" oninput="forceCaps(this)" placeholder="DEPARTMENT NAME" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
                                 <datalist id="maDepts"></datalist>
                             </div>
                         </div>
@@ -212,7 +212,7 @@
                     <!-- Notes -->
                     <div>
                         <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Notes (Optional)</label>
-                        <textarea id="notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase"></textarea>
+                        <textarea id="notes" name="notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase"></textarea>
                     </div>
 
                     <!-- Actions -->
@@ -462,7 +462,7 @@
                     </ul>
                 </div>
 
-                <!-- Crew Breakdown Stats -->
+                <!-- Crew Analysis -->
                 <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
                     <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Crew Analysis</h3>
                     <div class="grid grid-cols-2 gap-4 mb-4">
@@ -683,6 +683,10 @@
                 setupRealtimeListener();
                 loadConfiguration(); 
                 selectType('EMS');
+                
+                // Initialize form state
+                setNowDefaults();
+                toggleMutualAid(); // Ensure fields are correctly hidden/not required
             }
         });
 
@@ -1448,7 +1452,6 @@
             document.getElementById('dispatchDate').value = dateStr;
             document.getElementById('dispatchTime').value = timeStr;
         }
-        setNowDefaults();
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1495,8 +1498,10 @@
                 showToast(`CALL ${newCall.incidentNumber} SAVED!`);
                 form.reset();
                 setNowDefaults();
-                document.getElementById('mutualAidFields').classList.add('hidden');
-                switchTab('history'); 
+                document.getElementById('mutualAid').checked = false; // explicitly uncheck
+                toggleMutualAid(); // refresh UI state
+                selectType('EMS'); 
+                calculateNextIncidentId(); 
 
             } catch (error) {
                 console.error("Save Error:", error);
