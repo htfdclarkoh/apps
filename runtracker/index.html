@@ -481,6 +481,7 @@
                         <p class="font-bold mb-1">SCHEDULE (EMS/BOTH ONLY):</p>
                         <p>M-F: 06:00 - 18:00 (Day Crew)</p>
                         <p>S-S: 08:00 - 18:00 (Day Crew)</p>
+                        <p>Holidays: No Day Crew</p>
                         <p>All other times: Volunteer</p>
                     </div>
                 </div>
@@ -658,6 +659,7 @@
         let nextIncidentData = { id: '...', seq: 1, year: new Date().getFullYear() };
         let currentUser = null;
         let currentStatsYear = new Date().getFullYear();
+        let systemConfig = { holidays: [] }; // Stores loaded config logic
         
         // Sorting State
         let currentSort = { field: 'incidentNumber', dir: 'desc' };
@@ -875,6 +877,9 @@
                 if (snap.exists()) {
                     const data = snap.data();
                     
+                    // Store system config for global use (holidays etc)
+                    systemConfig.holidays = data.holidays || [];
+
                     // Populate Call Nature Datalist
                     const natureList = document.getElementById('natures');
                     natureList.innerHTML = '';
@@ -920,6 +925,9 @@
                         populateChips('deptChips', data.depts, addDeptToInput);
                         populateChips('edit_deptChips', data.depts, addDeptToEditInput);
                     }
+                    
+                    // Re-calculate stats in case holiday changes affect past data classification
+                    updateStats();
                 }
             } catch (e) {
                 console.error("Failed to load config options", e);
@@ -1707,6 +1715,12 @@
         // Helper to check shift type
         function getShiftType(dateStr, timeStr) {
             if (!dateStr || !timeStr) return 'Unknown';
+            
+            // Check for holidays (New logic)
+            if (systemConfig.holidays && systemConfig.holidays.includes(dateStr)) {
+                return 'Volunteer';
+            }
+
             try {
                 const [y, m, d] = dateStr.split('-').map(Number);
                 const [h, min] = timeStr.split(':').map(Number);

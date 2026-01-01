@@ -17,7 +17,7 @@
 </head>
 <body class="p-6">
 
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-[95%] mx-auto">
         <header class="flex items-center gap-4 mb-8 border-b border-gray-700 pb-4">
             <i class="fa-solid fa-gears text-red-500 text-3xl"></i>
             <div>
@@ -27,7 +27,8 @@
             <div id="status" class="ml-auto text-sm font-mono text-yellow-500">Connecting...</div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Changed to 4 columns to fit Holidays -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
 
             <!-- SECTION: CALL NATURES -->
             <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 shadow-lg flex flex-col h-[400px]">
@@ -69,6 +70,20 @@
                     </button>
                 </div>
                 <ul id="list-dept" class="list-container space-y-2 flex-grow pr-2"></ul>
+            </div>
+
+            <!-- SECTION: HOLIDAYS (NEW) -->
+            <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 shadow-lg flex flex-col h-[400px]">
+                <h2 class="font-bold text-lg mb-4 text-yellow-400 border-b border-gray-700 pb-2">
+                    <i class="fa-solid fa-calendar-xmark mr-2"></i>Holidays (No Day Crew)
+                </h2>
+                <div class="flex gap-2 mb-4">
+                    <input type="date" id="input-holiday" class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-yellow-500 outline-none text-white">
+                    <button onclick="addItem('holiday')" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 rounded">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <ul id="list-holiday" class="list-container space-y-2 flex-grow pr-2"></ul>
             </div>
 
         </div>
@@ -150,7 +165,8 @@
             natures: ["STRUCTURE FIRE", "MEDICAL EMERGENCY", "MVA", "FIRE ALARM"], 
             units: ["E1", "M1", "C1"],
             depts: ["NORTH FD", "SOUTH FD"],
-            widths: {} // Stores column widths
+            holidays: [], // Stores holiday date strings YYYY-MM-DD
+            widths: {} 
         };
 
         // UI References
@@ -159,12 +175,14 @@
             lists: {
                 nature: document.getElementById('list-nature'),
                 unit: document.getElementById('list-unit'),
-                dept: document.getElementById('list-dept')
+                dept: document.getElementById('list-dept'),
+                holiday: document.getElementById('list-holiday')
             },
             inputs: {
                 nature: document.getElementById('input-nature'),
                 unit: document.getElementById('input-unit'),
-                dept: document.getElementById('input-dept')
+                dept: document.getElementById('input-dept'),
+                holiday: document.getElementById('input-holiday')
             },
             widths: {
                 incident: document.getElementById('w-incident'),
@@ -212,6 +230,7 @@
                     state.natures = data.natures || state.natures;
                     state.units = data.units || state.units;
                     state.depts = data.depts || state.depts;
+                    state.holidays = data.holidays || [];
                     state.widths = data.widths || {};
                 }
                 renderAll();
@@ -245,6 +264,7 @@
                     natures: state.natures,
                     units: state.units,
                     depts: state.depts,
+                    holidays: state.holidays,
                     widths: state.widths,
                     updatedAt: new Date().toISOString()
                 });
@@ -263,10 +283,15 @@
         // List Management
         window.addItem = function(type) {
             const input = els.inputs[type];
-            const val = input.value.trim().toUpperCase();
+            let val = input.value.trim();
             if (!val) return;
 
-            const key = type === 'nature' ? 'natures' : (type === 'unit' ? 'units' : 'depts');
+            // Normalize
+            if (type !== 'holiday') {
+                val = val.toUpperCase();
+            }
+
+            const key = type === 'nature' ? 'natures' : (type === 'unit' ? 'units' : (type === 'dept' ? 'depts' : 'holidays'));
             
             if (!state[key].includes(val)) {
                 state[key].push(val);
@@ -274,11 +299,12 @@
                 renderAll();
             }
             input.value = '';
-            input.focus();
+            // Only focus back if it's text. Date inputs behave oddly on focus sometimes.
+            if(type !== 'holiday') input.focus();
         };
 
         window.deleteItem = function(type, index) {
-            const key = type === 'nature' ? 'natures' : (type === 'unit' ? 'units' : 'depts');
+            const key = type === 'nature' ? 'natures' : (type === 'unit' ? 'units' : (type === 'dept' ? 'depts' : 'holidays'));
             state[key].splice(index, 1);
             renderAll();
         };
@@ -288,6 +314,7 @@
             renderList('nature', state.natures);
             renderList('unit', state.units);
             renderList('dept', state.depts);
+            renderList('holiday', state.holidays);
 
             // Render Widths
             if (state.widths) {
@@ -309,8 +336,19 @@
             items.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.className = "flex justify-between items-center bg-gray-900 p-2 rounded border border-gray-700 group hover:border-gray-500 transition";
+                
+                // Format if holiday
+                let displayItem = item;
+                if (type === 'holiday') {
+                    // Try to format YYYY-MM-DD to something nicer
+                    try {
+                        const parts = item.split('-');
+                        if(parts.length === 3) displayItem = `${parts[1]}/${parts[2]}/${parts[0]}`;
+                    } catch(e) {}
+                }
+
                 li.innerHTML = `
-                    <span class="text-sm uppercase">${item}</span>
+                    <span class="text-sm uppercase font-mono">${displayItem}</span>
                     <button onclick="deleteItem('${type}', ${index})" class="text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition px-2">
                         <i class="fa-solid fa-trash"></i>
                     </button>
