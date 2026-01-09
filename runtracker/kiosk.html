@@ -156,6 +156,7 @@
                         <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
                             <span class="block text-gray-400 text-xs uppercase font-bold tracking-widest mb-1">Volunteer</span>
                             <span id="stat-crew-vol" class="text-4xl font-black text-orange-400">0</span>
+                            <span id="stat-crew-vol-pct" class="block text-xs text-gray-500 font-bold mt-1">0% Handled</span>
                         </div>
                     </div>
                     <div class="bg-gray-900/30 p-3 rounded border border-gray-700 text-[10px] text-gray-500 font-mono">
@@ -562,6 +563,16 @@
 
             document.getElementById('stat-crew-day').textContent = dayCrewCount;
             document.getElementById('stat-crew-vol').textContent = volunteerCount;
+
+            // NEW PERCENTAGE CALCULATION
+            let volPct = "0.0";
+            const noCrewCount = volDispCounts['NO CREW/MA'] || 0;
+            if (volunteerCount > 0) {
+                // (Total Vol Runs - NO CREW/MA) / Total Vol Runs
+                volPct = (((volunteerCount - noCrewCount) / volunteerCount) * 100).toFixed(1);
+            }
+            const volPctEl = document.getElementById('stat-crew-vol-pct');
+            if(volPctEl) volPctEl.textContent = `${volPct}% Handled`;
 
             const volDispListEl = document.getElementById('stats-vol-dispo');
             volDispListEl.innerHTML = '';

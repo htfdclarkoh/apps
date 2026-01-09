@@ -1,0 +1,43 @@
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #1f2937; 
+}
+::-webkit-scrollbar-thumb {
+    background: #4b5563; 
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #6b7280; 
+}
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+/* Chips for units */
+.unit-chip {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+}
+.unit-chip:active {
+    transform: scale(0.95);
+}
+/* Sortable Headers */
+th.sortable {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+th.sortable:hover {
+    background-color: #374151;
+}
+/* Chart Animations */
+.bar-animate {
+    transition: width 1s ease-out, height 1s ease-out;
+}
