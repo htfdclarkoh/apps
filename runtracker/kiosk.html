@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Department Stats Kiosk</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -48,202 +46,179 @@
 </head>
 <body class="text-gray-100 font-sans h-screen w-screen flex flex-col overflow-hidden selection:bg-red-500 selection:text-white">
 
-    <!-- Navbar / Header (Fixed Height) -->
-    <nav class="bg-gray-800 border-b border-gray-700 p-4 shadow-xl flex-none z-50">
+    <nav class="bg-gray-800 border-b border-gray-700 p-5 shadow-xl flex-none z-50">
         <div class="max-w-[98%] mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <div class="bg-gray-700 p-2 rounded-lg border border-gray-600">
-                    <i class="fa-solid fa-chart-pie text-red-500 text-3xl"></i>
+            <div class="flex items-center gap-5">
+                <div class="bg-gray-700 p-3 rounded-lg border border-gray-600">
+                    <i class="fa-solid fa-chart-pie text-red-500 text-4xl"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-2xl tracking-wide uppercase leading-none text-white">Department Dashboard</h1>
-                    <div id="connectionStatus" class="text-xs text-yellow-500 flex items-center gap-2 mt-1 font-mono uppercase tracking-wider">
-                        <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Connecting...
+                    <h1 class="font-bold text-3xl tracking-wide uppercase leading-none text-white">Department Dashboard</h1>
+                    <div id="connectionStatus" class="text-sm text-yellow-500 flex items-center gap-2 mt-1 font-mono uppercase tracking-wider">
+                        <i class="fa-solid fa-circle text-[10px] animate-pulse"></i> Connecting...
                     </div>
                 </div>
             </div>
             
-            <!-- Center: Year Display -->
             <div class="hidden md:block text-center">
-                 <h2 id="statsTitle" class="text-4xl font-black text-gray-700 uppercase tracking-[0.1em] drop-shadow-sm">Loading...</h2>
+                 <h2 id="statsTitle" class="text-5xl font-black text-gray-700 uppercase tracking-[0.1em] drop-shadow-sm">Loading...</h2>
             </div>
             
-            <!-- Clock -->
             <div class="text-right hidden sm:block">
-                <div id="clock-time" class="text-2xl font-bold font-mono text-white leading-none">00:00</div>
-                <div id="clock-date" class="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">...</div>
+                <div id="clock-time" class="text-4xl font-bold font-mono text-white leading-none">00:00</div>
+                <div id="clock-date" class="text-sm text-gray-400 font-bold uppercase tracking-wider mt-1">...</div>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content (Flex Grow to fill remaining height) -->
     <main class="flex-grow p-6 w-full max-w-[98%] mx-auto fade-in flex flex-col min-h-0">
         
-        <!-- Summary Stats Cards (Fixed Height portion) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 flex-none">
-            <!-- Total -->
-            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex items-center justify-between relative overflow-hidden group">
-                <div class="absolute right-0 top-0 h-full w-2 bg-white/20"></div>
+            <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-lg flex items-center justify-between relative overflow-hidden group">
+                <div class="absolute right-0 top-0 h-full w-3 bg-white/20"></div>
                 <div class="z-10">
-                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider mb-1">Total Calls</h3>
-                    <p class="text-6xl font-black text-white tracking-tight" id="stat-total">0</p>
+                    <h3 class="text-gray-400 text-lg uppercase font-bold tracking-wider mb-1">Total Calls</h3>
+                    <p class="text-7xl font-black text-white tracking-tight" id="stat-total">0</p>
                 </div>
-                <i class="fa-solid fa-phone text-gray-700 text-7xl opacity-10 absolute right-4 bottom-[-10px] group-hover:scale-110 transition-transform duration-500"></i>
+                <i class="fa-solid fa-phone text-gray-700 text-8xl opacity-10 absolute right-4 bottom-[-10px] group-hover:scale-110 transition-transform duration-500"></i>
             </div>
             
-            <!-- Fire -->
-            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex items-center justify-between relative overflow-hidden group">
-                <div class="absolute right-0 top-0 h-full w-2 bg-red-600"></div>
+            <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-lg flex items-center justify-between relative overflow-hidden group">
+                <div class="absolute right-0 top-0 h-full w-3 bg-red-600"></div>
                 <div class="z-10">
-                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider mb-1">Fire Runs</h3>
-                    <p class="text-6xl font-black text-red-500 tracking-tight" id="stat-fire">0</p>
+                    <h3 class="text-gray-400 text-lg uppercase font-bold tracking-wider mb-1">Fire Runs</h3>
+                    <p class="text-7xl font-black text-red-500 tracking-tight" id="stat-fire">0</p>
                 </div>
-                <i class="fa-solid fa-fire text-red-900 text-7xl opacity-20 absolute right-4 bottom-[-10px] group-hover:scale-110 transition-transform duration-500"></i>
+                <i class="fa-solid fa-fire text-red-900 text-8xl opacity-20 absolute right-4 bottom-[-10px] group-hover:scale-110 transition-transform duration-500"></i>
             </div>
             
-            <!-- EMS -->
-            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex items-center justify-between relative overflow-hidden group">
-                <div class="absolute right-0 top-0 h-full w-2 bg-blue-500"></div>
+            <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-lg flex items-center justify-between relative overflow-hidden group">
+                <div class="absolute right-0 top-0 h-full w-3 bg-blue-500"></div>
                 <div class="z-10">
-                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider mb-1">EMS Runs</h3>
-                    <p class="text-6xl font-black text-blue-400 tracking-tight" id="stat-ems">0</p>
+                    <h3 class="text-gray-400 text-lg uppercase font-bold tracking-wider mb-1">EMS Runs</h3>
+                    <p class="text-7xl font-black text-blue-400 tracking-tight" id="stat-ems">0</p>
                 </div>
-                <i class="fa-solid fa-star-of-life text-blue-900 text-7xl opacity-20 absolute right-4 bottom-[-10px] group-hover:scale-110 transition-transform duration-500"></i>
+                <i class="fa-solid fa-star-of-life text-blue-900 text-8xl opacity-20 absolute right-4 bottom-[-10px] group-hover:scale-110 transition-transform duration-500"></i>
             </div>
         </div>
 
-        <!-- Detailed Stats Grid (Fills remaining height) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
             
-            <!-- Column 1 -->
             <div class="flex flex-col gap-6 h-full min-h-0">
-                <!-- Top Natures -->
-                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-1 flex flex-col min-h-0 relative overflow-hidden">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6 flex-1 flex flex-col min-h-0 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
-                    <h3 class="font-bold text-lg text-white mb-3 uppercase border-b border-gray-700 pb-2 flex-none flex items-center gap-2">
+                    <h3 class="font-bold text-2xl text-white mb-4 uppercase border-b border-gray-700 pb-3 flex-none flex items-center gap-3">
                         <i class="fa-solid fa-list-ol text-gray-500"></i> Top Natures
                     </h3>
-                    <div id="stats-natures" class="space-y-3 overflow-y-auto flex-1 pr-2 custom-scroll">
-                        <div class="text-gray-500 text-sm italic">Loading...</div>
+                    <div id="stats-natures" class="space-y-4 overflow-y-auto flex-1 pr-2 custom-scroll">
+                        <div class="text-gray-500 text-base italic">Loading...</div>
                     </div>
                 </div>
 
-                <!-- Top Addresses -->
-                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-1 flex flex-col min-h-0 relative overflow-hidden">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6 flex-1 flex flex-col min-h-0 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
-                    <h3 class="font-bold text-lg text-white mb-3 uppercase border-b border-gray-700 pb-2 flex-none flex items-center gap-2">
+                    <h3 class="font-bold text-2xl text-white mb-4 uppercase border-b border-gray-700 pb-3 flex-none flex items-center gap-3">
                         <i class="fa-solid fa-map-location-dot text-gray-500"></i> Frequent Locations
                     </h3>
-                    <div id="stats-addresses" class="space-y-3 overflow-y-auto flex-1 pr-2 custom-scroll">
-                        <div class="text-gray-500 text-sm italic">Loading...</div>
+                    <div id="stats-addresses" class="space-y-4 overflow-y-auto flex-1 pr-2 custom-scroll">
+                        <div class="text-gray-500 text-base italic">Loading...</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Column 2 -->
             <div class="flex flex-col gap-6 h-full min-h-0">
-                <!-- Crew Breakdown Stats -->
-                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-none relative overflow-hidden">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6 flex-none relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-yellow-500"></div>
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2 flex items-center gap-2">
+                    <h3 class="font-bold text-2xl text-white mb-5 uppercase border-b border-gray-700 pb-3 flex items-center gap-3">
                         <i class="fa-solid fa-users text-gray-500"></i> EMS Crew Analysis
                     </h3>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
-                            <span class="block text-gray-400 text-xs uppercase font-bold tracking-widest mb-1">Day Crew</span>
-                            <span id="stat-crew-day" class="text-4xl font-black text-blue-400">0</span>
+                    <div class="grid grid-cols-2 gap-5 mb-5">
+                        <div class="bg-gray-900/50 p-5 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-sm uppercase font-bold tracking-widest mb-2">Day Crew</span>
+                            <span id="stat-crew-day" class="text-5xl font-black text-blue-400">0</span>
                         </div>
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
-                            <span class="block text-gray-400 text-xs uppercase font-bold tracking-widest mb-1">Volunteer</span>
-                            <span id="stat-crew-vol" class="text-4xl font-black text-orange-400">0</span>
-                            <span id="stat-crew-vol-pct" class="block text-xs text-gray-500 font-bold mt-1">0% Handled</span>
+                        <div class="bg-gray-900/50 p-5 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-sm uppercase font-bold tracking-widest mb-2">Volunteer</span>
+                            <span id="stat-crew-vol" class="text-5xl font-black text-orange-400">0</span>
+                            <span id="stat-crew-vol-pct" class="block text-sm text-gray-500 font-bold mt-1">0% Handled</span>
                         </div>
                     </div>
-                    <div class="bg-gray-900/30 p-3 rounded border border-gray-700 text-[10px] text-gray-500 font-mono">
+                    <div class="bg-gray-900/30 p-3 rounded border border-gray-700 text-xs text-gray-500 font-mono">
                         <p><span class="font-bold text-gray-400">M-F:</span> 06:00 - 18:00 (Day Crew)</p>
                         <p><span class="font-bold text-gray-400">S-S:</span> 08:00 - 18:00 (Day Crew)</p>
                         <p class="text-orange-400 mt-1">*Holidays count as Volunteer</p>
                     </div>
                 </div>
 
-                <!-- Volunteer Disposition Stats -->
-                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-1 flex flex-col min-h-0 relative overflow-hidden">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6 flex-1 flex flex-col min-h-0 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-teal-500"></div>
-                    <h3 class="font-bold text-lg text-white mb-3 uppercase border-b border-gray-700 pb-2 flex-none flex items-center gap-2">
+                    <h3 class="font-bold text-2xl text-white mb-4 uppercase border-b border-gray-700 pb-3 flex-none flex items-center gap-3">
                         <i class="fa-solid fa-clipboard-check text-gray-500"></i> Volunteer Outcomes
                     </h3>
-                    <div id="stats-vol-dispo" class="space-y-3 overflow-y-auto flex-1 pr-2 custom-scroll">
-                        <div class="text-gray-500 text-sm italic">Loading...</div>
+                    <div id="stats-vol-dispo" class="space-y-4 overflow-y-auto flex-1 pr-2 custom-scroll">
+                        <div class="text-gray-500 text-base italic">Loading...</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Column 3 -->
-             <div class="flex flex-col gap-6 h-full min-h-0">
-                 <!-- Mutual Aid Stats (Takes full height of Col 3) -->
-                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-1 flex flex-col min-h-0 relative overflow-hidden">
+            <div class="flex flex-col gap-6 h-full min-h-0">
+                 <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6 flex-1 flex flex-col min-h-0 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500"></div>
-                    <h3 class="font-bold text-lg text-white mb-3 uppercase border-b border-gray-700 pb-2 flex-none flex items-center gap-2">
+                    <h3 class="font-bold text-2xl text-white mb-4 uppercase border-b border-gray-700 pb-3 flex-none flex items-center gap-3">
                         <i class="fa-solid fa-handshake text-gray-500"></i> EMS Mutual Aid
                     </h3>
                     
-                    <!-- Top Counters -->
-                    <div class="grid grid-cols-2 gap-4 mb-4 flex-none">
-                        <!-- Given Box -->
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center relative overflow-hidden group">
-                            <i class="fa-solid fa-arrow-right-from-bracket absolute top-2 right-2 text-yellow-500 opacity-20 text-xl group-hover:scale-110 transition"></i>
-                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1 tracking-widest">Given</span>
-                            <span id="stat-ma-given" class="text-4xl font-black text-yellow-400 block mb-3">0</span>
+                    <div class="grid grid-cols-2 gap-5 mb-5 flex-none">
+                        <div class="bg-gray-900/50 p-5 rounded-lg border border-gray-700 text-center relative overflow-hidden group">
+                            <i class="fa-solid fa-arrow-right-from-bracket absolute top-2 right-2 text-yellow-500 opacity-20 text-2xl group-hover:scale-110 transition"></i>
+                            <span class="block text-gray-400 text-sm uppercase font-bold mb-2 tracking-widest">Given</span>
+                            <span id="stat-ma-given" class="text-5xl font-black text-yellow-400 block mb-3">0</span>
                             
-                            <div class="grid grid-cols-2 gap-2 text-xs border-t border-gray-700 pt-3">
+                            <div class="grid grid-cols-2 gap-2 text-sm border-t border-gray-700 pt-3">
                                 <div>
-                                    <span class="text-gray-500 block text-[9px] font-bold">DAY</span>
-                                    <span id="stat-ma-given-day" class="font-bold text-lg text-blue-400">0</span>
+                                    <span class="text-gray-500 block text-[11px] font-bold">DAY</span>
+                                    <span id="stat-ma-given-day" class="font-bold text-xl text-blue-400">0</span>
                                 </div>
                                 <div>
-                                    <span class="text-gray-500 block text-[9px] font-bold">VOL</span>
-                                    <span id="stat-ma-given-vol" class="font-bold text-lg text-orange-400">0</span>
+                                    <span class="text-gray-500 block text-[11px] font-bold">VOL</span>
+                                    <span id="stat-ma-given-vol" class="font-bold text-xl text-orange-400">0</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Received Box -->
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center relative overflow-hidden group">
-                            <i class="fa-solid fa-arrow-right-to-bracket absolute top-2 right-2 text-green-500 opacity-20 text-xl group-hover:scale-110 transition"></i>
-                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1 tracking-widest">Received</span>
-                            <span id="stat-ma-received" class="text-4xl font-black text-green-400 block mb-3">0</span>
+                        <div class="bg-gray-900/50 p-5 rounded-lg border border-gray-700 text-center relative overflow-hidden group">
+                            <i class="fa-solid fa-arrow-right-to-bracket absolute top-2 right-2 text-green-500 opacity-20 text-2xl group-hover:scale-110 transition"></i>
+                            <span class="block text-gray-400 text-sm uppercase font-bold mb-2 tracking-widest">Received</span>
+                            <span id="stat-ma-received" class="text-5xl font-black text-green-400 block mb-3">0</span>
 
-                            <div class="grid grid-cols-2 gap-2 text-xs border-t border-gray-700 pt-3">
+                            <div class="grid grid-cols-2 gap-2 text-sm border-t border-gray-700 pt-3">
                                 <div>
-                                    <span class="text-gray-500 block text-[9px] font-bold">DAY</span>
-                                    <span id="stat-ma-received-day" class="font-bold text-lg text-blue-400">0</span>
+                                    <span class="text-gray-500 block text-[11px] font-bold">DAY</span>
+                                    <span id="stat-ma-received-day" class="font-bold text-xl text-blue-400">0</span>
                                 </div>
                                 <div>
-                                    <span class="text-gray-500 block text-[9px] font-bold">VOL</span>
-                                    <span id="stat-ma-received-vol" class="font-bold text-lg text-orange-400">0</span>
+                                    <span class="text-gray-500 block text-[11px] font-bold">VOL</span>
+                                    <span id="stat-ma-received-vol" class="font-bold text-xl text-orange-400">0</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Split Lists: Given vs Received -->
-                    <div class="grid grid-cols-2 gap-4 flex-1 min-h-0 border-t border-gray-700 pt-4">
-                        <!-- Given List -->
-                        <div class="flex flex-col min-h-0 border-r border-gray-700 pr-2">
-                            <h4 class="text-[10px] text-yellow-500 uppercase font-bold mb-2 flex-none tracking-widest border-b border-gray-700 pb-1 flex items-center gap-1">
+                    <div class="grid grid-cols-2 gap-5 flex-1 min-h-0 border-t border-gray-700 pt-5">
+                        <div class="flex flex-col min-h-0 border-r border-gray-700 pr-3">
+                            <h4 class="text-xs text-yellow-500 uppercase font-bold mb-3 flex-none tracking-widest border-b border-gray-700 pb-2 flex items-center gap-2">
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i> Given To
                             </h4>
-                            <ul id="stats-ma-depts-given" class="text-sm space-y-1 text-gray-300 overflow-y-auto flex-1 custom-scroll pr-1">
-                                <li class="text-gray-500 italic text-[10px]">Loading...</li>
+                            <ul id="stats-ma-depts-given" class="text-sm space-y-2 text-gray-300 overflow-y-auto flex-1 custom-scroll pr-2">
+                                <li class="text-gray-500 italic text-xs">Loading...</li>
                             </ul>
                         </div>
-                        <!-- Received List -->
-                        <div class="flex flex-col min-h-0 pl-2">
-                             <h4 class="text-[10px] text-green-500 uppercase font-bold mb-2 flex-none tracking-widest border-b border-gray-700 pb-1 flex items-center gap-1">
+                        <div class="flex flex-col min-h-0 pl-3">
+                             <h4 class="text-xs text-green-500 uppercase font-bold mb-3 flex-none tracking-widest border-b border-gray-700 pb-2 flex items-center gap-2">
                                 <i class="fa-solid fa-arrow-right-to-bracket"></i> Recv From
                              </h4>
-                            <ul id="stats-ma-depts-received" class="text-sm space-y-1 text-gray-300 overflow-y-auto flex-1 custom-scroll pr-1">
-                                <li class="text-gray-500 italic text-[10px]">Loading...</li>
+                            <ul id="stats-ma-depts-received" class="text-sm space-y-2 text-gray-300 overflow-y-auto flex-1 custom-scroll pr-2">
+                                <li class="text-gray-500 italic text-xs">Loading...</li>
                             </ul>
                         </div>
                     </div>
@@ -254,7 +229,6 @@
 
     </main>
 
-    <!-- Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -309,7 +283,7 @@
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                document.getElementById('connectionStatus').innerHTML = '<span class="text-green-400 font-bold uppercase live-pulse"><i class="fa-solid fa-circle text-[8px] mr-1"></i> LIVE DATA</span>';
+                document.getElementById('connectionStatus').innerHTML = '<span class="text-green-400 font-bold uppercase live-pulse"><i class="fa-solid fa-circle text-[10px] mr-1"></i> LIVE DATA</span>';
                 document.getElementById('statsTitle').textContent = `${currentYear} STATISTICS`;
                 
                 loadConfiguration(); // Load holidays first
@@ -421,19 +395,19 @@
             natureListEl.innerHTML = '';
             
             if (sortedNatures.length === 0) {
-                natureListEl.innerHTML = '<div class="text-gray-500 text-sm italic p-2">No data available</div>';
+                natureListEl.innerHTML = '<div class="text-gray-500 text-base italic p-2">No data available</div>';
             } else {
                 const maxCount = sortedNatures[0][1];
                 sortedNatures.forEach(([name, count]) => {
                     const barWidth = (count / maxCount) * 100; 
                     const row = document.createElement('div');
                     row.innerHTML = `
-                        <div class="flex justify-between text-xs mb-1 uppercase font-semibold text-gray-300">
+                        <div class="flex justify-between text-sm mb-1 uppercase font-semibold text-gray-300">
                             <span class="truncate pr-2">${name}</span>
                             <span class="font-mono text-white">${count}</span>
                         </div>
-                        <div class="w-full bg-gray-700/50 rounded-full h-2">
-                            <div class="bg-blue-500 h-2 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]" style="width: 0%" onload="this.style.width='${barWidth}%'"></div>
+                        <div class="w-full bg-gray-700/50 rounded-full h-3">
+                            <div class="bg-blue-500 h-3 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]" style="width: 0%" onload="this.style.width='${barWidth}%'"></div>
                         </div>
                     `;
                     natureListEl.appendChild(row);
@@ -460,19 +434,19 @@
             addrListEl.innerHTML = '';
 
             if (sortedAddresses.length === 0) {
-                addrListEl.innerHTML = '<div class="text-gray-500 text-sm italic p-2">No data available</div>';
+                addrListEl.innerHTML = '<div class="text-gray-500 text-base italic p-2">No data available</div>';
             } else {
                 const maxAddrCount = sortedAddresses[0][1];
                 sortedAddresses.forEach(([addr, count]) => {
                     const barWidth = (count / maxAddrCount) * 100;
                     const row = document.createElement('div');
                     row.innerHTML = `
-                        <div class="flex justify-between text-xs mb-1 uppercase font-semibold text-gray-300">
+                        <div class="flex justify-between text-sm mb-1 uppercase font-semibold text-gray-300">
                             <span class="truncate pr-2" title="${addr}">${addr}</span>
                             <span class="font-mono text-white">${count}</span>
                         </div>
-                        <div class="w-full bg-gray-700/50 rounded-full h-2">
-                            <div class="bg-purple-500 h-2 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(168,85,247,0.5)]" style="width: 0%"></div>
+                        <div class="w-full bg-gray-700/50 rounded-full h-3">
+                            <div class="bg-purple-500 h-3 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(168,85,247,0.5)]" style="width: 0%"></div>
                         </div>
                     `;
                     addrListEl.appendChild(row);
@@ -528,13 +502,13 @@
                  el.innerHTML = '';
                  const sorted = Object.entries(dataObj).sort((a, b) => b[1] - a[1]).slice(0, 8); // Limit to 8
                  if(sorted.length === 0) {
-                     el.innerHTML = '<li class="text-gray-600 text-[10px] italic p-1">No data</li>';
+                     el.innerHTML = '<li class="text-gray-600 text-xs italic p-1">No data</li>';
                      return;
                  }
                  sorted.forEach(([name, count]) => {
                     const li = document.createElement('li');
-                    li.className = "flex justify-between items-center py-1 border-b border-gray-700/50 last:border-0";
-                    li.innerHTML = `<span class="uppercase font-medium text-[10px] truncate max-w-[70%] text-gray-300" title="${name}">${name}</span> <span class="${colorClass} text-[10px] font-mono font-bold">${count}</span>`;
+                    li.className = "flex justify-between items-center py-2 border-b border-gray-700/50 last:border-0";
+                    li.innerHTML = `<span class="uppercase font-medium text-xs truncate max-w-[70%] text-gray-300" title="${name}">${name}</span> <span class="${colorClass} text-xs font-mono font-bold">${count}</span>`;
                     el.appendChild(li);
                 });
             };
@@ -579,19 +553,19 @@
             const sortedVolDisps = Object.entries(volDispCounts).sort((a, b) => b[1] - a[1]);
 
             if (sortedVolDisps.length === 0) {
-                volDispListEl.innerHTML = '<div class="text-gray-500 text-sm italic p-2">No data available</div>';
+                volDispListEl.innerHTML = '<div class="text-gray-500 text-base italic p-2">No data available</div>';
             } else {
                 const maxCount = sortedVolDisps[0][1];
                 sortedVolDisps.forEach(([name, count]) => {
                     const barWidth = (count / maxCount) * 100;
                     const row = document.createElement('div');
                     row.innerHTML = `
-                        <div class="flex justify-between text-xs mb-1 uppercase font-semibold text-gray-300">
+                        <div class="flex justify-between text-sm mb-1 uppercase font-semibold text-gray-300">
                             <span class="truncate pr-2">${name}</span>
                             <span class="font-mono text-white">${count}</span>
                         </div>
-                        <div class="w-full bg-gray-700/50 rounded-full h-2">
-                            <div class="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]" style="width: 0%"></div>
+                        <div class="w-full bg-gray-700/50 rounded-full h-3">
+                            <div class="bg-green-500 h-3 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]" style="width: 0%"></div>
                         </div>
                     `;
                     volDispListEl.appendChild(row);
