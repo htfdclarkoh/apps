@@ -392,9 +392,21 @@
                             </div>
                         </div>
                     </div>
-                    <h4 class="text-xs text-gray-400 uppercase font-bold mb-2">Most Frequent Depts</h4>
-                    <ul id="stats-ma-depts" class="text-sm space-y-1 text-gray-300">
-                        </ul>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-700">
+                        <div>
+                            <h4 class="text-xs text-yellow-500/80 uppercase font-bold mb-2">Frequent: Given To</h4>
+                            <ul id="stats-ma-given-depts" class="text-sm space-y-1 text-gray-300">
+                                <li class="text-gray-500 text-xs italic">No data</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-xs text-green-500/80 uppercase font-bold mb-2">Frequent: Received From</h4>
+                            <ul id="stats-ma-received-depts" class="text-sm space-y-1 text-gray-300">
+                                <li class="text-gray-500 text-xs italic">No data</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">

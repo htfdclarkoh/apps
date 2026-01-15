@@ -1003,40 +1003,79 @@ function updateStats() {
             });
     }
 
-    let givenCount = 0; let receivedCount = 0; let givenDay = 0; let givenVol = 0; let recDay = 0; let recVol = 0; const maDepts = {};
+    // --- MUTUAL AID STATS ---
+    let givenCount = 0; 
+    let receivedCount = 0; 
+    let givenDay = 0; 
+    let givenVol = 0; 
+    let recDay = 0; 
+    let recVol = 0; 
+    
+    // Create two separate counters
+    const maGivenDepts = {};
+    const maReceivedDepts = {};
+
     thisYearCalls.forEach(c => {
         if (c.responseType === 'Fire') return;
+        
         if (c.mutualAid) {
             const shift = getShiftType(c.dispatchDate, c.dispatchTime);
+            
+            // Handle Given
             if (c.mutualAidType === 'Given') {
                 givenCount++;
                 if (shift === 'Day') givenDay++; else givenVol++; 
+                
+                // Track Given Depts
+                if (c.mutualAidDept) {
+                    const depts = c.mutualAidDept.split(',').map(s => s.trim());
+                    depts.forEach(d => { if(d) maGivenDepts[d] = (maGivenDepts[d] || 0) + 1; });
+                }
             }
+            
+            // Handle Received
             if (c.mutualAidType === 'Received') {
                 receivedCount++;
                 if (shift === 'Day') recDay++; else recVol++;
-            }
-            if (c.mutualAidDept) {
-                const depts = c.mutualAidDept.split(',').map(s => s.trim());
-                depts.forEach(d => { if(d) maDepts[d] = (maDepts[d] || 0) + 1; });
+                
+                // Track Received Depts
+                if (c.mutualAidDept) {
+                    const depts = c.mutualAidDept.split(',').map(s => s.trim());
+                    depts.forEach(d => { if(d) maReceivedDepts[d] = (maReceivedDepts[d] || 0) + 1; });
+                }
             }
         }
     });
+
     document.getElementById('stat-ma-given').textContent = givenCount;
     document.getElementById('stat-ma-given-day').textContent = givenDay;
     document.getElementById('stat-ma-given-vol').textContent = givenVol;
     document.getElementById('stat-ma-received').textContent = receivedCount;
     document.getElementById('stat-ma-received-day').textContent = recDay;
     document.getElementById('stat-ma-received-vol').textContent = recVol;
-    const sortedDepts = Object.entries(maDepts).sort((a, b) => b[1] - a[1]).slice(0, 5); 
-    const deptListEl = document.getElementById('stats-ma-depts');
-    deptListEl.innerHTML = '';
-    sortedDepts.forEach(([name, count]) => {
-        const li = document.createElement('li');
-        li.className = "flex justify-between border-b border-gray-700 py-1 last:border-0";
-        li.innerHTML = `<span>${name}</span> <span class="font-bold text-white">${count}</span>`;
-        deptListEl.appendChild(li);
-    });
+
+    // Helper to render list
+    const renderMaList = (dataObj, containerId) => {
+        const sorted = Object.entries(dataObj).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        
+        if (sorted.length === 0) {
+            container.innerHTML = '<li class="text-gray-500 text-xs italic">No data available</li>';
+            return;
+        }
+
+        sorted.forEach(([name, count]) => {
+            const li = document.createElement('li');
+            li.className = "flex justify-between border-b border-gray-700 py-1 last:border-0";
+            li.innerHTML = `<span class="truncate pr-2" title="${name}">${name}</span> <span class="font-bold text-white">${count}</span>`;
+            container.appendChild(li);
+        });
+    };
+
+    // Render both lists
+    renderMaList(maGivenDepts, 'stats-ma-given-depts');
+    renderMaList(maReceivedDepts, 'stats-ma-received-depts');
 
     let dayCrewCount = 0; let volunteerCount = 0; const volDispCounts = {};
     thisYearCalls.forEach(c => {
