@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, getDoc, writeBatch, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, getDoc, writeBatch, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- Config ---
 const firebaseConfig = {
@@ -162,6 +162,24 @@ window.saveEdit = async function() {
     } catch (e) {
         console.error("Update Error:", e);
         showToast("FAILED TO UPDATE CALL", true);
+    }
+}
+
+window.deleteCall = async function() {
+    const id = document.getElementById('edit_docId').value;
+    if (!id) return;
+
+    if (confirm("Are you sure you want to permanently delete this call record? This action cannot be undone.")) {
+        try {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'calls', id);
+            await deleteDoc(docRef);
+            
+            closeEditModal();
+            showToast("CALL DELETED SUCCESSFULLY");
+        } catch (e) {
+            console.error("Delete Error:", e);
+            showToast("FAILED TO DELETE CALL", true);
+        }
     }
 }
 
