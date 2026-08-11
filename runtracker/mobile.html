@@ -1,986 +1,541 @@
-<!DOCTYPE html>
-<html lang="en" class="mobile-app">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
-    <title>RMS Call Tracker Mobile</title>
-    <link rel="icon" type="image/png" href="./assets/icon-AV2rQ6CU.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="./assets/icon-AV2rQ6CU.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="RMS Mobile">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#111827">
-    <meta name="format-detection" content="telephone=no">
-    
-  <script type="module" crossorigin src="./assets/main-BbVyfZBz.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/firebase-config-DlaiQHMm.js">
-  <link rel="modulepreload" crossorigin href="./assets/utils-C2q0sq8J.js">
-  <link rel="stylesheet" crossorigin href="./assets/firebase-config-DFChnhM5.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#071018">
+  <meta name="color-scheme" content="dark">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="HARMONY">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>RMS Call Tracker</title>
+
   <style>
     :root {
       color-scheme: dark;
-      --mobile-accent: #ef4444;
-      --mobile-surface: #1f2937;
-      --mobile-border: #374151;
-      --mobile-top-inset: max(env(safe-area-inset-top), 3.25rem);
-      --mobile-bottom-nav: calc(70px + env(safe-area-inset-bottom));
+      background: #071018;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
     }
-    html.mobile-app {
-      min-height: 100%;
-      background: #111827;
-      -webkit-text-size-adjust: 100%;
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      margin: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% -12%, rgba(220, 38, 38, .18), transparent 31rem),
+        #071018;
     }
-    .mobile-app body {
-      min-height: 100dvh;
-      background: radial-gradient(circle at 50% -12rem, rgba(220, 38, 38, 0.16), transparent 25rem), #111827;
-      overscroll-behavior-y: auto;
+
+    body {
+      position: fixed;
+      inset: 0;
       -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
     }
-    .mobile-app button,
-    .mobile-app input,
-    .mobile-app select,
-    .mobile-app textarea {
-      touch-action: manipulation;
+
+    .app-frame {
+      position: fixed;
+      top: var(--safe-top);
+      right: var(--safe-right);
+      bottom: 0;
+      left: var(--safe-left);
+      display: block;
+      width: calc(100% - var(--safe-left) - var(--safe-right));
+      height: calc(100% - var(--safe-top));
+      border: 0;
+      background: #071018;
+      opacity: 0;
+      transition: opacity .22s ease;
     }
-    @media (max-width: 1024px) {
-      .mobile-app body:not(.modal-open) {
-        overflow-x: hidden;
-        overflow-y: auto;
-        padding-bottom: var(--mobile-bottom-nav);
-        -webkit-overflow-scrolling: touch;
-      }
-      .mobile-app nav {
-        top: 0;
-        padding: calc(var(--mobile-top-inset) + 0.4rem) 1rem 0.7rem;
-        background: rgba(17, 24, 39, 0.94);
-        border-bottom-color: rgba(75, 85, 99, 0.72);
-        -webkit-backdrop-filter: blur(18px) saturate(140%);
-        backdrop-filter: blur(18px) saturate(140%);
-      }
-      .mobile-app .app-nav-inner {
-        display: block;
-        width: 100%;
-        max-width: 32rem;
-        margin-inline: auto;
-      }
-      .mobile-app .app-nav-inner > .flex:first-child {
-        justify-content: flex-start;
-        gap: 0.75rem;
-      }
-      .mobile-app .app-nav-inner > .flex:first-child > i {
-        display: grid;
-        place-items: center;
-        width: 2.5rem;
-        height: 2.5rem;
-        flex: 0 0 2.5rem;
-        border: 1px solid rgba(239, 68, 68, 0.35);
-        border-radius: 0.8rem;
-        background: rgba(127, 29, 29, 0.3);
-        font-size: 1.15rem;
-      }
-      .mobile-app .app-nav-inner h1 {
-        font-size: 1rem;
-        line-height: 1.25rem;
-        letter-spacing: 0.08em;
-      }
-      .mobile-app #connectionStatus {
-        margin-top: 0.1rem;
-        font-size: 0.65rem;
-        line-height: 0.9rem;
-      }
-      .mobile-app .app-nav-actions {
-        position: fixed;
-        z-index: 90;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.45rem;
-        width: 100%;
-        margin: 0;
-        padding: 0.45rem max(0.75rem, env(safe-area-inset-left)) calc(0.45rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-right));
-        border-top: 1px solid rgba(75, 85, 99, 0.9);
-        background: rgba(17, 24, 39, 0.96);
-        box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.35);
-        -webkit-backdrop-filter: blur(20px) saturate(145%);
-        backdrop-filter: blur(20px) saturate(145%);
-      }
-      .mobile-app .app-nav-actions button {
-        min-width: 0;
-        min-height: 52px;
-        padding: 0.4rem 0.2rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.18rem;
-        border: 0;
-        border-radius: 0.85rem;
-        background: transparent;
-        box-shadow: none;
-        color: #9ca3af;
-        font-size: 0.64rem;
-        line-height: 0.8rem;
-        letter-spacing: 0.08em;
-      }
-      .mobile-app .app-nav-actions button i { margin: 0; font-size: 1.15rem; }
-      .mobile-app .app-nav-actions button[aria-selected="true"] {
-        background: rgba(220, 38, 38, 0.17);
-        color: #fca5a5;
-      }
-      .mobile-app main {
-        width: 100%;
-        max-width: 32rem;
-        padding: 0.75rem 0.75rem 1.25rem;
-      }
-      .mobile-app #tab-entry > div,
-      .mobile-app #tab-history > div,
-      .mobile-app #tab-stats > div {
-        border-color: rgba(75, 85, 99, 0.72);
-        border-radius: 1rem;
-        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
-      }
-      .mobile-app #tab-entry > div > div:first-child { padding: 1rem; }
-      .mobile-app #tab-entry > div > div:first-child h2 { font-size: 0.95rem; line-height: 1.25rem; }
-      .mobile-app #previewIncidentId { font-size: 1.3rem; line-height: 1.55rem; }
-      .mobile-app #callForm { padding: 1rem; }
-      .mobile-app #callForm.space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.15rem; }
-      .mobile-app #callForm .grid { gap: 1rem; }
-      .mobile-app label { font-size: 0.72rem; line-height: 1rem; }
-      .mobile-app input:not([type="checkbox"]):not([type="file"]),
-      .mobile-app select,
-      .mobile-app textarea {
-        width: 100%;
-        min-height: 48px;
-        padding: 0.72rem 0.85rem;
-        border-radius: 0.75rem;
-        font-size: 16px;
-        line-height: 1.3;
-      }
-      .mobile-app textarea { min-height: 88px; }
-      .mobile-app input[type="date"] {
-        min-width: 0;
-        -webkit-appearance: none;
-        appearance: none;
-      }
-      .mobile-app input[type="checkbox"] { width: 24px; height: 24px; flex: 0 0 24px; }
-      .mobile-app #btn-ems,
-      .mobile-app #btn-fire,
-      .mobile-app #btn-both,
-      .mobile-app #edit_btn-ems,
-      .mobile-app #edit_btn-fire,
-      .mobile-app #edit_btn-both {
-        min-height: 48px;
-        padding-inline: 0.3rem;
-        font-size: 0.76rem;
-      }
-      .mobile-app #btn-ems i,
-      .mobile-app #btn-fire i,
-      .mobile-app #btn-both i,
-      .mobile-app #edit_btn-ems i,
-      .mobile-app #edit_btn-fire i,
-      .mobile-app #edit_btn-both i { margin-right: 0.28rem; }
-      .mobile-app .unit-chip,
-      .mobile-app #deptChips button,
-      .mobile-app #edit_deptChips button {
-        min-height: 42px;
-        padding: 0.55rem 0.75rem;
-      }
-      .mobile-app #mutualAidFields,
-      .mobile-app #edit_mutualAidFields { padding-left: 1rem; }
-      .mobile-app #callForm > .pt-4 {
-        position: sticky;
-        bottom: calc(var(--mobile-bottom-nav) - env(safe-area-inset-bottom) + 0.4rem);
-        z-index: 15;
-        margin-inline: -0.25rem;
-        padding: 0.65rem;
-        border: 1px solid rgba(75, 85, 99, 0.85);
-        border-radius: 0.9rem;
-        background: rgba(31, 41, 55, 0.96);
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-        -webkit-backdrop-filter: blur(14px);
-        backdrop-filter: blur(14px);
-      }
-      .mobile-app #submitBtn {
-        min-height: 48px;
-        flex: 1;
-        justify-content: center;
-        padding-inline: 0.9rem;
-      }
-      .mobile-app #tab-history {
-        min-height: calc(100dvh - var(--mobile-top-inset));
-        padding-bottom: calc(var(--mobile-bottom-nav) + 1rem);
-      }
-      .mobile-app #tab-history > div:first-child { padding: 0.85rem; }
-      .mobile-app #tab-history > div:nth-child(2) {
-        height: auto;
-        min-height: 0;
-        overflow: visible;
-      }
-      .mobile-app #tab-history .flex.flex-col.md\:flex-row { align-items: stretch; }
-      .mobile-app #tab-history input[type="text"] { min-width: 0; }
-      .mobile-app #btn-toggle-filter,
-      .mobile-app #tab-history label.cursor-pointer,
-      .mobile-app #tab-history button { min-height: 44px; }
-      .mobile-app .history-table-wrapper { display: none; }
-      .mobile-app #historyCallCards {
-        display: block;
-        overflow: visible;
-        padding: 0.75rem 0;
-      }
-      .mobile-app .mobile-call-card {
-        display: block;
-        border-radius: 0.95rem;
-        box-shadow: 0 9px 24px rgba(0, 0, 0, 0.18);
-      }
-      .mobile-app #tab-stats { padding-bottom: 0.5rem; }
-      .mobile-app #tab-stats .grid { gap: 0.75rem; }
-      .mobile-app #tab-stats .p-6,
-      .mobile-app #tab-stats .p-5,
-      .mobile-app #tab-stats .p-4 { padding: 0.9rem; }
-      .mobile-app [role="dialog"] {
-        align-items: flex-end;
-        padding: env(safe-area-inset-top) 0 0;
-      }
-      .mobile-app [role="dialog"] > div {
-        width: 100%;
-        max-width: none;
-        max-height: calc(100dvh - env(safe-area-inset-top));
-        border-right: 0;
-        border-bottom: 0;
-        border-left: 0;
-        border-radius: 1.15rem 1.15rem 0 0;
-      }
-      .mobile-app [role="dialog"] > div > div { padding-left: 1rem; padding-right: 1rem; }
-      .mobile-app [role="dialog"] > div > div:last-child { padding-bottom: calc(0.8rem + env(safe-area-inset-bottom)); }
-      .mobile-app [role="dialog"] h2 { font-size: 1.05rem; line-height: 1.35rem; }
-      .mobile-app #editModal .p-6.overflow-y-auto,
-      .mobile-app #monthModal .p-6.overflow-y-auto { padding: 1rem; }
-      .mobile-app #editModal .p-6.border-t { gap: 0.6rem; align-items: stretch; }
-      .mobile-app #editModal .p-6.border-t > div {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.5rem;
-      }
-      .mobile-app #editModal .p-6.border-t button {
-        min-height: 46px;
-        padding: 0.6rem;
-        font-size: 0.72rem;
-      }
-      .mobile-app #toast {
-        right: 0.75rem;
-        bottom: calc(var(--mobile-bottom-nav) + 0.75rem);
-        left: 0.75rem;
-        justify-content: center;
-        padding: 0.85rem 1rem;
-        border-radius: 0.9rem;
-      }
+
+    .app-frame.ready { opacity: 1; }
+
+    .launch-screen {
+      position: fixed;
+      inset: var(--safe-top) var(--safe-right) 0 var(--safe-left);
+      z-index: 2;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 14px;
+      background: #071018;
+      color: #f9fafb;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      transition: opacity .2s ease, visibility .2s ease;
     }
-    @media (min-width: 1025px) {
-      .mobile-app body::before {
-        content: "This page is optimized for iPhone";
-        position: fixed;
-        z-index: 1000;
-        right: 1rem;
-        bottom: 1rem;
-        padding: 0.55rem 0.75rem;
-        border: 1px solid rgba(75, 85, 99, 0.9);
-        border-radius: 0.7rem;
-        background: rgba(17, 24, 39, 0.92);
-        color: #9ca3af;
-        font-size: 0.7rem;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
+
+    .launch-screen.hidden {
+      visibility: hidden;
+      opacity: 0;
     }
+
+    .launch-icon {
+      position: relative;
+      display: grid;
+      width: 68px;
+      height: 68px;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(248, 113, 113, .45);
+      border-radius: 19px;
+      background: #111827;
+      box-shadow: 0 16px 44px rgba(0, 0, 0, .42), 0 0 0 6px rgba(220, 38, 38, .08);
+    }
+
+    .launch-icon::before,
+    .launch-icon::after {
+      position: absolute;
+      border-radius: 3px;
+      background: #ef4444;
+      box-shadow: 0 0 18px rgba(239, 68, 68, .3);
+      content: "";
+    }
+
+    .launch-icon::before { width: 36px; height: 13px; }
+    .launch-icon::after { width: 13px; height: 36px; }
+
+    .launch-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .launch-caption {
+      margin: -7px 0 0;
+      color: #6b7280;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .spinner {
+      width: 22px;
+      height: 22px;
+      margin-top: 7px;
+      border: 2px solid #263241;
+      border-top-color: #ef4444;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(1turn); } }
+
     @media (prefers-reduced-motion: reduce) {
-      .mobile-app * { scroll-behavior: auto !important; }
+      .app-frame,
+      .launch-screen { transition: none; }
+      .spinner { animation-duration: 1.8s; }
     }
   </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans min-h-screen flex flex-col">
+<body>
+  <div id="launchScreen" class="launch-screen" aria-live="polite">
+    <div class="launch-icon" aria-hidden="true"></div>
+    <p class="launch-title">RMS Call Tracker</p>
+    <p class="launch-caption">Harmony Township</p>
+    <div class="spinner" aria-label="Loading application"></div>
+  </div>
 
-    <nav class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-50 shadow-lg">
-        <div class="app-nav-inner max-w-[95%] mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-truck-medical text-red-500 text-2xl"></i>
-                <div>
-                    <h1 class="font-bold text-xl tracking-wide uppercase">RMS Mobile</h1>
-                    <div id="connectionStatus" class="text-xs text-yellow-500 flex items-center gap-1">
-                        <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Connecting...
-                    </div>
-                </div>
-            </div>
-            <div class="app-nav-actions flex gap-2" role="tablist" aria-label="Application sections">
-                <button type="button" role="tab" aria-controls="tab-entry" aria-selected="true" onclick="switchTab('entry')" id="btn-entry" class="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition shadow-md border border-red-500 uppercase text-sm tracking-wider">
-                    <i class="fa-solid fa-plus mr-1"></i> New
-                </button>
-                <button type="button" role="tab" aria-controls="tab-history" aria-selected="false" onclick="switchTab('history')" id="btn-history" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 font-medium hover:bg-gray-600 transition border border-gray-600 uppercase text-sm tracking-wider">
-                    <i class="fa-solid fa-list mr-1"></i> Calls
-                </button>
-                <button type="button" role="tab" aria-controls="tab-stats" aria-selected="false" onclick="switchTab('stats')" id="btn-stats" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 font-medium hover:bg-gray-600 transition border border-gray-600 uppercase text-sm tracking-wider">
-                    <i class="fa-solid fa-chart-pie mr-1"></i> Stats
-                </button>
-            </div>
-        </div>
-    </nav>
+  <iframe
+    id="appFrame"
+    class="app-frame"
+    src="./index.html"
+    title="RMS Call Tracker mobile application"
+    allow="clipboard-write"
+  ></iframe>
 
-    <main class="flex-grow p-4 max-w-[95%] mx-auto w-full">
-        
-        <div id="tab-entry" class="fade-in max-w-2xl mx-auto">
-            <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
-                <div class="bg-gray-750 p-6 border-b border-gray-700 flex justify-between items-center bg-gradient-to-r from-gray-800 to-gray-750">
-                    <h2 class="text-xl font-semibold text-white uppercase tracking-wide"><i class="fa-solid fa-pen-to-square mr-2 text-red-500"></i>Enter Incident</h2>
-                    <div class="text-right">
-                        <span class="text-xs text-gray-400 block uppercase tracking-wider">Next Incident ID</span>
-                        <span id="previewIncidentId" class="text-2xl font-mono font-bold text-green-400">Loading...</span>
-                    </div>
-                </div>
-                
-                <form id="callForm" class="p-6 space-y-6">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Date</label>
-                            <input type="date" id="dispatchDate" required class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Time (24h)</label>
-                            <input type="text" id="dispatchTime" required placeholder="HH:MM" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition font-mono tracking-wider">
-                            <p class="text-xs text-gray-500 mt-1 uppercase">Format: HH:MM (00:00 - 23:59)</p>
-                        </div>
-                    </div>
+  <script>
+    (() => {
+      const frame = document.getElementById('appFrame');
+      const launchScreen = document.getElementById('launchScreen');
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Call Nature</label>
-                            <input list="natures" id="callNature" oninput="forceCaps(this)" required placeholder="SELECT OR TYPE..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
-                            <datalist id="natures"></datalist>
-                        </div>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Response Type</label>
-                                <div class="grid grid-cols-3 gap-3">
-                                    <button type="button" onclick="selectType('EMS')" id="btn-ems" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase">
-                                        <i class="fa-solid fa-star-of-life mr-2"></i>EMS
-                                    </button>
-                                    <button type="button" onclick="selectType('Fire')" id="btn-fire" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-red-500 bg-red-600 text-white shadow-lg shadow-red-900/50 transform scale-[1.02] transition uppercase">
-                                        <i class="fa-solid fa-fire mr-2"></i>Fire
-                                    </button>
-                                    <button type="button" onclick="selectType('Both')" id="btn-both" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-purple-500 bg-purple-600 text-white shadow-lg shadow-purple-900/50 transform scale-[1.02] transition uppercase">
-                                        <i class="fa-solid fa-layer-group mr-2"></i>Both
-                                    </button>
-                                </div>
-                                <input type="hidden" id="responseType" value="EMS">
-                            </div>
+      const mobileStyles = `
+        :root {
+          color-scheme: dark;
+          background: #071018;
+          --mobile-nav-height: 76px;
+          --mobile-safe-bottom: clamp(2px, var(--host-safe-bottom, 2px), 4px);
+          --mobile-nav-total-height: calc(var(--mobile-nav-height) + var(--mobile-safe-bottom));
+        }
 
-                            <div id="emsDispositionSection" class="hidden animate-fade-in-down">
-                                <label class="block text-sm font-medium text-blue-400 mb-1 uppercase tracking-wider">EMS Disposition</label>
-                                <select id="emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
-                                    <option value="">SELECT DISPOSITION</option>
-                                    <option value="TRANSPORT">TRANSPORT</option>
-                                    <option value="REFUSAL">REFUSAL</option>
-                                    <option value="NO PATIENT">NO PATIENT</option>
-                                    <option value="NO CREW/MA">NO CREW/MA</option>
-                                    <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
-                                    <option value="76 COVERAGE">76 COVERAGE</option>
-                                    <option value="CANCELLED">CANCELLED</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+        html {
+          background: #071018;
+          overscroll-behavior: none;
+        }
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div class="md:col-span-1">
-                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">District</label>
-                            <select id="district" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase font-bold">
-                                <option value="">SELECT</option>
-                                <option value="58">58</option>
-                                <option value="72">72</option>
-                                <option value="56">56</option>
-                                <option value="MA">MA</option>
-                            </select>
-                        </div>
-                        <div class="md:col-span-3">
-                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
-                            <div class="relative">
-                                <input type="text" id="address" oninput="forceCaps(this)" required placeholder="1234 MAIN ST..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase" autocomplete="off">
-                                
-                                <div id="addressSuggestions" class="absolute w-full bg-gray-800 border border-gray-600 rounded-lg shadow-2xl z-50 hidden mt-1 max-h-48 overflow-y-auto">
-                                    </div>
-                            </div>
-                        </div>
-                    </div>
+        body {
+          min-height: 100%;
+          overflow-x: hidden;
+          background:
+            radial-gradient(circle at 50% -12%, rgba(220, 38, 38, .16), transparent 28rem),
+            #071018 !important;
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif !important;
+          -webkit-font-smoothing: antialiased;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Units Responded</label>
-                        <div id="unitChips" class="flex flex-wrap gap-2 mb-2 uppercase">
-                            </div>
-                        <input type="text" id="units" oninput="forceCaps(this)" placeholder="E.G. E1, M2, C501..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
-                        <p class="text-xs text-gray-500 mt-1 uppercase">Tap chips above to add, or type manually.</p>
-                    </div>
+        nav {
+          position: sticky !important;
+          top: 0;
+          z-index: 60 !important;
+          min-height: 66px;
+          padding: 10px 14px !important;
+          border-color: rgba(75, 85, 99, .58) !important;
+          background: rgba(10, 18, 28, .9) !important;
+          box-shadow: 0 8px 26px rgba(0, 0, 0, .22) !important;
+          -webkit-backdrop-filter: blur(18px) saturate(140%);
+          backdrop-filter: blur(18px) saturate(140%);
+        }
 
-                    <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                        <div class="flex items-center gap-3 mb-4">
-                            <input type="checkbox" id="mutualAid" name="mutualAid" class="w-5 h-5 text-red-600 rounded focus:ring-red-500 border-gray-600 bg-gray-800" onchange="toggleMutualAid()">
-                            <label for="mutualAid" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Mutual Aid Involved?</label>
-                        </div>
+        .app-nav-inner {
+          display: flex !important;
+          max-width: 100% !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          gap: 10px !important;
+        }
 
-                        <div id="mutualAidFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pl-8 border-l-2 border-red-500/30">
-                            <div>
-                                <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Direction</label>
-                                <select id="mutualAidType" name="mutualAidType" onchange="handleMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
-                                    <option value="Given">Given (To)</option>
-                                    <option value="Received">Received (From)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Department</label>
-                                <div id="deptChips" class="hidden flex flex-wrap gap-2 mb-2 transition-all uppercase">
-                                    </div>
-                                <input list="maDepts" type="text" id="mutualAidDept" name="mutualAidDept" oninput="forceCaps(this)" placeholder="DEPARTMENT NAME" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
-                                <datalist id="maDepts"></datalist>
-                            </div>
-                        </div>
-                    </div>
+        .app-nav-inner > .flex:first-child {
+          width: 100%;
+          min-width: 0;
+          gap: 10px !important;
+        }
 
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" id="workingIncident" name="workingIncident" class="w-5 h-5 text-red-600 rounded focus:ring-red-500 border-gray-600 bg-gray-800">
-                        <label for="workingIncident" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Working Incident</label>
-                    </div>
+        .app-nav-inner > .flex:first-child > i {
+          display: grid;
+          width: 38px;
+          height: 38px;
+          flex: 0 0 38px;
+          place-items: center;
+          border: 1px solid rgba(248, 113, 113, .35);
+          border-radius: 12px;
+          background: rgba(220, 38, 38, .12);
+          font-size: 17px !important;
+          box-shadow: inset 0 1px rgba(255, 255, 255, .04);
+        }
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Notes (Optional)</label>
-                        <textarea id="notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase"></textarea>
-                    </div>
+        nav h1 {
+          overflow: hidden;
+          font-size: 15px !important;
+          line-height: 1.15 !important;
+          letter-spacing: .035em !important;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
 
-                    <div class="pt-4 flex items-center justify-end gap-4 border-t border-gray-700">
-                        <button type="button" onclick="resetForm()" class="text-gray-400 hover:text-white text-sm uppercase">Clear Form</button>
-                        <button type="submit" id="submitBtn" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transform active:scale-95 transition flex items-center gap-2 uppercase tracking-wide">
-                            <span>Save Call Record</span>
-                            <i class="fa-solid fa-save"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        #connectionStatus {
+          margin-top: 3px;
+          font-size: 10px !important;
+          letter-spacing: .02em;
+        }
 
-        <div id="tab-history" class="hidden fade-in space-y-6">
-            
-            <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 shadow-lg flex flex-col space-y-4">
-                
-                <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
-                    <div class="flex items-center gap-2 w-full md:w-auto">
-                        <button onclick="exportToCSV()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2 rounded-lg border border-blue-500 transition flex items-center gap-2 uppercase shadow-md">
-                            <i class="fa-solid fa-download"></i>
-                            <span class="hidden sm:inline">Export CSV</span>
-                        </button>
+        .app-nav-actions {
+          position: fixed;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          z-index: 80;
+          display: grid !important;
+          width: 100%;
+          height: var(--mobile-nav-total-height);
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          gap: 6px !important;
+          padding: 8px 10px .5px;
+          border-top: 1px solid rgba(75, 85, 99, .62);
+          background: rgba(10, 18, 28, .94);
+          box-shadow: 0 -12px 32px rgba(0, 0, 0, .26);
+          -webkit-backdrop-filter: blur(22px) saturate(150%);
+          backdrop-filter: blur(22px) saturate(150%);
+        }
 
-                        <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium px-4 py-2 rounded-lg border border-gray-600 transition flex items-center gap-2 uppercase">
-                            <i class="fa-solid fa-file-csv"></i>
-                            <span class="hidden sm:inline">Import CSV</span>
-                            <input type="file" id="csvInput" accept=".csv" class="hidden" onchange="handleFileUpload(this)">
-                        </label>
-                        <span id="importStatus" class="text-xs text-gray-400 italic uppercase"></span>
-                    </div>
+        .app-nav-actions button {
+          display: flex !important;
+          min-width: 0 !important;
+          min-height: 56px;
+          flex-direction: column;
+          justify-content: center;
+          gap: 4px;
+          padding: 5px 4px !important;
+          border-color: transparent !important;
+          border-radius: 13px !important;
+          box-shadow: none !important;
+          font-size: 10px !important;
+          letter-spacing: .04em !important;
+        }
 
-                    <div class="flex items-center gap-2 w-full md:w-auto">
-                        <button onclick="toggleFilterPanel()" id="btn-toggle-filter" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm px-4 py-2 rounded-lg border border-gray-600 transition uppercase flex items-center gap-2">
-                            <i class="fa-solid fa-filter"></i> Filters
-                        </button>
-                        <input type="text" id="searchInput" oninput="forceCaps(this)" placeholder="SEARCH ADDRESS, NOTES, ID..." onkeyup="renderTable()" class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg px-4 py-2 w-full md:w-64 focus:ring-1 focus:ring-red-500 outline-none uppercase">
-                    </div>
-                </div>
+        .app-nav-actions button i {
+          margin: 0 !important;
+          font-size: 17px;
+        }
 
-                <div id="filterPanel" class="hidden border-t border-gray-700 pt-4 animate-fade-in-down">
-                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        
-                        <div class="col-span-1 lg:col-span-2">
-                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Date Range</label>
-                            <div class="flex gap-2">
-                                <input type="date" id="filterDateStart" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
-                                <span class="text-gray-500 self-center">-</span>
-                                <input type="date" id="filterDateEnd" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
-                            </div>
-                        </div>
+        .app-nav-actions button[aria-selected="false"] {
+          background: transparent !important;
+          color: #8792a3 !important;
+        }
 
-                        <div>
-                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Response Type</label>
-                            <select id="filterType" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
-                                <option value="">ALL TYPES</option>
-                                <option value="EMS">EMS</option>
-                                <option value="FIRE">FIRE</option>
-                                <option value="BOTH">BOTH</option>
-                            </select>
-                        </div>
+        .app-nav-actions button[aria-selected="true"] {
+          border-color: rgba(248, 113, 113, .26) !important;
+          background: rgba(220, 38, 38, .16) !important;
+          color: #fca5a5 !important;
+        }
 
-                        <div>
-                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Nature</label>
-                            <input type="text" id="filterNature" list="natures" oninput="forceCaps(this); renderTable()" placeholder="ANY" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
-                        </div>
+        main {
+          width: 100% !important;
+          max-width: 100% !important;
+          padding: 12px 12px calc(var(--mobile-nav-total-height) + 18px) !important;
+        }
 
-                        <div>
-                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Disposition</label>
-                            <select id="filterDisposition" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
-                                <option value="">ALL</option>
-                                <option value="TRANSPORT">TRANSPORT</option>
-                                <option value="REFUSAL">REFUSAL</option>
-                                <option value="NO PATIENT">NO PATIENT</option>
-                                <option value="NO CREW/MA">NO CREW/MA</option>
-                                <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
-                                <option value="76 COVERAGE">76 COVERAGE</option>
-                                <option value="CANCELLED">CANCELLED</option>
-                            </select>
-                        </div>
+        #tab-entry { max-width: 100% !important; }
 
-                        <div>
-                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">District</label>
-                            <select id="filterDistrict" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
-                                <option value="">ANY</option>
-                                <option value="58">58</option>
-                                <option value="72">72</option>
-                                <option value="56">56</option>
-                                <option value="MA">MA</option>
-                            </select>
-                        </div>
+        #tab-entry > div,
+        #tab-history > div,
+        #tab-stats > div,
+        #widget-monthly,
+        #widget-natures,
+        #widget-addresses,
+        #widget-mutual,
+        #widget-crew,
+        #widget-districts,
+        #widget-voldispo,
+        #widget-time-analysis > div {
+          border-color: rgba(75, 85, 99, .56) !important;
+          background-color: rgba(22, 31, 43, .9) !important;
+          box-shadow: 0 14px 38px rgba(0, 0, 0, .2) !important;
+        }
 
-                        <div>
-                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Mutual Aid</label>
-                            <select id="filterMutual" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
-                                <option value="">ANY</option>
-                                <option value="YES">YES (ANY)</option>
-                                <option value="NO">NO</option>
-                                <option value="GIVEN">GIVEN</option>
-                                <option value="RECEIVED">RECEIVED</option>
-                            </select>
-                        </div>
+        #tab-entry > div > div:first-child {
+          padding: 15px 16px !important;
+          background: linear-gradient(135deg, rgba(31, 41, 55, .98), rgba(24, 34, 47, .94)) !important;
+        }
 
-                        <div>
-                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Working Incident</label>
-                            <select id="filterWorking" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
-                                <option value="">ANY</option>
-                                <option value="YES">YES</option>
-                                <option value="NO">NO</option>
-                            </select>
-                        </div>
+        #tab-entry > div > div:first-child h2 { font-size: 15px !important; }
+        #previewIncidentId { font-size: 20px !important; }
+        #callForm { padding: 16px !important; }
 
-                        <div class="lg:col-span-2">
-                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Units</label>
-                            <input type="text" id="filterUnits" oninput="forceCaps(this); renderTable()" placeholder="CONTAINS..." class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
-                        </div>
+        #callForm.space-y-6 > :not([hidden]) ~ :not([hidden]),
+        #editModal .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+          margin-top: 18px !important;
+        }
 
-                    </div>
-                    <div class="flex justify-end mt-4">
-                        <button onclick="resetFilters()" class="text-xs text-red-400 hover:text-red-300 uppercase font-bold">Reset Filters</button>
-                    </div>
-                </div>
-            </div>
+        #callForm .gap-6,
+        #editModal .gap-6,
+        #monthModal .gap-6 { gap: 16px !important; }
 
-            <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg overflow-hidden flex flex-col h-[650px]">
-                <div class="p-4 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
-                    <h3 class="font-bold text-lg uppercase tracking-wide">Call Log</h3>
-                    <span id="recordCount" class="text-xs text-gray-500 uppercase font-mono">0 Records</span>
-                </div>
-                
-                <div class="history-table-wrapper overflow-auto flex-grow">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-gray-900 text-gray-400 text-xs uppercase sticky top-0 z-10">
-                            <tr>
-                                <th id="th-incident" onclick="handleSort('incident')" class="p-4 font-medium tracking-wider sortable">
-                                    Incident # <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                                <th id="th-datetime" onclick="handleSort('datetime')" class="p-4 font-medium tracking-wider sortable">
-                                    Date/Time <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                                <th id="th-nature" onclick="handleSort('nature')" class="p-4 font-medium tracking-wider sortable">
-                                    Nature <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                                <th id="th-district" onclick="handleSort('district')" class="p-4 font-medium tracking-wider sortable">
-                                    Dist <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                                <th id="th-address" onclick="handleSort('address')" class="p-4 font-medium tracking-wider sortable">
-                                    Address <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                                <th id="th-type" onclick="handleSort('type')" class="p-4 font-medium tracking-wider sortable">
-                                    Type <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                                <th id="th-units" onclick="handleSort('units')" class="p-4 font-medium tracking-wider sortable">
-                                    Units <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                                <th id="th-mutual" onclick="handleSort('mutual')" class="p-4 font-medium tracking-wider sortable">
-                                    Mutual Aid <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                                <th id="th-disposition" onclick="handleSort('disposition')" class="p-4 font-medium tracking-wider sortable">
-                                    Disposition <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                                <th id="th-notes" onclick="handleSort('notes')" class="p-4 font-medium tracking-wider sortable">
-                                    Notes <i class="fa-solid fa-sort sort-icon"></i>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody" class="divide-y divide-gray-700 text-sm text-gray-300 uppercase cursor-pointer">
-                            </tbody>
-                    </table>
-                </div>
-                <div id="historyCallCards" class="space-y-3 p-3" aria-label="Call history"></div>
-                <div id="emptyState" class="hidden p-10 text-center text-gray-500">
-                    <i class="fa-solid fa-filter text-4xl mb-3 opacity-50" aria-hidden="true"></i>
-                    <p class="uppercase">No calls found matching filters.</p>
-                </div>
-                <div id="loadMoreContainer" class="hidden p-4 text-center border-t border-gray-700">
-                    <button type="button" onclick="loadMoreCalls()" class="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold uppercase text-sm">
-                        Load More Calls
-                    </button>
-                </div>
-            </div>
-        </div>
+        label { letter-spacing: .045em !important; }
 
-        <div id="tab-stats" class="hidden fade-in space-y-6">
-            
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h2 class="text-xl font-bold text-white uppercase tracking-wide flex items-center">
-                    <i class="fa-solid fa-chart-pie mr-2 text-red-500"></i>
-                    <span id="statsTitle">2025 Statistics</span>
-                </h2>
-                <div class="flex items-center gap-2">
-                    <label class="text-xs text-gray-400 uppercase font-bold">Select Year:</label>
-                    <select id="statsYearSelect" onchange="handleStatsYearChange(this)" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block p-2 uppercase font-bold min-w-[100px]">
-                        </select>
-                </div>
-            </div>
+        input:not([type="checkbox"]):not([type="file"]),
+        select,
+        textarea {
+          min-height: 48px;
+          border-radius: 12px !important;
+          font-size: 16px !important;
+        }
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
-                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">Total Calls</h3>
-                    <p class="text-3xl font-bold text-white mt-1" id="stat-total">0</p>
-                </div>
-                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
-                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">Fire Runs</h3>
-                    <p class="text-3xl font-bold text-red-500 mt-1" id="stat-fire">0</p>
-                </div>
-                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
-                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">EMS Runs</h3>
-                    <p class="text-3xl font-bold text-blue-400 mt-1" id="stat-ems">0</p>
-                </div>
-            </div>
+        textarea { min-height: 94px; }
 
-            <div id="widget-monthly" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Monthly Breakdown</h3>
-                <div id="stats-monthly" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    <div class="text-gray-500 text-sm italic">No data available</div>
-                </div>
-            </div>
+        input[type="checkbox"] {
+          width: 23px !important;
+          height: 23px !important;
+          flex: 0 0 23px;
+        }
 
-            <div id="widget-time-analysis" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Day of Week Analysis (Average)</h3>
-                    <div id="stats-dow" class="space-y-3">
-                         <div class="text-gray-500 text-sm italic">No data available</div>
-                    </div>
-                </div>
-                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6 flex flex-col">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Hour of Day Analysis (Average)</h3>
-                    <div class="flex-grow flex items-end justify-between gap-1 h-64 w-full" id="stats-hod">
-                        <div class="text-gray-500 text-sm italic">No data available</div>
-                    </div>
-                    <div class="flex justify-between text-[9px] text-gray-500 mt-2 uppercase font-mono">
-                        <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
-                    </div>
-                </div>
-            </div>
+        #btn-ems,
+        #btn-fire,
+        #btn-both,
+        #edit_btn-ems,
+        #edit_btn-fire,
+        #edit_btn-both {
+          min-height: 48px;
+          padding: 8px 4px !important;
+          border-radius: 12px !important;
+          font-size: 12px !important;
+          transform: none !important;
+        }
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                <div id="widget-natures" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Top Call Natures</h3>
-                    <div id="stats-natures" class="space-y-3">
-                        <div class="text-gray-500 text-sm italic">No data available</div>
-                    </div>
-                </div>
+        #btn-ems i,
+        #btn-fire i,
+        #btn-both i { margin-right: 5px !important; }
 
-                <div id="widget-addresses" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Top Addresses</h3>
-                    <div id="stats-addresses" class="space-y-3">
-                        <div class="text-gray-500 text-sm italic">No data available</div>
-                    </div>
-                </div>
+        .unit-chip {
+          min-height: 40px;
+          padding: 9px 13px !important;
+          border-radius: 12px !important;
+        }
 
-                <div id="widget-mutual" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Mutual Aid Breakdown</h3>
-                    <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
-                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Given (To)</span>
-                            <span id="stat-ma-given" class="text-3xl font-bold text-yellow-400 block mb-2">0</span>
-                        </div>
-                        
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
-                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Received (From)</span>
-                            <span id="stat-ma-received" class="text-3xl font-bold text-green-400 block mb-2">0</span>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-700">
-                        <div>
-                            <h4 class="text-xs text-yellow-500 uppercase font-bold mb-2 flex items-center gap-1"><i class="fa-solid fa-arrow-right"></i> Given To</h4>
-                            <ul id="stats-ma-given-list" class="text-sm space-y-1 text-gray-300">
-                                </ul>
-                        </div>
-                        <div>
-                            <h4 class="text-xs text-green-500 uppercase font-bold mb-2 flex items-center gap-1"><i class="fa-solid fa-arrow-left"></i> Rec'd From</h4>
-                            <ul id="stats-ma-received-list" class="text-sm space-y-1 text-gray-300">
-                                </ul>
-                        </div>
-                    </div>
-                </div>
+        #callForm > .pt-4:last-child {
+          align-items: stretch !important;
+          flex-direction: column-reverse;
+          gap: 12px !important;
+        }
 
-                <div id="widget-districts" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">District Analysis</h3>
-                    <div id="stats-districts" class="space-y-3">
-                        <div class="text-gray-500 text-sm italic">No data available</div>
-                    </div>
-                </div>
+        #submitBtn {
+          width: 100%;
+          min-height: 54px;
+          justify-content: center;
+          border-radius: 14px !important;
+          font-size: 15px;
+          box-shadow: 0 12px 28px rgba(127, 29, 29, .3) !important;
+        }
 
-                <div id="widget-voldispo" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
-                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Disposition Analysis</h3>
-                    <div id="stats-vol-dispo" class="space-y-3">
-                        <div class="text-gray-500 text-sm italic">No data available</div>
-                    </div>
-                </div>
+        #callForm > .pt-4:last-child > button:first-child { min-height: 44px; }
+        #tab-history > div:first-child { padding: 12px !important; }
 
-            </div>
+        #tab-history > div:first-child > div:first-child,
+        #tab-history > div:first-child > div:first-child > div {
+          align-items: stretch !important;
+        }
 
-        </div>
+        #tab-history > div:first-child button,
+        #tab-history > div:first-child label {
+          min-height: 44px;
+          justify-content: center;
+        }
 
-    </main>
+        #tab-history > div:nth-child(2) {
+          height: auto !important;
+          min-height: 420px;
+          overflow: visible !important;
+        }
 
-    <div id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div class="bg-gray-800 w-full max-w-2xl rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
-            
-            <div class="p-6 border-b border-gray-700 bg-gray-850 flex justify-between items-center">
-                <div class="w-full mr-4">
-                    <h2 id="editModalTitle" class="text-xl font-bold text-white uppercase">Edit Incident</h2>
-                    <div class="mt-2">
-                         <label class="text-xs text-gray-500 uppercase font-bold">Incident ID</label>
-                         <input type="text" id="edit_incidentNumber" class="bg-gray-900 border border-gray-600 rounded px-3 py-1 text-yellow-400 font-mono text-sm font-bold w-full focus:ring-1 focus:ring-yellow-500 outline-none uppercase" oninput="forceCaps(this)">
-                    </div>
-                </div>
-                <button type="button" aria-label="Close edit incident" onclick="closeEditModal()" class="text-gray-400 hover:text-white transition">
-                    <i class="fa-solid fa-xmark text-2xl" aria-hidden="true"></i>
-                </button>
-            </div>
+        #historyCallCards { padding: 10px !important; }
 
-            <div class="p-6 overflow-y-auto space-y-6">
-                
-                <input type="hidden" id="edit_docId">
+        .mobile-call-card {
+          border-radius: 14px !important;
+          background: rgba(17, 24, 39, .82) !important;
+          box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
+        }
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Date</label>
-                        <input type="date" id="edit_dispatchDate" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Time (24h)</label>
-                        <input type="text" id="edit_dispatchTime" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-mono tracking-wider">
-                    </div>
-                </div>
+        #tab-stats > div:first-child {
+          align-items: stretch !important;
+          margin-bottom: 14px !important;
+          padding: 4px 2px;
+        }
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Call Nature</label>
-                        <input list="natures" id="edit_callNature" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Response Type</label>
-                            <div class="grid grid-cols-3 gap-3">
-                                <button type="button" onclick="selectEditType('EMS')" id="edit_btn-ems" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">EMS</button>
-                                <button type="button" onclick="selectEditType('Fire')" id="edit_btn-fire" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">Fire</button>
-                                <button type="button" onclick="selectEditType('Both')" id="edit_btn-both" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">Both</button>
-                            </div>
-                            <input type="hidden" id="edit_responseType">
-                        </div>
+        #tab-stats > div:first-child h2 { font-size: 17px !important; }
 
-                        <div id="edit_emsDispositionSection" class="hidden animate-fade-in-down">
-                            <label class="block text-sm font-medium text-blue-400 mb-1 uppercase tracking-wider">EMS Disposition</label>
-                            <select id="edit_emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
-                                <option value="">SELECT DISPOSITION</option>
-                                <option value="TRANSPORT">TRANSPORT</option>
-                                <option value="REFUSAL">REFUSAL</option>
-                                <option value="NO PATIENT">NO PATIENT</option>
-                                <option value="NO CREW/MA">NO CREW/MA</option>
-                                <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
-                                <option value="76 COVERAGE">76 COVERAGE</option>
-                                <option value="CANCELLED">CANCELLED</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+        #tab-stats > .grid.grid-cols-1.sm\\:grid-cols-3 {
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          gap: 8px !important;
+        }
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="md:col-span-1">
-                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">District</label>
-                        <select id="edit_district" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase font-bold">
-                            <option value="">SELECT</option>
-                            <option value="58">58</option>
-                            <option value="72">72</option>
-                            <option value="56">56</option>
-                            <option value="MA">MA</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-3">
-                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
-                        <input type="text" id="edit_address" list="addressHistory" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase" autocomplete="off">
-                    </div>
-                </div>
+        #tab-stats > .grid.grid-cols-1.sm\\:grid-cols-3 > div {
+          padding: 13px 10px !important;
+          text-align: center;
+        }
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Units Responded</label>
-                    <div id="edit_unitChips" class="flex flex-wrap gap-2 mb-2 uppercase">
-                        </div>
-                    <input type="text" id="edit_units" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
-                </div>
+        #tab-stats > .grid.grid-cols-1.sm\\:grid-cols-3 h3 {
+          font-size: 9px !important;
+          line-height: 1.25;
+        }
 
-                <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    <div class="flex items-center gap-3 mb-4">
-                        <input type="checkbox" id="edit_mutualAid" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-600 bg-gray-800" onchange="toggleEditMutualAid()">
-                        <label for="edit_mutualAid" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Mutual Aid Involved?</label>
-                    </div>
+        #tab-stats > .grid.grid-cols-1.sm\\:grid-cols-3 p { font-size: 24px !important; }
+        #tab-stats .p-6 { padding: 16px !important; }
 
-                    <div id="edit_mutualAidFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pl-8 border-l-2 border-blue-500/30">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Direction</label>
-                            <select id="edit_mutualAidType" onchange="handleEditMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 uppercase">
-                                <option value="Given">Given (To)</option>
-                                <option value="Received">Received (From)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Department</label>
-                            <div id="edit_deptChips" class="hidden flex flex-wrap gap-2 mb-2 transition-all uppercase">
-                                </div>
-                            <input list="maDepts" type="text" id="edit_mutualAidDept" oninput="forceCaps(this)" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 uppercase">
-                        </div>
-                    </div>
-                </div>
+        #editModal,
+        #monthModal {
+          align-items: flex-end !important;
+          padding: 0 !important;
+        }
 
-                <div class="flex items-center gap-3">
-                    <input type="checkbox" id="edit_workingIncident" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-600 bg-gray-800">
-                    <label for="edit_workingIncident" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Working Incident</label>
-                </div>
+        #editModal > div,
+        #monthModal > div {
+          width: 100% !important;
+          max-height: 96% !important;
+          border-right: 0 !important;
+          border-bottom: 0 !important;
+          border-left: 0 !important;
+          border-radius: 22px 22px 0 0 !important;
+        }
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Notes</label>
-                    <textarea id="edit_notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase"></textarea>
-                </div>
+        #editModal > div > div,
+        #monthModal > div > div { padding: 16px !important; }
 
-            </div>
+        #editModal > div > div:last-child {
+          gap: 10px;
+          padding-bottom: 18px !important;
+        }
 
-            <div class="p-6 border-t border-gray-700 bg-gray-850 flex justify-between items-center">
-                <button onclick="deleteCall()" class="px-4 py-2 rounded-lg bg-red-900/50 text-red-500 font-bold hover:bg-red-900 hover:text-white transition uppercase flex items-center gap-2 border border-red-900/50 hover:border-red-500">
-                    <i class="fa-solid fa-trash-can"></i> Delete
-                </button>
-                <div class="flex gap-3">
-                    <button onclick="closeEditModal()" class="px-6 py-2 rounded-lg bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition uppercase">Cancel</button>
-                    <button onclick="saveEdit()" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg transition uppercase flex items-center gap-2">
-                        <i class="fa-solid fa-save"></i> Save Changes
-                    </button>
-                </div>
-            </div>
+        #editModal > div > div:last-child > div { gap: 8px !important; }
 
-        </div>
-    </div>
+        #editModal > div > div:last-child button {
+          min-height: 46px;
+          padding: 8px 12px !important;
+          font-size: 11px;
+        }
 
-    <div id="monthModal" role="dialog" aria-modal="true" aria-labelledby="monthModalTitle" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div class="bg-gray-800 w-full max-w-4xl rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
-            <div class="p-6 border-b border-gray-700 bg-gray-850 flex justify-between items-center">
-                <h2 id="monthModalTitle" class="text-2xl font-bold text-white uppercase tracking-wide">MONTH DETAILS</h2>
-                <button type="button" aria-label="Close month details" onclick="closeMonthModal()" class="text-gray-400 hover:text-white transition">
-                    <i class="fa-solid fa-xmark text-2xl" aria-hidden="true"></i>
-                </button>
-            </div>
-            
-            <div class="p-6 overflow-y-auto space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600 text-center">
-                        <span class="block text-gray-400 text-xs uppercase font-bold">Total Calls</span>
-                        <span id="monthModalTotal" class="text-3xl font-bold text-white">0</span>
-                    </div>
-                    <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600 text-center">
-                        <span class="block text-gray-400 text-xs uppercase font-bold">Fire Runs</span>
-                        <span id="monthModalFire" class="text-3xl font-bold text-red-500">0</span>
-                    </div>
-                    <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600 text-center">
-                        <span class="block text-gray-400 text-xs uppercase font-bold">EMS Runs</span>
-                        <span id="monthModalEms" class="text-3xl font-bold text-blue-400">0</span>
-                    </div>
-                </div>
+        #toast {
+          right: 12px !important;
+          bottom: calc(var(--mobile-nav-total-height) + 12px) !important;
+          left: 12px !important;
+          justify-content: center;
+          padding: 14px 16px !important;
+          border-radius: 14px !important;
+        }
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
-                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Top Call Natures</h3>
-                        <div id="monthModalNatures" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
-                    </div>
-                    
-                     <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
-                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Top 5 Addresses</h3>
-                        <div id="monthModalAddresses" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
-                    </div>
+        @media (orientation: landscape) and (max-height: 500px) {
+          :root { --mobile-nav-height: 62px; }
+          nav { position: relative !important; min-height: 56px; }
+          .app-nav-actions { padding-top: 5px; padding-bottom: .5px; }
+          .app-nav-actions button { min-height: 48px; }
+        }
 
-                    <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
-                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">District Analysis</h3>
-                        <div id="monthModalDistricts" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
-                    </div>
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { scroll-behavior: auto !important; }
+        }
+      `;
 
-                     <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
-                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">EMS Dispositions</h3>
-                        <div id="monthModalDispos" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
-                    </div>
+      function prepareMobileApp() {
+        try {
+          const appDocument = frame.contentDocument;
+          if (!appDocument) return;
 
-                    <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
-                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Day of Week (Avg)</h3>
-                        <div id="monthModalDoW" class="space-y-2"></div>
-                    </div>
-                </div>
+          appDocument.documentElement.classList.add('mobile-home-screen');
+          const hostSafeBottom = getComputedStyle(document.documentElement)
+            .getPropertyValue('--safe-bottom')
+            .trim() || '0px';
+          appDocument.documentElement.style.setProperty('--host-safe-bottom', hostSafeBottom);
 
-                <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
-                    <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Mutual Aid Analysis</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                             <div class="flex justify-between items-end mb-2">
-                                <span class="text-xs text-yellow-500 uppercase font-bold"><i class="fa-solid fa-arrow-right mr-1"></i> Given To</span>
-                                <span id="monthModalMaGivenCount" class="text-xl font-bold text-white">0</span>
-                             </div>
-                             <div id="monthModalMaGivenList" class="space-y-2"></div>
-                        </div>
+          const viewport = appDocument.querySelector('meta[name="viewport"]');
+          if (viewport) {
+            viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+          }
 
-                        <div>
-                             <div class="flex justify-between items-end mb-2">
-                                <span class="text-xs text-green-500 uppercase font-bold"><i class="fa-solid fa-arrow-left mr-1"></i> Rec'd From</span>
-                                <span id="monthModalMaReceivedCount" class="text-xl font-bold text-white">0</span>
-                             </div>
-                             <div id="monthModalMaReceivedList" class="space-y-2"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="p-4 border-t border-gray-700 bg-gray-850 flex justify-between items-center">
-                 <button id="btn-month-export" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition uppercase text-sm shadow-md flex items-center gap-2">
-                    <i class="fa-solid fa-file-csv"></i> Export CSV
-                 </button>
-                 <button onclick="closeMonthModal()" class="px-6 py-2 rounded-lg bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition uppercase">Close</button>
-            </div>
-        </div>
-    </div>
+          const oldStyle = appDocument.getElementById('iphone-mobile-overrides');
+          if (oldStyle) oldStyle.remove();
+          const style = appDocument.createElement('style');
+          style.id = 'iphone-mobile-overrides';
+          style.textContent = mobileStyles;
+          appDocument.head.appendChild(style);
 
-    <div id="toast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
-        <i class="fa-solid fa-check-circle"></i>
-        <span id="toastMessage" class="uppercase font-bold text-sm">Action Successful</span>
-    </div>
+          const tabBar = appDocument.querySelector('.app-nav-actions');
+          if (tabBar && tabBar.parentElement !== appDocument.body) {
+            appDocument.body.appendChild(tabBar);
+          }
 
+          const appTitle = appDocument.querySelector('nav h1');
+          if (appTitle) appTitle.textContent = 'RMS Call Tracker';
+
+          frame.classList.add('ready');
+          launchScreen.classList.add('hidden');
+        } catch (error) {
+          launchScreen.querySelector('.launch-caption').textContent = 'Unable to open the application';
+          launchScreen.querySelector('.spinner').hidden = true;
+        }
+      }
+
+      frame.addEventListener('load', prepareMobileApp);
+    })();
+  </script>
 </body>
 </html>
