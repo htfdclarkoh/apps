@@ -528,6 +528,17 @@
           const appTitle = appDocument.querySelector('nav h1');
           if (appTitle) appTitle.textContent = 'RMS Call Tracker';
 
+          // Keep edit fields from receiving focus and opening the keyboard
+          // when an existing History record is first opened on mobile.
+          const editModalHeader = appDocument.querySelector('#editModal > div > div:first-child');
+          const editCloseButton = editModalHeader?.querySelector(
+            'button[aria-label="Close edit incident"]'
+          );
+          if (editModalHeader && editCloseButton) {
+            editCloseButton.style.order = '9999';
+            editModalHeader.prepend(editCloseButton);
+          }
+
           frame.classList.add('ready');
           launchScreen.classList.add('hidden');
         } catch (error) {

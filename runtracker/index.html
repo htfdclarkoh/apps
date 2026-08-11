@@ -445,6 +445,9 @@
         <div class="bg-gray-800 w-full max-w-2xl rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
             
             <div class="p-6 border-b border-gray-700 bg-gray-850 flex justify-between items-center">
+                <button type="button" aria-label="Close edit incident" onclick="closeEditModal()" style="order: 9999" class="text-gray-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-2xl" aria-hidden="true"></i>
+                </button>
                 <div class="w-full mr-4">
                     <h2 id="editModalTitle" class="text-xl font-bold text-white uppercase">Edit Incident</h2>
                     <div class="mt-2">
@@ -452,9 +455,6 @@
                          <input type="text" id="edit_incidentNumber" class="bg-gray-900 border border-gray-600 rounded px-3 py-1 text-yellow-400 font-mono text-sm font-bold w-full focus:ring-1 focus:ring-yellow-500 outline-none uppercase" oninput="forceCaps(this)">
                     </div>
                 </div>
-                <button type="button" aria-label="Close edit incident" onclick="closeEditModal()" class="text-gray-400 hover:text-white transition">
-                    <i class="fa-solid fa-xmark text-2xl" aria-hidden="true"></i>
-                </button>
             </div>
 
             <div class="p-6 overflow-y-auto space-y-6">
