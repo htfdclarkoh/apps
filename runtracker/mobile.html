@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="HTFD Mobile">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111827">
+    <title>HTFD Mobile Tracker</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0b1220;
+            --surface: #182235;
+            --surface-2: #111a2a;
+            --line: #334155;
+            --muted: #94a3b8;
+            --text: #f8fafc;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --green: #22c55e;
+            --orange: #f97316;
+        }
+
+        * { box-sizing: border-box; }
+        html { background: var(--bg); }
+        body {
+            margin: 0;
+            min-height: 100dvh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior-y: none;
+        }
+        button, input, select, textarea { font: inherit; }
+        button { -webkit-tap-highlight-color: transparent; }
+        input, select, textarea { font-size: 16px; }
+        .app { width: 100%; max-width: 540px; min-height: 100dvh; margin: 0 auto; background: var(--bg); }
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+            background: rgba(24, 34, 53, .96);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--line);
+        }
+        .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .brand-mark {
+            width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+            background: rgba(239, 68, 68, .13); color: #fb7185; border: 1px solid rgba(239, 68, 68, .3);
+        }
+        .brand h1 { margin: 0; font-size: 17px; line-height: 1.1; letter-spacing: .02em; }
+        .status { display: flex; align-items: center; gap: 5px; margin-top: 4px; color: #fbbf24; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .status.online { color: #4ade80; }
+        .status.error { color: #fb7185; }
+        .status-dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; }
+        .incident-preview { text-align: right; flex: none; }
+        .incident-preview small { display: block; color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+        .incident-preview strong { display: block; color: #4ade80; font: 800 16px ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 3px; }
+
+        main { padding: 18px 14px calc(96px + env(safe-area-inset-bottom)); }
+        .view[hidden] { display: none !important; }
+        .page-heading { margin-bottom: 16px; }
+        .eyebrow { color: #fb7185; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; }
+        .page-heading h2 { margin: 4px 0 0; font-size: 26px; letter-spacing: -.03em; }
+        .page-heading p { color: var(--muted); margin: 5px 0 0; font-size: 13px; }
+        .card { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: 0 14px 35px rgba(0,0,0,.16); }
+        .stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+        .field-grid { min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .field { min-width: 0; }
+        .field label, .field-label { display: block; margin: 0 0 7px; color: #cbd5e1; font-size: 11px; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; }
+        .control {
+            width: 100%; min-height: 48px; border: 1px solid #475569; border-radius: 13px;
+            background: var(--surface-2); color: var(--text); padding: 11px 13px; outline: none;
+        }
+        .control:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(59,130,246,.18); }
+        textarea.control { min-height: 86px; resize: vertical; }
+        .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+        .segment {
+            min-height: 48px; border: 1px solid #475569; border-radius: 13px; background: var(--surface-2);
+            color: var(--muted); font-size: 12px; font-weight: 900; text-transform: uppercase;
+        }
+        .segment.active[data-value="EMS"] { background: var(--blue); border-color: #60a5fa; color: white; }
+        .segment.active[data-value="Fire"] { background: #dc2626; border-color: #f87171; color: white; }
+        .segment.active[data-value="Both"] { background: #7c3aed; border-color: #a78bfa; color: white; }
+        .chips { display: flex; gap: 8px; overflow-x: auto; padding: 1px 1px 7px; scrollbar-width: none; }
+        .chips::-webkit-scrollbar { display: none; }
+        .chip { flex: none; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #475569; background: var(--surface-2); color: #cbd5e1; font-size: 12px; font-weight: 800; }
+        .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; }
+        .switch-copy strong { display: block; font-size: 14px; }
+        .switch-copy span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+        .switch { position: relative; width: 52px; height: 30px; flex: none; }
+        .switch input { position: absolute; opacity: 0; }
+        .switch-track { position: absolute; inset: 0; border-radius: 999px; background: #475569; transition: .2s; }
+        .switch-track::after { content: ""; position: absolute; width: 24px; height: 24px; left: 3px; top: 3px; border-radius: 50%; background: white; transition: .2s; }
+        .switch input:checked + .switch-track { background: var(--red); }
+        .switch input:checked + .switch-track::after { transform: translateX(22px); }
+        .subpanel { border-top: 1px solid var(--line); padding-top: 14px; }
+        .subpanel[hidden] { display: none; }
+        .primary {
+            width: 100%; min-height: 54px; border: 0; border-radius: 15px; background: linear-gradient(135deg,#ef4444,#dc2626);
+            color: white; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em;
+            box-shadow: 0 10px 24px rgba(220,38,38,.25);
+        }
+        .primary:disabled { opacity: .55; }
+        .secondary { min-height: 44px; border-radius: 12px; border: 1px solid #475569; background: var(--surface-2); color: #e2e8f0; padding: 9px 13px; font-size: 12px; font-weight: 850; text-transform: uppercase; }
+        .danger { color: #fda4af; border-color: rgba(239,68,68,.45); }
+
+        .search-wrap { position: relative; margin-bottom: 12px; }
+        .search-wrap i { position: absolute; left: 14px; top: 16px; color: #64748b; }
+        .search-wrap .control { padding-left: 40px; }
+        .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .history-meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 11px; margin: 0 2px 10px; text-transform: uppercase; font-weight: 800; }
+        .call-list { display: grid; gap: 10px; }
+        .call-card { width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); padding: 14px; }
+        .call-card:active { transform: scale(.99); }
+        .call-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .call-id { font: 850 14px ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .badge { border-radius: 8px; padding: 5px 8px; font-size: 10px; font-weight: 900; }
+        .badge.ems { background: rgba(37,99,235,.3); color: #bfdbfe; }
+        .badge.fire { background: rgba(220,38,38,.3); color: #fecaca; }
+        .badge.both { background: rgba(124,58,237,.3); color: #ddd6fe; }
+        .call-time { color: var(--muted); font-size: 11px; margin-top: 8px; }
+        .call-nature { font-size: 15px; font-weight: 900; margin-top: 5px; }
+        .call-address { color: #cbd5e1; font-size: 13px; line-height: 1.35; margin-top: 4px; }
+        .call-details { display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: 11px; margin-top: 10px; }
+        .empty { text-align: center; color: var(--muted); padding: 38px 16px; }
+        .load-more { margin-top: 12px; }
+
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 12px; }
+        .summary { min-width: 0; padding: 14px 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+        .summary span { display: block; color: var(--muted); font-size: 9px; font-weight: 900; text-transform: uppercase; }
+        .summary strong { display: block; margin-top: 6px; font-size: 25px; }
+        .summary.fire strong { color: #fb7185; }
+        .summary.ems strong { color: #60a5fa; }
+        .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; }
+        .section-title h3 { margin: 0; font-size: 16px; }
+        .section-title i { color: #64748b; }
+        .crew-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .crew-stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px; text-align: center; }
+        .crew-stat span { color: var(--muted); font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .crew-stat strong { display: block; margin-top: 5px; font-size: 29px; }
+        .crew-stat.day strong { color: #60a5fa; }
+        .crew-stat.vol strong { color: #fb923c; }
+        .crew-stat small { display: block; color: #cbd5e1; font-size: 11px; font-weight: 850; margin-top: 2px; }
+        .stats-stack { display: grid; gap: 12px; }
+        .month-list, .disposition-list { display: grid; gap: 9px; }
+        .bar-row-head { display: flex; justify-content: space-between; gap: 10px; color: #cbd5e1; font-size: 11px; font-weight: 850; text-transform: uppercase; }
+        .bar-track { height: 7px; border-radius: 999px; background: #334155; overflow: hidden; margin-top: 5px; }
+        .bar-fill { height: 100%; border-radius: inherit; background: var(--blue); }
+        .bar-fill.orange { background: var(--orange); }
+
+        .bottom-nav {
+            position: fixed; z-index: 40; left: 50%; bottom: 0; transform: translateX(-50%);
+            width: min(100%, 540px); display: grid; grid-template-columns: repeat(3,1fr); gap: 6px;
+            padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+            background: rgba(17,26,42,.97); backdrop-filter: blur(18px); border-top: 1px solid var(--line);
+        }
+        .nav-button { min-height: 54px; border: 0; border-radius: 14px; background: transparent; color: #94a3b8; display: grid; place-items: center; align-content: center; gap: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .nav-button i { font-size: 18px; }
+        .nav-button.active { background: rgba(239,68,68,.13); color: #fb7185; }
+
+        dialog { width: min(100%, 540px); max-width: none; max-height: 91dvh; margin: auto auto 0; padding: 0; color: var(--text); border: 1px solid var(--line); border-bottom: 0; border-radius: 22px 22px 0 0; background: var(--surface); box-shadow: 0 -20px 60px rgba(0,0,0,.45); }
+        dialog::backdrop { background: rgba(2,6,23,.75); backdrop-filter: blur(3px); }
+        .sheet-head { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 15px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+        .sheet-head h2 { margin: 0; font-size: 18px; }
+        .icon-button { width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--surface-2); color: #cbd5e1; }
+        .sheet-body { padding: 16px 16px calc(18px + env(safe-area-inset-bottom)); overflow-y: auto; }
+        .sheet-actions { display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 16px; }
+        .toast { position: fixed; z-index: 80; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); transform: translate(-50%, 24px); width: calc(100% - 28px); max-width: 500px; padding: 13px 15px; border-radius: 13px; background: #166534; color: white; font-size: 12px; font-weight: 850; text-align: center; opacity: 0; pointer-events: none; transition: .22s; }
+        .toast.show { opacity: 1; transform: translate(-50%, 0); }
+        .toast.error { background: #991b1b; }
+        @media (max-width: 370px) {
+            .incident-preview small { display: none; }
+            .field-grid { grid-template-columns: 1fr; }
+            .brand h1 { font-size: 15px; }
+        }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+    </style>
+  <script type="module" crossorigin src="./assets/mobile-DM0uolb8.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/firebase-config-DIgTNME-.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-j1fhIcVl.js">
+  <link rel="stylesheet" crossorigin href="./assets/firebase-config-zQ_KO3TN.css">
+</head>
+<body>
+    <div class="app">
+        <header class="topbar">
+            <div class="topbar-row">
+                <div class="brand">
+                    <div class="brand-mark"><i class="fa-solid fa-truck-medical" aria-hidden="true"></i></div>
+                    <div>
+                        <h1>HTFD Run Tracker</h1>
+                        <div id="mobileStatus" class="status"><span class="status-dot"></span><span>Connecting</span></div>
+                    </div>
+                </div>
+                <div class="incident-preview">
+                    <small>Next incident</small>
+                    <strong id="mobileNextId">—</strong>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section id="view-new" class="view" aria-labelledby="newTitle">
+                <div class="page-heading">
+                    <span class="eyebrow">Quick entry</span>
+                    <h2 id="newTitle">New Incident</h2>
+                    <p>Designed for fast one-handed entry.</p>
+                </div>
+                <form id="mobileCallForm" class="card stack">
+                    <div class="field-grid">
+                        <div class="field"><label for="mobileDate">Dispatch date</label><input class="control" type="date" id="mobileDate" required></div>
+                        <div class="field"><label for="mobileTime">Dispatch time</label><input class="control" type="time" id="mobileTime" required></div>
+                    </div>
+                    <div>
+                        <span class="field-label">Response type</span>
+                        <div id="mobileResponseSegments" class="segmented" role="group" aria-label="Response type">
+                            <button class="segment" type="button" data-value="EMS"><i class="fa-solid fa-star-of-life" aria-hidden="true"></i> EMS</button>
+                            <button class="segment" type="button" data-value="Fire"><i class="fa-solid fa-fire" aria-hidden="true"></i> Fire</button>
+                            <button class="segment" type="button" data-value="Both"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Both</button>
+                        </div>
+                    </div>
+                    <div class="field"><label for="mobileNature">Call nature</label><input class="control caps" id="mobileNature" list="mobileNatures" placeholder="SELECT OR TYPE" required><datalist id="mobileNatures"></datalist></div>
+                    <div id="mobileDispositionField" class="field"><label for="mobileDisposition">EMS disposition</label><select class="control" id="mobileDisposition">
+                        <option value="">SELECT DISPOSITION</option><option>TRANSPORT</option><option>REFUSAL</option><option>NO PATIENT</option><option>NO CREW/MA</option><option>OTHER EMS XPORT</option><option>75 COVERAGE</option><option>CANCELLED</option>
+                    </select></div>
+                    <div class="field"><label for="mobileAddress">Address</label><input class="control caps" id="mobileAddress" list="mobileAddresses" placeholder="1234 MAIN ST" autocomplete="street-address" required><datalist id="mobileAddresses"></datalist></div>
+                    <div class="field">
+                        <label for="mobileUnits">Units responded</label>
+                        <div id="mobileUnitChips" class="chips" aria-label="Quick unit choices"></div>
+                        <input class="control caps" id="mobileUnits" placeholder="M176, E76">
+                    </div>
+                    <div>
+                        <div class="switch-row">
+                            <div class="switch-copy"><strong>Mutual aid involved?</strong><span>Add direction and department</span></div>
+                            <label class="switch"><input type="checkbox" id="mobileMutual"><span class="switch-track"></span></label>
+                        </div>
+                        <div id="mobileMutualFields" class="subpanel stack" hidden>
+                            <div class="field-grid">
+                                <div class="field"><label for="mobileMutualType">Direction</label><select class="control" id="mobileMutualType"><option value="Given">Given to</option><option value="Received">Received from</option></select></div>
+                                <div class="field"><label for="mobileMutualDept">Department</label><input class="control caps" id="mobileMutualDept" list="mobileDepartments" placeholder="DEPARTMENT"><datalist id="mobileDepartments"></datalist></div>
+                            </div>
+                            <div id="mobileDeptChips" class="chips" aria-label="Quick department choices"></div>
+                        </div>
+                    </div>
+                    <div class="field"><label for="mobileNotes">Notes</label><textarea class="control caps" id="mobileNotes" placeholder="OPTIONAL NOTES"></textarea></div>
+                    <button id="mobileSaveButton" class="primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save call record</button>
+                </form>
+            </section>
+
+            <section id="view-history" class="view" aria-labelledby="historyTitle" hidden>
+                <div class="page-heading"><span class="eyebrow">Call log</span><h2 id="historyTitle">Incident History</h2><p>Tap a record to review or edit it.</p></div>
+                <div class="search-wrap"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input class="control caps" id="mobileSearch" placeholder="SEARCH ID, ADDRESS, NATURE"></div>
+                <div class="filter-row">
+                    <select class="control" id="mobileHistoryYear" aria-label="Filter by year"><option value="">ALL YEARS</option></select>
+                    <select class="control" id="mobileHistoryType" aria-label="Filter by response type"><option value="">ALL TYPES</option><option value="EMS">EMS</option><option value="Fire">FIRE</option><option value="Both">BOTH</option></select>
+                </div>
+                <div class="history-meta"><span id="mobileHistoryCount">0 records</span><span>Newest first</span></div>
+                <div id="mobileCallList" class="call-list"></div>
+                <div id="mobileHistoryEmpty" class="empty" hidden><i class="fa-solid fa-magnifying-glass"></i><p>No matching calls</p></div>
+                <button id="mobileLoadMore" type="button" class="secondary load-more" hidden>Load more calls</button>
+            </section>
+
+            <section id="view-stats" class="view" aria-labelledby="statsMobileTitle" hidden>
+                <div class="page-heading"><span class="eyebrow">Department data</span><h2 id="statsMobileTitle">Statistics</h2><p>Live totals and EMS crew coverage.</p></div>
+                <div class="field" style="margin-bottom:12px"><label for="mobileStatsYear">Statistics year</label><select class="control" id="mobileStatsYear"></select></div>
+                <div class="summary-grid">
+                    <div class="summary"><span>Total calls</span><strong id="mobileStatTotal">0</strong></div>
+                    <div class="summary fire"><span>Fire runs</span><strong id="mobileStatFire">0</strong></div>
+                    <div class="summary ems"><span>EMS runs</span><strong id="mobileStatEms">0</strong></div>
+                </div>
+                <div class="stats-stack">
+                    <div class="card">
+                        <div class="section-title"><h3>EMS Crew Analysis</h3><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+                        <div class="crew-grid">
+                            <div class="crew-stat day"><span>Day crew</span><strong id="mobileCrewDay">0</strong></div>
+                            <div class="crew-stat vol"><span>Volunteer</span><strong id="mobileCrewVolunteer">0</strong><small id="mobileCrewHandled">0% handled</small></div>
+                        </div>
+                    </div>
+                    <div class="card"><div class="section-title"><h3>Runs by Month</h3><i class="fa-solid fa-chart-column"></i></div><div id="mobileMonths" class="month-list"></div></div>
+                    <div class="card"><div class="section-title"><h3>Volunteer Outcomes</h3><i class="fa-solid fa-clipboard-check"></i></div><div id="mobileDispositions" class="disposition-list"></div></div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Mobile sections">
+            <button type="button" class="nav-button active" data-view="new"><i class="fa-solid fa-plus-circle"></i><span>New</span></button>
+            <button type="button" class="nav-button" data-view="history"><i class="fa-solid fa-list"></i><span>Calls</span></button>
+            <button type="button" class="nav-button" data-view="stats"><i class="fa-solid fa-chart-pie"></i><span>Stats</span></button>
+        </nav>
+    </div>
+
+    <dialog id="mobileEditDialog" aria-labelledby="mobileEditTitle">
+        <div class="sheet-head"><div><div class="eyebrow">Incident record</div><h2 id="mobileEditTitle">Edit Call</h2></div><button id="mobileEditClose" class="icon-button" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+        <form id="mobileEditForm" class="sheet-body stack">
+            <input type="hidden" id="mobileEditId">
+            <div class="field"><label for="mobileEditIncident">Incident number</label><input class="control" id="mobileEditIncident" readonly></div>
+            <div class="field-grid"><div class="field"><label for="mobileEditDate">Date</label><input class="control" type="date" id="mobileEditDate" required></div><div class="field"><label for="mobileEditTime">Time</label><input class="control" type="time" id="mobileEditTime" required></div></div>
+            <div class="field"><label for="mobileEditNature">Call nature</label><input class="control caps" id="mobileEditNature" list="mobileNatures" required></div>
+            <div class="field"><label for="mobileEditType">Response type</label><select class="control" id="mobileEditType"><option value="EMS">EMS</option><option value="Fire">FIRE</option><option value="Both">BOTH</option></select></div>
+            <div class="field"><label for="mobileEditDisposition">EMS disposition</label><select class="control" id="mobileEditDisposition"><option value="">NONE</option><option>TRANSPORT</option><option>REFUSAL</option><option>NO PATIENT</option><option>NO CREW/MA</option><option>OTHER EMS XPORT</option><option>75 COVERAGE</option><option>CANCELLED</option></select></div>
+            <div class="field"><label for="mobileEditAddress">Address</label><input class="control caps" id="mobileEditAddress" list="mobileAddresses" required></div>
+            <div class="field"><label for="mobileEditUnits">Units</label><input class="control caps" id="mobileEditUnits"></div>
+            <div class="field"><label for="mobileEditMutualType">Mutual aid</label><select class="control" id="mobileEditMutualType"><option value="">NONE</option><option value="Given">GIVEN TO</option><option value="Received">RECEIVED FROM</option></select></div>
+            <div class="field"><label for="mobileEditMutualDept">Mutual aid department</label><input class="control caps" id="mobileEditMutualDept" list="mobileDepartments"></div>
+            <div class="field"><label for="mobileEditNotes">Notes</label><textarea class="control caps" id="mobileEditNotes"></textarea></div>
+            <div class="sheet-actions"><button id="mobileDelete" class="secondary danger" type="button"><i class="fa-solid fa-trash"></i> Delete</button><button id="mobileEditSave" class="primary" type="submit">Save changes</button></div>
+        </form>
+    </dialog>
+
+    <div id="mobileToast" class="toast" role="status" aria-live="polite"></div>
+
+</body>
+</html>
