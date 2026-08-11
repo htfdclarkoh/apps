@@ -1,319 +1,986 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="mobile-app">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <title>RMS Call Tracker Mobile</title>
+    <link rel="icon" type="image/png" href="./assets/icon-AV2rQ6CU.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./assets/icon-AV2rQ6CU.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="HTFD Mobile">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="RMS Mobile">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#111827">
-    <title>HTFD Mobile Tracker</title>
-    <style>
-        :root {
-            color-scheme: dark;
-            --bg: #0b1220;
-            --surface: #182235;
-            --surface-2: #111a2a;
-            --line: #334155;
-            --muted: #94a3b8;
-            --text: #f8fafc;
-            --red: #ef4444;
-            --blue: #3b82f6;
-            --green: #22c55e;
-            --orange: #f97316;
-        }
-
-        * { box-sizing: border-box; }
-        html { background: var(--bg); }
-        body {
-            margin: 0;
-            min-height: 100dvh;
-            background: var(--bg);
-            color: var(--text);
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-            -webkit-font-smoothing: antialiased;
-            overscroll-behavior-y: none;
-        }
-        button, input, select, textarea { font: inherit; }
-        button { -webkit-tap-highlight-color: transparent; }
-        input, select, textarea { font-size: 16px; }
-        .app { width: 100%; max-width: 540px; min-height: 100dvh; margin: 0 auto; background: var(--bg); }
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 30;
-            padding: max(12px, env(safe-area-inset-top)) 16px 12px;
-            background: rgba(24, 34, 53, .96);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--line);
-        }
-        .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-        .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-        .brand-mark {
-            width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
-            background: rgba(239, 68, 68, .13); color: #fb7185; border: 1px solid rgba(239, 68, 68, .3);
-        }
-        .brand h1 { margin: 0; font-size: 17px; line-height: 1.1; letter-spacing: .02em; }
-        .status { display: flex; align-items: center; gap: 5px; margin-top: 4px; color: #fbbf24; font-size: 11px; font-weight: 800; text-transform: uppercase; }
-        .status.online { color: #4ade80; }
-        .status.error { color: #fb7185; }
-        .status-dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; }
-        .incident-preview { text-align: right; flex: none; }
-        .incident-preview small { display: block; color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
-        .incident-preview strong { display: block; color: #4ade80; font: 800 16px ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 3px; }
-
-        main { padding: 18px 14px calc(96px + env(safe-area-inset-bottom)); }
-        .view[hidden] { display: none !important; }
-        .page-heading { margin-bottom: 16px; }
-        .eyebrow { color: #fb7185; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; }
-        .page-heading h2 { margin: 4px 0 0; font-size: 26px; letter-spacing: -.03em; }
-        .page-heading p { color: var(--muted); margin: 5px 0 0; font-size: 13px; }
-        .card { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: 0 14px 35px rgba(0,0,0,.16); }
-        .stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
-        .field-grid { min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-        .field { min-width: 0; }
-        .field label, .field-label { display: block; margin: 0 0 7px; color: #cbd5e1; font-size: 11px; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; }
-        .control {
-            width: 100%; min-height: 48px; border: 1px solid #475569; border-radius: 13px;
-            background: var(--surface-2); color: var(--text); padding: 11px 13px; outline: none;
-        }
-        .control:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(59,130,246,.18); }
-        textarea.control { min-height: 86px; resize: vertical; }
-        .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-        .segment {
-            min-height: 48px; border: 1px solid #475569; border-radius: 13px; background: var(--surface-2);
-            color: var(--muted); font-size: 12px; font-weight: 900; text-transform: uppercase;
-        }
-        .segment.active[data-value="EMS"] { background: var(--blue); border-color: #60a5fa; color: white; }
-        .segment.active[data-value="Fire"] { background: #dc2626; border-color: #f87171; color: white; }
-        .segment.active[data-value="Both"] { background: #7c3aed; border-color: #a78bfa; color: white; }
-        .chips { display: flex; gap: 8px; overflow-x: auto; padding: 1px 1px 7px; scrollbar-width: none; }
-        .chips::-webkit-scrollbar { display: none; }
-        .chip { flex: none; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #475569; background: var(--surface-2); color: #cbd5e1; font-size: 12px; font-weight: 800; }
-        .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; }
-        .switch-copy strong { display: block; font-size: 14px; }
-        .switch-copy span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
-        .switch { position: relative; width: 52px; height: 30px; flex: none; }
-        .switch input { position: absolute; opacity: 0; }
-        .switch-track { position: absolute; inset: 0; border-radius: 999px; background: #475569; transition: .2s; }
-        .switch-track::after { content: ""; position: absolute; width: 24px; height: 24px; left: 3px; top: 3px; border-radius: 50%; background: white; transition: .2s; }
-        .switch input:checked + .switch-track { background: var(--red); }
-        .switch input:checked + .switch-track::after { transform: translateX(22px); }
-        .subpanel { border-top: 1px solid var(--line); padding-top: 14px; }
-        .subpanel[hidden] { display: none; }
-        .primary {
-            width: 100%; min-height: 54px; border: 0; border-radius: 15px; background: linear-gradient(135deg,#ef4444,#dc2626);
-            color: white; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em;
-            box-shadow: 0 10px 24px rgba(220,38,38,.25);
-        }
-        .primary:disabled { opacity: .55; }
-        .secondary { min-height: 44px; border-radius: 12px; border: 1px solid #475569; background: var(--surface-2); color: #e2e8f0; padding: 9px 13px; font-size: 12px; font-weight: 850; text-transform: uppercase; }
-        .danger { color: #fda4af; border-color: rgba(239,68,68,.45); }
-
-        .search-wrap { position: relative; margin-bottom: 12px; }
-        .search-wrap i { position: absolute; left: 14px; top: 16px; color: #64748b; }
-        .search-wrap .control { padding-left: 40px; }
-        .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-        .history-meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 11px; margin: 0 2px 10px; text-transform: uppercase; font-weight: 800; }
-        .call-list { display: grid; gap: 10px; }
-        .call-card { width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); padding: 14px; }
-        .call-card:active { transform: scale(.99); }
-        .call-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .call-id { font: 850 14px ui-monospace, SFMono-Regular, Menlo, monospace; }
-        .badge { border-radius: 8px; padding: 5px 8px; font-size: 10px; font-weight: 900; }
-        .badge.ems { background: rgba(37,99,235,.3); color: #bfdbfe; }
-        .badge.fire { background: rgba(220,38,38,.3); color: #fecaca; }
-        .badge.both { background: rgba(124,58,237,.3); color: #ddd6fe; }
-        .call-time { color: var(--muted); font-size: 11px; margin-top: 8px; }
-        .call-nature { font-size: 15px; font-weight: 900; margin-top: 5px; }
-        .call-address { color: #cbd5e1; font-size: 13px; line-height: 1.35; margin-top: 4px; }
-        .call-details { display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: 11px; margin-top: 10px; }
-        .empty { text-align: center; color: var(--muted); padding: 38px 16px; }
-        .load-more { margin-top: 12px; }
-
-        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 12px; }
-        .summary { min-width: 0; padding: 14px 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
-        .summary span { display: block; color: var(--muted); font-size: 9px; font-weight: 900; text-transform: uppercase; }
-        .summary strong { display: block; margin-top: 6px; font-size: 25px; }
-        .summary.fire strong { color: #fb7185; }
-        .summary.ems strong { color: #60a5fa; }
-        .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; }
-        .section-title h3 { margin: 0; font-size: 16px; }
-        .section-title i { color: #64748b; }
-        .crew-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .crew-stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px; text-align: center; }
-        .crew-stat span { color: var(--muted); font-size: 10px; font-weight: 900; text-transform: uppercase; }
-        .crew-stat strong { display: block; margin-top: 5px; font-size: 29px; }
-        .crew-stat.day strong { color: #60a5fa; }
-        .crew-stat.vol strong { color: #fb923c; }
-        .crew-stat small { display: block; color: #cbd5e1; font-size: 11px; font-weight: 850; margin-top: 2px; }
-        .stats-stack { display: grid; gap: 12px; }
-        .month-list, .disposition-list { display: grid; gap: 9px; }
-        .bar-row-head { display: flex; justify-content: space-between; gap: 10px; color: #cbd5e1; font-size: 11px; font-weight: 850; text-transform: uppercase; }
-        .bar-track { height: 7px; border-radius: 999px; background: #334155; overflow: hidden; margin-top: 5px; }
-        .bar-fill { height: 100%; border-radius: inherit; background: var(--blue); }
-        .bar-fill.orange { background: var(--orange); }
-
-        .bottom-nav {
-            position: fixed; z-index: 40; left: 50%; bottom: 0; transform: translateX(-50%);
-            width: min(100%, 540px); display: grid; grid-template-columns: repeat(3,1fr); gap: 6px;
-            padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-            background: rgba(17,26,42,.97); backdrop-filter: blur(18px); border-top: 1px solid var(--line);
-        }
-        .nav-button { min-height: 54px; border: 0; border-radius: 14px; background: transparent; color: #94a3b8; display: grid; place-items: center; align-content: center; gap: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
-        .nav-button i { font-size: 18px; }
-        .nav-button.active { background: rgba(239,68,68,.13); color: #fb7185; }
-
-        dialog { width: min(100%, 540px); max-width: none; max-height: 91dvh; margin: auto auto 0; padding: 0; color: var(--text); border: 1px solid var(--line); border-bottom: 0; border-radius: 22px 22px 0 0; background: var(--surface); box-shadow: 0 -20px 60px rgba(0,0,0,.45); }
-        dialog::backdrop { background: rgba(2,6,23,.75); backdrop-filter: blur(3px); }
-        .sheet-head { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 15px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
-        .sheet-head h2 { margin: 0; font-size: 18px; }
-        .icon-button { width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--surface-2); color: #cbd5e1; }
-        .sheet-body { padding: 16px 16px calc(18px + env(safe-area-inset-bottom)); overflow-y: auto; }
-        .sheet-actions { display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 16px; }
-        .toast { position: fixed; z-index: 80; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); transform: translate(-50%, 24px); width: calc(100% - 28px); max-width: 500px; padding: 13px 15px; border-radius: 13px; background: #166534; color: white; font-size: 12px; font-weight: 850; text-align: center; opacity: 0; pointer-events: none; transition: .22s; }
-        .toast.show { opacity: 1; transform: translate(-50%, 0); }
-        .toast.error { background: #991b1b; }
-        @media (max-width: 370px) {
-            .incident-preview small { display: none; }
-            .field-grid { grid-template-columns: 1fr; }
-            .brand h1 { font-size: 15px; }
-        }
-        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
-    </style>
-  <script type="module" crossorigin src="./assets/mobile-DM0uolb8.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/firebase-config-DIgTNME-.js">
-  <link rel="modulepreload" crossorigin href="./assets/utils-j1fhIcVl.js">
-  <link rel="stylesheet" crossorigin href="./assets/firebase-config-zQ_KO3TN.css">
+    <meta name="format-detection" content="telephone=no">
+    
+  <script type="module" crossorigin src="./assets/main-BbVyfZBz.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/firebase-config-DlaiQHMm.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-C2q0sq8J.js">
+  <link rel="stylesheet" crossorigin href="./assets/firebase-config-DFChnhM5.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --mobile-accent: #ef4444;
+      --mobile-surface: #1f2937;
+      --mobile-border: #374151;
+      --mobile-top-inset: max(env(safe-area-inset-top), 3.25rem);
+      --mobile-bottom-nav: calc(70px + env(safe-area-inset-bottom));
+    }
+    html.mobile-app {
+      min-height: 100%;
+      background: #111827;
+      -webkit-text-size-adjust: 100%;
+    }
+    .mobile-app body {
+      min-height: 100dvh;
+      background: radial-gradient(circle at 50% -12rem, rgba(220, 38, 38, 0.16), transparent 25rem), #111827;
+      overscroll-behavior-y: auto;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-app button,
+    .mobile-app input,
+    .mobile-app select,
+    .mobile-app textarea {
+      touch-action: manipulation;
+    }
+    @media (max-width: 1024px) {
+      .mobile-app body:not(.modal-open) {
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding-bottom: var(--mobile-bottom-nav);
+        -webkit-overflow-scrolling: touch;
+      }
+      .mobile-app nav {
+        top: 0;
+        padding: calc(var(--mobile-top-inset) + 0.4rem) 1rem 0.7rem;
+        background: rgba(17, 24, 39, 0.94);
+        border-bottom-color: rgba(75, 85, 99, 0.72);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        backdrop-filter: blur(18px) saturate(140%);
+      }
+      .mobile-app .app-nav-inner {
+        display: block;
+        width: 100%;
+        max-width: 32rem;
+        margin-inline: auto;
+      }
+      .mobile-app .app-nav-inner > .flex:first-child {
+        justify-content: flex-start;
+        gap: 0.75rem;
+      }
+      .mobile-app .app-nav-inner > .flex:first-child > i {
+        display: grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        flex: 0 0 2.5rem;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        border-radius: 0.8rem;
+        background: rgba(127, 29, 29, 0.3);
+        font-size: 1.15rem;
+      }
+      .mobile-app .app-nav-inner h1 {
+        font-size: 1rem;
+        line-height: 1.25rem;
+        letter-spacing: 0.08em;
+      }
+      .mobile-app #connectionStatus {
+        margin-top: 0.1rem;
+        font-size: 0.65rem;
+        line-height: 0.9rem;
+      }
+      .mobile-app .app-nav-actions {
+        position: fixed;
+        z-index: 90;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.45rem;
+        width: 100%;
+        margin: 0;
+        padding: 0.45rem max(0.75rem, env(safe-area-inset-left)) calc(0.45rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-right));
+        border-top: 1px solid rgba(75, 85, 99, 0.9);
+        background: rgba(17, 24, 39, 0.96);
+        box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.35);
+        -webkit-backdrop-filter: blur(20px) saturate(145%);
+        backdrop-filter: blur(20px) saturate(145%);
+      }
+      .mobile-app .app-nav-actions button {
+        min-width: 0;
+        min-height: 52px;
+        padding: 0.4rem 0.2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.18rem;
+        border: 0;
+        border-radius: 0.85rem;
+        background: transparent;
+        box-shadow: none;
+        color: #9ca3af;
+        font-size: 0.64rem;
+        line-height: 0.8rem;
+        letter-spacing: 0.08em;
+      }
+      .mobile-app .app-nav-actions button i { margin: 0; font-size: 1.15rem; }
+      .mobile-app .app-nav-actions button[aria-selected="true"] {
+        background: rgba(220, 38, 38, 0.17);
+        color: #fca5a5;
+      }
+      .mobile-app main {
+        width: 100%;
+        max-width: 32rem;
+        padding: 0.75rem 0.75rem 1.25rem;
+      }
+      .mobile-app #tab-entry > div,
+      .mobile-app #tab-history > div,
+      .mobile-app #tab-stats > div {
+        border-color: rgba(75, 85, 99, 0.72);
+        border-radius: 1rem;
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+      }
+      .mobile-app #tab-entry > div > div:first-child { padding: 1rem; }
+      .mobile-app #tab-entry > div > div:first-child h2 { font-size: 0.95rem; line-height: 1.25rem; }
+      .mobile-app #previewIncidentId { font-size: 1.3rem; line-height: 1.55rem; }
+      .mobile-app #callForm { padding: 1rem; }
+      .mobile-app #callForm.space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.15rem; }
+      .mobile-app #callForm .grid { gap: 1rem; }
+      .mobile-app label { font-size: 0.72rem; line-height: 1rem; }
+      .mobile-app input:not([type="checkbox"]):not([type="file"]),
+      .mobile-app select,
+      .mobile-app textarea {
+        width: 100%;
+        min-height: 48px;
+        padding: 0.72rem 0.85rem;
+        border-radius: 0.75rem;
+        font-size: 16px;
+        line-height: 1.3;
+      }
+      .mobile-app textarea { min-height: 88px; }
+      .mobile-app input[type="date"] {
+        min-width: 0;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+      .mobile-app input[type="checkbox"] { width: 24px; height: 24px; flex: 0 0 24px; }
+      .mobile-app #btn-ems,
+      .mobile-app #btn-fire,
+      .mobile-app #btn-both,
+      .mobile-app #edit_btn-ems,
+      .mobile-app #edit_btn-fire,
+      .mobile-app #edit_btn-both {
+        min-height: 48px;
+        padding-inline: 0.3rem;
+        font-size: 0.76rem;
+      }
+      .mobile-app #btn-ems i,
+      .mobile-app #btn-fire i,
+      .mobile-app #btn-both i,
+      .mobile-app #edit_btn-ems i,
+      .mobile-app #edit_btn-fire i,
+      .mobile-app #edit_btn-both i { margin-right: 0.28rem; }
+      .mobile-app .unit-chip,
+      .mobile-app #deptChips button,
+      .mobile-app #edit_deptChips button {
+        min-height: 42px;
+        padding: 0.55rem 0.75rem;
+      }
+      .mobile-app #mutualAidFields,
+      .mobile-app #edit_mutualAidFields { padding-left: 1rem; }
+      .mobile-app #callForm > .pt-4 {
+        position: sticky;
+        bottom: calc(var(--mobile-bottom-nav) - env(safe-area-inset-bottom) + 0.4rem);
+        z-index: 15;
+        margin-inline: -0.25rem;
+        padding: 0.65rem;
+        border: 1px solid rgba(75, 85, 99, 0.85);
+        border-radius: 0.9rem;
+        background: rgba(31, 41, 55, 0.96);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+      }
+      .mobile-app #submitBtn {
+        min-height: 48px;
+        flex: 1;
+        justify-content: center;
+        padding-inline: 0.9rem;
+      }
+      .mobile-app #tab-history {
+        min-height: calc(100dvh - var(--mobile-top-inset));
+        padding-bottom: calc(var(--mobile-bottom-nav) + 1rem);
+      }
+      .mobile-app #tab-history > div:first-child { padding: 0.85rem; }
+      .mobile-app #tab-history > div:nth-child(2) {
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+      }
+      .mobile-app #tab-history .flex.flex-col.md\:flex-row { align-items: stretch; }
+      .mobile-app #tab-history input[type="text"] { min-width: 0; }
+      .mobile-app #btn-toggle-filter,
+      .mobile-app #tab-history label.cursor-pointer,
+      .mobile-app #tab-history button { min-height: 44px; }
+      .mobile-app .history-table-wrapper { display: none; }
+      .mobile-app #historyCallCards {
+        display: block;
+        overflow: visible;
+        padding: 0.75rem 0;
+      }
+      .mobile-app .mobile-call-card {
+        display: block;
+        border-radius: 0.95rem;
+        box-shadow: 0 9px 24px rgba(0, 0, 0, 0.18);
+      }
+      .mobile-app #tab-stats { padding-bottom: 0.5rem; }
+      .mobile-app #tab-stats .grid { gap: 0.75rem; }
+      .mobile-app #tab-stats .p-6,
+      .mobile-app #tab-stats .p-5,
+      .mobile-app #tab-stats .p-4 { padding: 0.9rem; }
+      .mobile-app [role="dialog"] {
+        align-items: flex-end;
+        padding: env(safe-area-inset-top) 0 0;
+      }
+      .mobile-app [role="dialog"] > div {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100dvh - env(safe-area-inset-top));
+        border-right: 0;
+        border-bottom: 0;
+        border-left: 0;
+        border-radius: 1.15rem 1.15rem 0 0;
+      }
+      .mobile-app [role="dialog"] > div > div { padding-left: 1rem; padding-right: 1rem; }
+      .mobile-app [role="dialog"] > div > div:last-child { padding-bottom: calc(0.8rem + env(safe-area-inset-bottom)); }
+      .mobile-app [role="dialog"] h2 { font-size: 1.05rem; line-height: 1.35rem; }
+      .mobile-app #editModal .p-6.overflow-y-auto,
+      .mobile-app #monthModal .p-6.overflow-y-auto { padding: 1rem; }
+      .mobile-app #editModal .p-6.border-t { gap: 0.6rem; align-items: stretch; }
+      .mobile-app #editModal .p-6.border-t > div {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+      }
+      .mobile-app #editModal .p-6.border-t button {
+        min-height: 46px;
+        padding: 0.6rem;
+        font-size: 0.72rem;
+      }
+      .mobile-app #toast {
+        right: 0.75rem;
+        bottom: calc(var(--mobile-bottom-nav) + 0.75rem);
+        left: 0.75rem;
+        justify-content: center;
+        padding: 0.85rem 1rem;
+        border-radius: 0.9rem;
+      }
+    }
+    @media (min-width: 1025px) {
+      .mobile-app body::before {
+        content: "This page is optimized for iPhone";
+        position: fixed;
+        z-index: 1000;
+        right: 1rem;
+        bottom: 1rem;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid rgba(75, 85, 99, 0.9);
+        border-radius: 0.7rem;
+        background: rgba(17, 24, 39, 0.92);
+        color: #9ca3af;
+        font-size: 0.7rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mobile-app * { scroll-behavior: auto !important; }
+    }
+  </style>
 </head>
-<body>
-    <div class="app">
-        <header class="topbar">
-            <div class="topbar-row">
-                <div class="brand">
-                    <div class="brand-mark"><i class="fa-solid fa-truck-medical" aria-hidden="true"></i></div>
-                    <div>
-                        <h1>HTFD Run Tracker</h1>
-                        <div id="mobileStatus" class="status"><span class="status-dot"></span><span>Connecting</span></div>
+<body class="bg-gray-900 text-gray-100 font-sans min-h-screen flex flex-col">
+
+    <nav class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-50 shadow-lg">
+        <div class="app-nav-inner max-w-[95%] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-truck-medical text-red-500 text-2xl"></i>
+                <div>
+                    <h1 class="font-bold text-xl tracking-wide uppercase">RMS Mobile</h1>
+                    <div id="connectionStatus" class="text-xs text-yellow-500 flex items-center gap-1">
+                        <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Connecting...
                     </div>
-                </div>
-                <div class="incident-preview">
-                    <small>Next incident</small>
-                    <strong id="mobileNextId">—</strong>
                 </div>
             </div>
-        </header>
+            <div class="app-nav-actions flex gap-2" role="tablist" aria-label="Application sections">
+                <button type="button" role="tab" aria-controls="tab-entry" aria-selected="true" onclick="switchTab('entry')" id="btn-entry" class="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition shadow-md border border-red-500 uppercase text-sm tracking-wider">
+                    <i class="fa-solid fa-plus mr-1"></i> New
+                </button>
+                <button type="button" role="tab" aria-controls="tab-history" aria-selected="false" onclick="switchTab('history')" id="btn-history" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 font-medium hover:bg-gray-600 transition border border-gray-600 uppercase text-sm tracking-wider">
+                    <i class="fa-solid fa-list mr-1"></i> Calls
+                </button>
+                <button type="button" role="tab" aria-controls="tab-stats" aria-selected="false" onclick="switchTab('stats')" id="btn-stats" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 font-medium hover:bg-gray-600 transition border border-gray-600 uppercase text-sm tracking-wider">
+                    <i class="fa-solid fa-chart-pie mr-1"></i> Stats
+                </button>
+            </div>
+        </div>
+    </nav>
 
-        <main>
-            <section id="view-new" class="view" aria-labelledby="newTitle">
-                <div class="page-heading">
-                    <span class="eyebrow">Quick entry</span>
-                    <h2 id="newTitle">New Incident</h2>
-                    <p>Designed for fast one-handed entry.</p>
+    <main class="flex-grow p-4 max-w-[95%] mx-auto w-full">
+        
+        <div id="tab-entry" class="fade-in max-w-2xl mx-auto">
+            <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
+                <div class="bg-gray-750 p-6 border-b border-gray-700 flex justify-between items-center bg-gradient-to-r from-gray-800 to-gray-750">
+                    <h2 class="text-xl font-semibold text-white uppercase tracking-wide"><i class="fa-solid fa-pen-to-square mr-2 text-red-500"></i>Enter Incident</h2>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-400 block uppercase tracking-wider">Next Incident ID</span>
+                        <span id="previewIncidentId" class="text-2xl font-mono font-bold text-green-400">Loading...</span>
+                    </div>
                 </div>
-                <form id="mobileCallForm" class="card stack">
-                    <div class="field-grid">
-                        <div class="field"><label for="mobileDate">Dispatch date</label><input class="control" type="date" id="mobileDate" required></div>
-                        <div class="field"><label for="mobileTime">Dispatch time</label><input class="control" type="time" id="mobileTime" required></div>
-                    </div>
-                    <div>
-                        <span class="field-label">Response type</span>
-                        <div id="mobileResponseSegments" class="segmented" role="group" aria-label="Response type">
-                            <button class="segment" type="button" data-value="EMS"><i class="fa-solid fa-star-of-life" aria-hidden="true"></i> EMS</button>
-                            <button class="segment" type="button" data-value="Fire"><i class="fa-solid fa-fire" aria-hidden="true"></i> Fire</button>
-                            <button class="segment" type="button" data-value="Both"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Both</button>
+                
+                <form id="callForm" class="p-6 space-y-6">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Date</label>
+                            <input type="date" id="dispatchDate" required class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Time (24h)</label>
+                            <input type="text" id="dispatchTime" required placeholder="HH:MM" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition font-mono tracking-wider">
+                            <p class="text-xs text-gray-500 mt-1 uppercase">Format: HH:MM (00:00 - 23:59)</p>
                         </div>
                     </div>
-                    <div class="field"><label for="mobileNature">Call nature</label><input class="control caps" id="mobileNature" list="mobileNatures" placeholder="SELECT OR TYPE" required><datalist id="mobileNatures"></datalist></div>
-                    <div id="mobileDispositionField" class="field"><label for="mobileDisposition">EMS disposition</label><select class="control" id="mobileDisposition">
-                        <option value="">SELECT DISPOSITION</option><option>TRANSPORT</option><option>REFUSAL</option><option>NO PATIENT</option><option>NO CREW/MA</option><option>OTHER EMS XPORT</option><option>75 COVERAGE</option><option>CANCELLED</option>
-                    </select></div>
-                    <div class="field"><label for="mobileAddress">Address</label><input class="control caps" id="mobileAddress" list="mobileAddresses" placeholder="1234 MAIN ST" autocomplete="street-address" required><datalist id="mobileAddresses"></datalist></div>
-                    <div class="field">
-                        <label for="mobileUnits">Units responded</label>
-                        <div id="mobileUnitChips" class="chips" aria-label="Quick unit choices"></div>
-                        <input class="control caps" id="mobileUnits" placeholder="M176, E76">
-                    </div>
-                    <div>
-                        <div class="switch-row">
-                            <div class="switch-copy"><strong>Mutual aid involved?</strong><span>Add direction and department</span></div>
-                            <label class="switch"><input type="checkbox" id="mobileMutual"><span class="switch-track"></span></label>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Call Nature</label>
+                            <input list="natures" id="callNature" oninput="forceCaps(this)" required placeholder="SELECT OR TYPE..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                            <datalist id="natures"></datalist>
                         </div>
-                        <div id="mobileMutualFields" class="subpanel stack" hidden>
-                            <div class="field-grid">
-                                <div class="field"><label for="mobileMutualType">Direction</label><select class="control" id="mobileMutualType"><option value="Given">Given to</option><option value="Received">Received from</option></select></div>
-                                <div class="field"><label for="mobileMutualDept">Department</label><input class="control caps" id="mobileMutualDept" list="mobileDepartments" placeholder="DEPARTMENT"><datalist id="mobileDepartments"></datalist></div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Response Type</label>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <button type="button" onclick="selectType('EMS')" id="btn-ems" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase">
+                                        <i class="fa-solid fa-star-of-life mr-2"></i>EMS
+                                    </button>
+                                    <button type="button" onclick="selectType('Fire')" id="btn-fire" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-red-500 bg-red-600 text-white shadow-lg shadow-red-900/50 transform scale-[1.02] transition uppercase">
+                                        <i class="fa-solid fa-fire mr-2"></i>Fire
+                                    </button>
+                                    <button type="button" onclick="selectType('Both')" id="btn-both" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-purple-500 bg-purple-600 text-white shadow-lg shadow-purple-900/50 transform scale-[1.02] transition uppercase">
+                                        <i class="fa-solid fa-layer-group mr-2"></i>Both
+                                    </button>
+                                </div>
+                                <input type="hidden" id="responseType" value="EMS">
                             </div>
-                            <div id="mobileDeptChips" class="chips" aria-label="Quick department choices"></div>
+
+                            <div id="emsDispositionSection" class="hidden animate-fade-in-down">
+                                <label class="block text-sm font-medium text-blue-400 mb-1 uppercase tracking-wider">EMS Disposition</label>
+                                <select id="emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
+                                    <option value="">SELECT DISPOSITION</option>
+                                    <option value="TRANSPORT">TRANSPORT</option>
+                                    <option value="REFUSAL">REFUSAL</option>
+                                    <option value="NO PATIENT">NO PATIENT</option>
+                                    <option value="NO CREW/MA">NO CREW/MA</option>
+                                    <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                    <option value="76 COVERAGE">76 COVERAGE</option>
+                                    <option value="CANCELLED">CANCELLED</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="field"><label for="mobileNotes">Notes</label><textarea class="control caps" id="mobileNotes" placeholder="OPTIONAL NOTES"></textarea></div>
-                    <button id="mobileSaveButton" class="primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save call record</button>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="md:col-span-1">
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">District</label>
+                            <select id="district" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase font-bold">
+                                <option value="">SELECT</option>
+                                <option value="58">58</option>
+                                <option value="72">72</option>
+                                <option value="56">56</option>
+                                <option value="MA">MA</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
+                            <div class="relative">
+                                <input type="text" id="address" oninput="forceCaps(this)" required placeholder="1234 MAIN ST..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase" autocomplete="off">
+                                
+                                <div id="addressSuggestions" class="absolute w-full bg-gray-800 border border-gray-600 rounded-lg shadow-2xl z-50 hidden mt-1 max-h-48 overflow-y-auto">
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Units Responded</label>
+                        <div id="unitChips" class="flex flex-wrap gap-2 mb-2 uppercase">
+                            </div>
+                        <input type="text" id="units" oninput="forceCaps(this)" placeholder="E.G. E1, M2, C501..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                        <p class="text-xs text-gray-500 mt-1 uppercase">Tap chips above to add, or type manually.</p>
+                    </div>
+
+                    <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <div class="flex items-center gap-3 mb-4">
+                            <input type="checkbox" id="mutualAid" name="mutualAid" class="w-5 h-5 text-red-600 rounded focus:ring-red-500 border-gray-600 bg-gray-800" onchange="toggleMutualAid()">
+                            <label for="mutualAid" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Mutual Aid Involved?</label>
+                        </div>
+
+                        <div id="mutualAidFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pl-8 border-l-2 border-red-500/30">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Direction</label>
+                                <select id="mutualAidType" name="mutualAidType" onchange="handleMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
+                                    <option value="Given">Given (To)</option>
+                                    <option value="Received">Received (From)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Department</label>
+                                <div id="deptChips" class="hidden flex flex-wrap gap-2 mb-2 transition-all uppercase">
+                                    </div>
+                                <input list="maDepts" type="text" id="mutualAidDept" name="mutualAidDept" oninput="forceCaps(this)" placeholder="DEPARTMENT NAME" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
+                                <datalist id="maDepts"></datalist>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="workingIncident" name="workingIncident" class="w-5 h-5 text-red-600 rounded focus:ring-red-500 border-gray-600 bg-gray-800">
+                        <label for="workingIncident" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Working Incident</label>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Notes (Optional)</label>
+                        <textarea id="notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase"></textarea>
+                    </div>
+
+                    <div class="pt-4 flex items-center justify-end gap-4 border-t border-gray-700">
+                        <button type="button" onclick="resetForm()" class="text-gray-400 hover:text-white text-sm uppercase">Clear Form</button>
+                        <button type="submit" id="submitBtn" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transform active:scale-95 transition flex items-center gap-2 uppercase tracking-wide">
+                            <span>Save Call Record</span>
+                            <i class="fa-solid fa-save"></i>
+                        </button>
+                    </div>
                 </form>
-            </section>
+            </div>
+        </div>
 
-            <section id="view-history" class="view" aria-labelledby="historyTitle" hidden>
-                <div class="page-heading"><span class="eyebrow">Call log</span><h2 id="historyTitle">Incident History</h2><p>Tap a record to review or edit it.</p></div>
-                <div class="search-wrap"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input class="control caps" id="mobileSearch" placeholder="SEARCH ID, ADDRESS, NATURE"></div>
-                <div class="filter-row">
-                    <select class="control" id="mobileHistoryYear" aria-label="Filter by year"><option value="">ALL YEARS</option></select>
-                    <select class="control" id="mobileHistoryType" aria-label="Filter by response type"><option value="">ALL TYPES</option><option value="EMS">EMS</option><option value="Fire">FIRE</option><option value="Both">BOTH</option></select>
-                </div>
-                <div class="history-meta"><span id="mobileHistoryCount">0 records</span><span>Newest first</span></div>
-                <div id="mobileCallList" class="call-list"></div>
-                <div id="mobileHistoryEmpty" class="empty" hidden><i class="fa-solid fa-magnifying-glass"></i><p>No matching calls</p></div>
-                <button id="mobileLoadMore" type="button" class="secondary load-more" hidden>Load more calls</button>
-            </section>
+        <div id="tab-history" class="hidden fade-in space-y-6">
+            
+            <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 shadow-lg flex flex-col space-y-4">
+                
+                <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                        <button onclick="exportToCSV()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2 rounded-lg border border-blue-500 transition flex items-center gap-2 uppercase shadow-md">
+                            <i class="fa-solid fa-download"></i>
+                            <span class="hidden sm:inline">Export CSV</span>
+                        </button>
 
-            <section id="view-stats" class="view" aria-labelledby="statsMobileTitle" hidden>
-                <div class="page-heading"><span class="eyebrow">Department data</span><h2 id="statsMobileTitle">Statistics</h2><p>Live totals and EMS crew coverage.</p></div>
-                <div class="field" style="margin-bottom:12px"><label for="mobileStatsYear">Statistics year</label><select class="control" id="mobileStatsYear"></select></div>
-                <div class="summary-grid">
-                    <div class="summary"><span>Total calls</span><strong id="mobileStatTotal">0</strong></div>
-                    <div class="summary fire"><span>Fire runs</span><strong id="mobileStatFire">0</strong></div>
-                    <div class="summary ems"><span>EMS runs</span><strong id="mobileStatEms">0</strong></div>
+                        <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium px-4 py-2 rounded-lg border border-gray-600 transition flex items-center gap-2 uppercase">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span class="hidden sm:inline">Import CSV</span>
+                            <input type="file" id="csvInput" accept=".csv" class="hidden" onchange="handleFileUpload(this)">
+                        </label>
+                        <span id="importStatus" class="text-xs text-gray-400 italic uppercase"></span>
+                    </div>
+
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                        <button onclick="toggleFilterPanel()" id="btn-toggle-filter" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm px-4 py-2 rounded-lg border border-gray-600 transition uppercase flex items-center gap-2">
+                            <i class="fa-solid fa-filter"></i> Filters
+                        </button>
+                        <input type="text" id="searchInput" oninput="forceCaps(this)" placeholder="SEARCH ADDRESS, NOTES, ID..." onkeyup="renderTable()" class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg px-4 py-2 w-full md:w-64 focus:ring-1 focus:ring-red-500 outline-none uppercase">
+                    </div>
                 </div>
-                <div class="stats-stack">
-                    <div class="card">
-                        <div class="section-title"><h3>EMS Crew Analysis</h3><i class="fa-solid fa-users" aria-hidden="true"></i></div>
-                        <div class="crew-grid">
-                            <div class="crew-stat day"><span>Day crew</span><strong id="mobileCrewDay">0</strong></div>
-                            <div class="crew-stat vol"><span>Volunteer</span><strong id="mobileCrewVolunteer">0</strong><small id="mobileCrewHandled">0% handled</small></div>
+
+                <div id="filterPanel" class="hidden border-t border-gray-700 pt-4 animate-fade-in-down">
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        
+                        <div class="col-span-1 lg:col-span-2">
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Date Range</label>
+                            <div class="flex gap-2">
+                                <input type="date" id="filterDateStart" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <span class="text-gray-500 self-center">-</span>
+                                <input type="date" id="filterDateEnd" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Response Type</label>
+                            <select id="filterType" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ALL TYPES</option>
+                                <option value="EMS">EMS</option>
+                                <option value="FIRE">FIRE</option>
+                                <option value="BOTH">BOTH</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Nature</label>
+                            <input type="text" id="filterNature" list="natures" oninput="forceCaps(this); renderTable()" placeholder="ANY" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Disposition</label>
+                            <select id="filterDisposition" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ALL</option>
+                                <option value="TRANSPORT">TRANSPORT</option>
+                                <option value="REFUSAL">REFUSAL</option>
+                                <option value="NO PATIENT">NO PATIENT</option>
+                                <option value="NO CREW/MA">NO CREW/MA</option>
+                                <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                <option value="76 COVERAGE">76 COVERAGE</option>
+                                <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">District</label>
+                            <select id="filterDistrict" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ANY</option>
+                                <option value="58">58</option>
+                                <option value="72">72</option>
+                                <option value="56">56</option>
+                                <option value="MA">MA</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Mutual Aid</label>
+                            <select id="filterMutual" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ANY</option>
+                                <option value="YES">YES (ANY)</option>
+                                <option value="NO">NO</option>
+                                <option value="GIVEN">GIVEN</option>
+                                <option value="RECEIVED">RECEIVED</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Working Incident</label>
+                            <select id="filterWorking" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ANY</option>
+                                <option value="YES">YES</option>
+                                <option value="NO">NO</option>
+                            </select>
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Units</label>
+                            <input type="text" id="filterUnits" oninput="forceCaps(this); renderTable()" placeholder="CONTAINS..." class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                        </div>
+
+                    </div>
+                    <div class="flex justify-end mt-4">
+                        <button onclick="resetFilters()" class="text-xs text-red-400 hover:text-red-300 uppercase font-bold">Reset Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg overflow-hidden flex flex-col h-[650px]">
+                <div class="p-4 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
+                    <h3 class="font-bold text-lg uppercase tracking-wide">Call Log</h3>
+                    <span id="recordCount" class="text-xs text-gray-500 uppercase font-mono">0 Records</span>
+                </div>
+                
+                <div class="history-table-wrapper overflow-auto flex-grow">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-900 text-gray-400 text-xs uppercase sticky top-0 z-10">
+                            <tr>
+                                <th id="th-incident" onclick="handleSort('incident')" class="p-4 font-medium tracking-wider sortable">
+                                    Incident # <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-datetime" onclick="handleSort('datetime')" class="p-4 font-medium tracking-wider sortable">
+                                    Date/Time <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-nature" onclick="handleSort('nature')" class="p-4 font-medium tracking-wider sortable">
+                                    Nature <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-district" onclick="handleSort('district')" class="p-4 font-medium tracking-wider sortable">
+                                    Dist <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-address" onclick="handleSort('address')" class="p-4 font-medium tracking-wider sortable">
+                                    Address <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-type" onclick="handleSort('type')" class="p-4 font-medium tracking-wider sortable">
+                                    Type <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-units" onclick="handleSort('units')" class="p-4 font-medium tracking-wider sortable">
+                                    Units <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-mutual" onclick="handleSort('mutual')" class="p-4 font-medium tracking-wider sortable">
+                                    Mutual Aid <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-disposition" onclick="handleSort('disposition')" class="p-4 font-medium tracking-wider sortable">
+                                    Disposition <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-notes" onclick="handleSort('notes')" class="p-4 font-medium tracking-wider sortable">
+                                    Notes <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-gray-700 text-sm text-gray-300 uppercase cursor-pointer">
+                            </tbody>
+                    </table>
+                </div>
+                <div id="historyCallCards" class="space-y-3 p-3" aria-label="Call history"></div>
+                <div id="emptyState" class="hidden p-10 text-center text-gray-500">
+                    <i class="fa-solid fa-filter text-4xl mb-3 opacity-50" aria-hidden="true"></i>
+                    <p class="uppercase">No calls found matching filters.</p>
+                </div>
+                <div id="loadMoreContainer" class="hidden p-4 text-center border-t border-gray-700">
+                    <button type="button" onclick="loadMoreCalls()" class="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold uppercase text-sm">
+                        Load More Calls
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-stats" class="hidden fade-in space-y-6">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-xl font-bold text-white uppercase tracking-wide flex items-center">
+                    <i class="fa-solid fa-chart-pie mr-2 text-red-500"></i>
+                    <span id="statsTitle">2025 Statistics</span>
+                </h2>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs text-gray-400 uppercase font-bold">Select Year:</label>
+                    <select id="statsYearSelect" onchange="handleStatsYearChange(this)" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block p-2 uppercase font-bold min-w-[100px]">
+                        </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">Total Calls</h3>
+                    <p class="text-3xl font-bold text-white mt-1" id="stat-total">0</p>
+                </div>
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">Fire Runs</h3>
+                    <p class="text-3xl font-bold text-red-500 mt-1" id="stat-fire">0</p>
+                </div>
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">EMS Runs</h3>
+                    <p class="text-3xl font-bold text-blue-400 mt-1" id="stat-ems">0</p>
+                </div>
+            </div>
+
+            <div id="widget-monthly" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Monthly Breakdown</h3>
+                <div id="stats-monthly" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div class="text-gray-500 text-sm italic">No data available</div>
+                </div>
+            </div>
+
+            <div id="widget-time-analysis" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Day of Week Analysis (Average)</h3>
+                    <div id="stats-dow" class="space-y-3">
+                         <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6 flex flex-col">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Hour of Day Analysis (Average)</h3>
+                    <div class="flex-grow flex items-end justify-between gap-1 h-64 w-full" id="stats-hod">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                    <div class="flex justify-between text-[9px] text-gray-500 mt-2 uppercase font-mono">
+                        <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <div id="widget-natures" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Top Call Natures</h3>
+                    <div id="stats-natures" class="space-y-3">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+                <div id="widget-addresses" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Top Addresses</h3>
+                    <div id="stats-addresses" class="space-y-3">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+                <div id="widget-mutual" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Mutual Aid Breakdown</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Given (To)</span>
+                            <span id="stat-ma-given" class="text-3xl font-bold text-yellow-400 block mb-2">0</span>
+                        </div>
+                        
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Received (From)</span>
+                            <span id="stat-ma-received" class="text-3xl font-bold text-green-400 block mb-2">0</span>
                         </div>
                     </div>
-                    <div class="card"><div class="section-title"><h3>Runs by Month</h3><i class="fa-solid fa-chart-column"></i></div><div id="mobileMonths" class="month-list"></div></div>
-                    <div class="card"><div class="section-title"><h3>Volunteer Outcomes</h3><i class="fa-solid fa-clipboard-check"></i></div><div id="mobileDispositions" class="disposition-list"></div></div>
+                    
+                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-700">
+                        <div>
+                            <h4 class="text-xs text-yellow-500 uppercase font-bold mb-2 flex items-center gap-1"><i class="fa-solid fa-arrow-right"></i> Given To</h4>
+                            <ul id="stats-ma-given-list" class="text-sm space-y-1 text-gray-300">
+                                </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-xs text-green-500 uppercase font-bold mb-2 flex items-center gap-1"><i class="fa-solid fa-arrow-left"></i> Rec'd From</h4>
+                            <ul id="stats-ma-received-list" class="text-sm space-y-1 text-gray-300">
+                                </ul>
+                        </div>
+                    </div>
                 </div>
-            </section>
-        </main>
 
-        <nav class="bottom-nav" aria-label="Mobile sections">
-            <button type="button" class="nav-button active" data-view="new"><i class="fa-solid fa-plus-circle"></i><span>New</span></button>
-            <button type="button" class="nav-button" data-view="history"><i class="fa-solid fa-list"></i><span>Calls</span></button>
-            <button type="button" class="nav-button" data-view="stats"><i class="fa-solid fa-chart-pie"></i><span>Stats</span></button>
-        </nav>
+                <div id="widget-districts" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">District Analysis</h3>
+                    <div id="stats-districts" class="space-y-3">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+                <div id="widget-voldispo" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Disposition Analysis</h3>
+                    <div id="stats-vol-dispo" class="space-y-3">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <div id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-gray-800 w-full max-w-2xl rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
+            
+            <div class="p-6 border-b border-gray-700 bg-gray-850 flex justify-between items-center">
+                <div class="w-full mr-4">
+                    <h2 id="editModalTitle" class="text-xl font-bold text-white uppercase">Edit Incident</h2>
+                    <div class="mt-2">
+                         <label class="text-xs text-gray-500 uppercase font-bold">Incident ID</label>
+                         <input type="text" id="edit_incidentNumber" class="bg-gray-900 border border-gray-600 rounded px-3 py-1 text-yellow-400 font-mono text-sm font-bold w-full focus:ring-1 focus:ring-yellow-500 outline-none uppercase" oninput="forceCaps(this)">
+                    </div>
+                </div>
+                <button type="button" aria-label="Close edit incident" onclick="closeEditModal()" class="text-gray-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-2xl" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6">
+                
+                <input type="hidden" id="edit_docId">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Date</label>
+                        <input type="date" id="edit_dispatchDate" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Time (24h)</label>
+                        <input type="text" id="edit_dispatchTime" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-mono tracking-wider">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Call Nature</label>
+                        <input list="natures" id="edit_callNature" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Response Type</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button type="button" onclick="selectEditType('EMS')" id="edit_btn-ems" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">EMS</button>
+                                <button type="button" onclick="selectEditType('Fire')" id="edit_btn-fire" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">Fire</button>
+                                <button type="button" onclick="selectEditType('Both')" id="edit_btn-both" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">Both</button>
+                            </div>
+                            <input type="hidden" id="edit_responseType">
+                        </div>
+
+                        <div id="edit_emsDispositionSection" class="hidden animate-fade-in-down">
+                            <label class="block text-sm font-medium text-blue-400 mb-1 uppercase tracking-wider">EMS Disposition</label>
+                            <select id="edit_emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
+                                <option value="">SELECT DISPOSITION</option>
+                                <option value="TRANSPORT">TRANSPORT</option>
+                                <option value="REFUSAL">REFUSAL</option>
+                                <option value="NO PATIENT">NO PATIENT</option>
+                                <option value="NO CREW/MA">NO CREW/MA</option>
+                                <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                <option value="76 COVERAGE">76 COVERAGE</option>
+                                <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">District</label>
+                        <select id="edit_district" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase font-bold">
+                            <option value="">SELECT</option>
+                            <option value="58">58</option>
+                            <option value="72">72</option>
+                            <option value="56">56</option>
+                            <option value="MA">MA</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
+                        <input type="text" id="edit_address" list="addressHistory" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase" autocomplete="off">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Units Responded</label>
+                    <div id="edit_unitChips" class="flex flex-wrap gap-2 mb-2 uppercase">
+                        </div>
+                    <input type="text" id="edit_units" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                </div>
+
+                <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                    <div class="flex items-center gap-3 mb-4">
+                        <input type="checkbox" id="edit_mutualAid" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-600 bg-gray-800" onchange="toggleEditMutualAid()">
+                        <label for="edit_mutualAid" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Mutual Aid Involved?</label>
+                    </div>
+
+                    <div id="edit_mutualAidFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pl-8 border-l-2 border-blue-500/30">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Direction</label>
+                            <select id="edit_mutualAidType" onchange="handleEditMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 uppercase">
+                                <option value="Given">Given (To)</option>
+                                <option value="Received">Received (From)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Department</label>
+                            <div id="edit_deptChips" class="hidden flex flex-wrap gap-2 mb-2 transition-all uppercase">
+                                </div>
+                            <input list="maDepts" type="text" id="edit_mutualAidDept" oninput="forceCaps(this)" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 uppercase">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="edit_workingIncident" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-600 bg-gray-800">
+                    <label for="edit_workingIncident" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Working Incident</label>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Notes</label>
+                    <textarea id="edit_notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase"></textarea>
+                </div>
+
+            </div>
+
+            <div class="p-6 border-t border-gray-700 bg-gray-850 flex justify-between items-center">
+                <button onclick="deleteCall()" class="px-4 py-2 rounded-lg bg-red-900/50 text-red-500 font-bold hover:bg-red-900 hover:text-white transition uppercase flex items-center gap-2 border border-red-900/50 hover:border-red-500">
+                    <i class="fa-solid fa-trash-can"></i> Delete
+                </button>
+                <div class="flex gap-3">
+                    <button onclick="closeEditModal()" class="px-6 py-2 rounded-lg bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition uppercase">Cancel</button>
+                    <button onclick="saveEdit()" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg transition uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+
+        </div>
     </div>
 
-    <dialog id="mobileEditDialog" aria-labelledby="mobileEditTitle">
-        <div class="sheet-head"><div><div class="eyebrow">Incident record</div><h2 id="mobileEditTitle">Edit Call</h2></div><button id="mobileEditClose" class="icon-button" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
-        <form id="mobileEditForm" class="sheet-body stack">
-            <input type="hidden" id="mobileEditId">
-            <div class="field"><label for="mobileEditIncident">Incident number</label><input class="control" id="mobileEditIncident" readonly></div>
-            <div class="field-grid"><div class="field"><label for="mobileEditDate">Date</label><input class="control" type="date" id="mobileEditDate" required></div><div class="field"><label for="mobileEditTime">Time</label><input class="control" type="time" id="mobileEditTime" required></div></div>
-            <div class="field"><label for="mobileEditNature">Call nature</label><input class="control caps" id="mobileEditNature" list="mobileNatures" required></div>
-            <div class="field"><label for="mobileEditType">Response type</label><select class="control" id="mobileEditType"><option value="EMS">EMS</option><option value="Fire">FIRE</option><option value="Both">BOTH</option></select></div>
-            <div class="field"><label for="mobileEditDisposition">EMS disposition</label><select class="control" id="mobileEditDisposition"><option value="">NONE</option><option>TRANSPORT</option><option>REFUSAL</option><option>NO PATIENT</option><option>NO CREW/MA</option><option>OTHER EMS XPORT</option><option>75 COVERAGE</option><option>CANCELLED</option></select></div>
-            <div class="field"><label for="mobileEditAddress">Address</label><input class="control caps" id="mobileEditAddress" list="mobileAddresses" required></div>
-            <div class="field"><label for="mobileEditUnits">Units</label><input class="control caps" id="mobileEditUnits"></div>
-            <div class="field"><label for="mobileEditMutualType">Mutual aid</label><select class="control" id="mobileEditMutualType"><option value="">NONE</option><option value="Given">GIVEN TO</option><option value="Received">RECEIVED FROM</option></select></div>
-            <div class="field"><label for="mobileEditMutualDept">Mutual aid department</label><input class="control caps" id="mobileEditMutualDept" list="mobileDepartments"></div>
-            <div class="field"><label for="mobileEditNotes">Notes</label><textarea class="control caps" id="mobileEditNotes"></textarea></div>
-            <div class="sheet-actions"><button id="mobileDelete" class="secondary danger" type="button"><i class="fa-solid fa-trash"></i> Delete</button><button id="mobileEditSave" class="primary" type="submit">Save changes</button></div>
-        </form>
-    </dialog>
+    <div id="monthModal" role="dialog" aria-modal="true" aria-labelledby="monthModalTitle" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-gray-800 w-full max-w-4xl rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-gray-700 bg-gray-850 flex justify-between items-center">
+                <h2 id="monthModalTitle" class="text-2xl font-bold text-white uppercase tracking-wide">MONTH DETAILS</h2>
+                <button type="button" aria-label="Close month details" onclick="closeMonthModal()" class="text-gray-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-2xl" aria-hidden="true"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600 text-center">
+                        <span class="block text-gray-400 text-xs uppercase font-bold">Total Calls</span>
+                        <span id="monthModalTotal" class="text-3xl font-bold text-white">0</span>
+                    </div>
+                    <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600 text-center">
+                        <span class="block text-gray-400 text-xs uppercase font-bold">Fire Runs</span>
+                        <span id="monthModalFire" class="text-3xl font-bold text-red-500">0</span>
+                    </div>
+                    <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600 text-center">
+                        <span class="block text-gray-400 text-xs uppercase font-bold">EMS Runs</span>
+                        <span id="monthModalEms" class="text-3xl font-bold text-blue-400">0</span>
+                    </div>
+                </div>
 
-    <div id="mobileToast" class="toast" role="status" aria-live="polite"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Top Call Natures</h3>
+                        <div id="monthModalNatures" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+                    </div>
+                    
+                     <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Top 5 Addresses</h3>
+                        <div id="monthModalAddresses" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+                    </div>
+
+                    <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">District Analysis</h3>
+                        <div id="monthModalDistricts" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+                    </div>
+
+                     <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">EMS Dispositions</h3>
+                        <div id="monthModalDispos" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+                    </div>
+
+                    <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Day of Week (Avg)</h3>
+                        <div id="monthModalDoW" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                    <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Mutual Aid Analysis</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                             <div class="flex justify-between items-end mb-2">
+                                <span class="text-xs text-yellow-500 uppercase font-bold"><i class="fa-solid fa-arrow-right mr-1"></i> Given To</span>
+                                <span id="monthModalMaGivenCount" class="text-xl font-bold text-white">0</span>
+                             </div>
+                             <div id="monthModalMaGivenList" class="space-y-2"></div>
+                        </div>
+
+                        <div>
+                             <div class="flex justify-between items-end mb-2">
+                                <span class="text-xs text-green-500 uppercase font-bold"><i class="fa-solid fa-arrow-left mr-1"></i> Rec'd From</span>
+                                <span id="monthModalMaReceivedCount" class="text-xl font-bold text-white">0</span>
+                             </div>
+                             <div id="monthModalMaReceivedList" class="space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-gray-700 bg-gray-850 flex justify-between items-center">
+                 <button id="btn-month-export" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition uppercase text-sm shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                 </button>
+                 <button onclick="closeMonthModal()" class="px-6 py-2 rounded-lg bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition uppercase">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i class="fa-solid fa-check-circle"></i>
+        <span id="toastMessage" class="uppercase font-bold text-sm">Action Successful</span>
+    </div>
 
 </body>
 </html>
