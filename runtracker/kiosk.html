@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <title>Department Stats Kiosk</title>
+    
+    <style>
+        /* Force fixed full screen, no scrollbars */
+        body, html {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+  <script type="module" crossorigin src="/assets/kiosk-C-CUO83n.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/firebase-config-CCAAiLF7.js">
+  <link rel="modulepreload" crossorigin href="/assets/utils-DoHnE9If.js">
+  <link rel="stylesheet" crossorigin href="/assets/firebase-config-vp52RkYz.css">
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans h-screen w-screen flex flex-col overflow-hidden">
+
+    <nav class="bg-gray-800 border-b border-gray-700 p-4 shadow-xl flex-none z-50">
+        <div class="max-w-[98%] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <i class="fa-solid fa-chart-pie text-red-500 text-3xl"></i>
+                <div>
+                    <h1 class="font-bold text-2xl tracking-wide uppercase leading-none">Live Department Statistics</h1>
+                    <div id="connectionStatus" class="text-xs text-yellow-500 flex items-center gap-1 mt-1">
+                        <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Connecting...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hidden md:block">
+                 <h2 id="statsTitle" class="text-3xl font-bold text-gray-500 opacity-30 uppercase tracking-[0.2em]">2026 Statistics</h2>
+            </div>
+            
+            </div>
+    </nav>
+
+    <main class="flex-grow p-6 w-full max-w-[98%] mx-auto fade-in flex flex-col min-h-0">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 flex-none">
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex items-center justify-between relative overflow-hidden group">
+                <div class="absolute right-0 top-0 h-full w-2 bg-white"></div>
+                <div>
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider mb-1">Total Calls</h3>
+                    <p class="text-5xl font-bold text-white" id="stat-total">0</p>
+                </div>
+                <i class="fa-solid fa-phone text-gray-700 text-6xl opacity-20 group-hover:opacity-30 transition-opacity"></i>
+            </div>
+            
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex items-center justify-between relative overflow-hidden group">
+                <div class="absolute right-0 top-0 h-full w-2 bg-red-600"></div>
+                <div>
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider mb-1">Fire Runs</h3>
+                    <p class="text-5xl font-bold text-red-500" id="stat-fire">0</p>
+                </div>
+                <i class="fa-solid fa-fire text-red-900 text-6xl opacity-20 group-hover:opacity-30 transition-opacity"></i>
+            </div>
+            
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex items-center justify-between relative overflow-hidden group">
+                <div class="absolute right-0 top-0 h-full w-2 bg-blue-500"></div>
+                <div>
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider mb-1">EMS Runs</h3>
+                    <p class="text-5xl font-bold text-blue-400" id="stat-ems">0</p>
+                </div>
+                <i class="fa-solid fa-star-of-life text-blue-900 text-6xl opacity-20 group-hover:opacity-30 transition-opacity"></i>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+            
+            <div class="flex flex-col gap-6 h-full min-h-0">
+                <div id="widget-natures" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-1 flex flex-col min-h-0">
+                    <h3 class="font-bold text-lg text-white mb-3 uppercase border-b border-gray-700 pb-2 flex-none flex items-center gap-2">
+                        <i class="fa-solid fa-list-ol text-gray-500"></i> Top Natures
+                    </h3>
+                    <div id="stats-natures" class="space-y-3 overflow-hidden flex-1">
+                        <div class="text-gray-500 text-sm italic">Loading...</div>
+                    </div>
+                </div>
+
+                <div id="widget-addresses" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-1 flex flex-col min-h-0">
+                    <h3 class="font-bold text-lg text-white mb-3 uppercase border-b border-gray-700 pb-2 flex-none flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-gray-500"></i> Frequent Locations
+                    </h3>
+                    <div id="stats-addresses" class="space-y-3 overflow-hidden flex-1">
+                        <div class="text-gray-500 text-sm italic">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-6 h-full min-h-0">
+                <div id="widget-crew" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-none">
+                    <h3 class="font-bold text-lg text-white mb-3 uppercase border-b border-gray-700 pb-2 flex-none flex items-center gap-2">
+                        <i class="fa-solid fa-users text-gray-500"></i> EMS Crew Analysis
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4 mb-3">
+                        <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold">Day Crew</span>
+                            <span id="stat-crew-day" class="text-3xl font-bold text-blue-400">0</span>
+                        </div>
+                        <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold">Volunteer</span>
+                            <span id="stat-crew-vol" class="text-3xl font-bold text-orange-400">0</span>
+                            <span id="stat-crew-vol-pct" class="block text-[10px] text-gray-500 font-bold">0% Handled</span>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-gray-500 uppercase">M-F 06:00–18:00 · S-S 08:00–18:00 · Holidays: Volunteer</p>
+                </div>
+
+                <div id="widget-voldispo" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-1 flex flex-col min-h-0">
+                    <h3 class="font-bold text-lg text-white mb-3 uppercase border-b border-gray-700 pb-2 flex-none flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard-check text-gray-500"></i> EMS Volunteer Outcomes
+                    </h3>
+                    <div id="stats-vol-dispo" class="space-y-3 overflow-hidden flex-1">
+                        <div class="text-gray-500 text-sm italic">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-6 h-full min-h-0">
+                 <div id="widget-mutual" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-5 flex-1 flex flex-col min-h-0">
+                    <h3 class="font-bold text-lg text-white mb-3 uppercase border-b border-gray-700 pb-2 flex-none flex items-center gap-2">
+                        <i class="fa-solid fa-handshake text-gray-500"></i> Mutual Aid
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4 flex-none">
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center relative overflow-hidden">
+                            <i class="fa-solid fa-arrow-right-from-bracket absolute top-1 right-2 text-gray-700 opacity-30 text-2xl"></i>
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Given</span>
+                            <span id="stat-ma-given" class="text-3xl font-bold text-yellow-400 block">0</span>
+                        </div>
+
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center relative overflow-hidden">
+                            <i class="fa-solid fa-arrow-right-to-bracket absolute top-1 right-2 text-gray-700 opacity-30 text-2xl"></i>
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Received</span>
+                            <span id="stat-ma-received" class="text-3xl font-bold text-green-400 block">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 min-h-0 grid grid-cols-2 gap-4 border-t border-gray-700 pt-3">
+                        <div class="flex flex-col min-h-0">
+                            <h4 class="text-xs text-yellow-500 uppercase font-bold mb-2 flex-none"><i class="fa-solid fa-arrow-right mr-1"></i> Given To</h4>
+                            <ul id="stats-ma-given-list" class="text-sm space-y-2 text-gray-300 overflow-hidden flex-1">
+                                </ul>
+                        </div>
+                        <div class="flex flex-col min-h-0">
+                            <h4 class="text-xs text-green-500 uppercase font-bold mb-2 flex-none"><i class="fa-solid fa-arrow-left mr-1"></i> Rec'd From</h4>
+                            <ul id="stats-ma-received-list" class="text-sm space-y-2 text-gray-300 overflow-hidden flex-1">
+                                </ul>
+                        </div>
+                    </div>
+                </div>
+             </div>
+
+        </div>
+
+    </main>
+
+</body>
+</html>

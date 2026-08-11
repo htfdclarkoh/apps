@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <title>Fire/EMS Call Tracker</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="HARMONY">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+  <script type="module" crossorigin src="/assets/main-CNrT2kni.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/firebase-config-CCAAiLF7.js">
+  <link rel="modulepreload" crossorigin href="/assets/utils-DoHnE9If.js">
+  <link rel="stylesheet" crossorigin href="/assets/firebase-config-vp52RkYz.css">
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans min-h-screen flex flex-col">
+
+    <nav class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-50 shadow-lg">
+        <div class="app-nav-inner max-w-[95%] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-truck-medical text-red-500 text-2xl"></i>
+                <div>
+                    <h1 class="font-bold text-xl tracking-wide uppercase">RMS Call Tracker</h1>
+                    <div id="connectionStatus" class="text-xs text-yellow-500 flex items-center gap-1">
+                        <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Connecting...
+                    </div>
+                </div>
+            </div>
+            <div class="app-nav-actions flex gap-2" role="tablist" aria-label="Application sections">
+                <button type="button" role="tab" aria-controls="tab-entry" aria-selected="true" onclick="switchTab('entry')" id="btn-entry" class="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition shadow-md border border-red-500 uppercase text-sm tracking-wider">
+                    <i class="fa-solid fa-plus mr-1"></i> New Call
+                </button>
+                <button type="button" role="tab" aria-controls="tab-history" aria-selected="false" onclick="switchTab('history')" id="btn-history" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 font-medium hover:bg-gray-600 transition border border-gray-600 uppercase text-sm tracking-wider">
+                    <i class="fa-solid fa-list mr-1"></i> History
+                </button>
+                <button type="button" role="tab" aria-controls="tab-stats" aria-selected="false" onclick="switchTab('stats')" id="btn-stats" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 font-medium hover:bg-gray-600 transition border border-gray-600 uppercase text-sm tracking-wider">
+                    <i class="fa-solid fa-chart-pie mr-1"></i> Statistics
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow p-4 max-w-[95%] mx-auto w-full">
+        
+        <div id="tab-entry" class="fade-in max-w-2xl mx-auto">
+            <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
+                <div class="bg-gray-750 p-6 border-b border-gray-700 flex justify-between items-center bg-gradient-to-r from-gray-800 to-gray-750">
+                    <h2 class="text-xl font-semibold text-white uppercase tracking-wide"><i class="fa-solid fa-pen-to-square mr-2 text-red-500"></i>Enter Incident</h2>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-400 block uppercase tracking-wider">Next Incident ID</span>
+                        <span id="previewIncidentId" class="text-2xl font-mono font-bold text-green-400">Loading...</span>
+                    </div>
+                </div>
+                
+                <form id="callForm" class="p-6 space-y-6">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Date</label>
+                            <input type="date" id="dispatchDate" required class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Time (24h)</label>
+                            <input type="text" id="dispatchTime" required placeholder="HH:MM" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition font-mono tracking-wider">
+                            <p class="text-xs text-gray-500 mt-1 uppercase">Format: HH:MM (00:00 - 23:59)</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Call Nature</label>
+                            <input list="natures" id="callNature" oninput="forceCaps(this)" required placeholder="SELECT OR TYPE..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                            <datalist id="natures"></datalist>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Response Type</label>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <button type="button" onclick="selectType('EMS')" id="btn-ems" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase">
+                                        <i class="fa-solid fa-star-of-life mr-2"></i>EMS
+                                    </button>
+                                    <button type="button" onclick="selectType('Fire')" id="btn-fire" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-red-500 bg-red-600 text-white shadow-lg shadow-red-900/50 transform scale-[1.02] transition uppercase">
+                                        <i class="fa-solid fa-fire mr-2"></i>Fire
+                                    </button>
+                                    <button type="button" onclick="selectType('Both')" id="btn-both" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-purple-500 bg-purple-600 text-white shadow-lg shadow-purple-900/50 transform scale-[1.02] transition uppercase">
+                                        <i class="fa-solid fa-layer-group mr-2"></i>Both
+                                    </button>
+                                </div>
+                                <input type="hidden" id="responseType" value="EMS">
+                            </div>
+
+                            <div id="emsDispositionSection" class="hidden animate-fade-in-down">
+                                <label class="block text-sm font-medium text-blue-400 mb-1 uppercase tracking-wider">EMS Disposition</label>
+                                <select id="emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
+                                    <option value="">SELECT DISPOSITION</option>
+                                    <option value="TRANSPORT">TRANSPORT</option>
+                                    <option value="REFUSAL">REFUSAL</option>
+                                    <option value="NO PATIENT">NO PATIENT</option>
+                                    <option value="NO CREW/MA">NO CREW/MA</option>
+                                    <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                    <option value="75 COVERAGE">75 COVERAGE</option>
+                                    <option value="CANCELLED">CANCELLED</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
+                        <div class="relative">
+                            <input type="text" id="address" oninput="forceCaps(this)" required placeholder="1234 MAIN ST..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase" autocomplete="off">
+                            <div id="addressSuggestions" class="absolute w-full bg-gray-800 border border-gray-600 rounded-lg shadow-2xl z-50 hidden mt-1 max-h-48 overflow-y-auto"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Units Responded</label>
+                        <div id="unitChips" class="flex flex-wrap gap-2 mb-2 uppercase">
+                            </div>
+                        <input type="text" id="units" oninput="forceCaps(this)" placeholder="E.G. E1, M2, C501..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase">
+                        <p class="text-xs text-gray-500 mt-1 uppercase">Tap chips above to add, or type manually.</p>
+                    </div>
+
+                    <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <div class="flex items-center gap-3 mb-4">
+                            <input type="checkbox" id="mutualAid" name="mutualAid" class="w-5 h-5 text-red-600 rounded focus:ring-red-500 border-gray-600 bg-gray-800" onchange="toggleMutualAid()">
+                            <label for="mutualAid" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Mutual Aid Involved?</label>
+                        </div>
+
+                        <div id="mutualAidFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pl-8 border-l-2 border-red-500/30">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Direction</label>
+                                <select id="mutualAidType" name="mutualAidType" onchange="handleMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
+                                    <option value="Given">Given (To)</option>
+                                    <option value="Received">Received (From)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Department</label>
+                                <div id="deptChips" class="hidden flex flex-wrap gap-2 mb-2 transition-all uppercase">
+                                    </div>
+                                <input list="maDepts" type="text" id="mutualAidDept" name="mutualAidDept" oninput="forceCaps(this)" placeholder="DEPARTMENT NAME" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-red-500 uppercase">
+                                <datalist id="maDepts"></datalist>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Notes (Optional)</label>
+                        <textarea id="notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition uppercase"></textarea>
+                    </div>
+
+                    <div class="pt-4 flex items-center justify-end gap-4 border-t border-gray-700">
+                        <button type="button" onclick="resetForm()" class="text-gray-400 hover:text-white text-sm uppercase">Clear Form</button>
+                        <button type="submit" id="submitBtn" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transform active:scale-95 transition flex items-center gap-2 uppercase tracking-wide">
+                            <span>Save Call Record</span>
+                            <i class="fa-solid fa-save"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="tab-history" class="hidden fade-in space-y-6">
+            
+            <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 shadow-lg flex flex-col space-y-4">
+                
+                <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                        <button onclick="exportToCSV()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2 rounded-lg border border-blue-500 transition flex items-center gap-2 uppercase shadow-md">
+                            <i class="fa-solid fa-download"></i>
+                            <span class="hidden sm:inline">Export CSV</span>
+                        </button>
+
+                        <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium px-4 py-2 rounded-lg border border-gray-600 transition flex items-center gap-2 uppercase">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span class="hidden sm:inline">Import CSV</span>
+                            <input type="file" id="csvInput" accept=".csv" class="hidden" onchange="handleFileUpload(this)">
+                        </label>
+                        <span id="importStatus" class="text-xs text-gray-400 italic uppercase"></span>
+                    </div>
+
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                        <button onclick="toggleFilterPanel()" id="btn-toggle-filter" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm px-4 py-2 rounded-lg border border-gray-600 transition uppercase flex items-center gap-2">
+                            <i class="fa-solid fa-filter"></i> Filters
+                        </button>
+                        <input type="text" id="searchInput" oninput="forceCaps(this)" placeholder="SEARCH ADDRESS, NOTES, ID..." onkeyup="renderTable()" class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg px-4 py-2 w-full md:w-64 focus:ring-1 focus:ring-red-500 outline-none uppercase">
+                    </div>
+                </div>
+
+                <div id="filterPanel" class="hidden border-t border-gray-700 pt-4 animate-fade-in-down">
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        
+                        <div class="col-span-1 lg:col-span-2">
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Date Range</label>
+                            <div class="flex gap-2">
+                                <input type="date" id="filterDateStart" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <span class="text-gray-500 self-center">-</span>
+                                <input type="date" id="filterDateEnd" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Response Type</label>
+                            <select id="filterType" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ALL TYPES</option>
+                                <option value="EMS">EMS</option>
+                                <option value="FIRE">FIRE</option>
+                                <option value="BOTH">BOTH</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Nature</label>
+                            <input type="text" id="filterNature" list="natures" oninput="forceCaps(this); renderTable()" placeholder="ANY" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Disposition</label>
+                            <select id="filterDisposition" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ALL</option>
+                                <option value="TRANSPORT">TRANSPORT</option>
+                                <option value="REFUSAL">REFUSAL</option>
+                                <option value="NO PATIENT">NO PATIENT</option>
+                                <option value="NO CREW/MA">NO CREW/MA</option>
+                                <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                <option value="75 COVERAGE">75 COVERAGE</option>
+                                <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Mutual Aid</label>
+                            <select id="filterMutual" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ANY</option>
+                                <option value="YES">YES (ANY)</option>
+                                <option value="NO">NO</option>
+                                <option value="GIVEN">GIVEN</option>
+                                <option value="RECEIVED">RECEIVED</option>
+                            </select>
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Units</label>
+                            <input type="text" id="filterUnits" oninput="forceCaps(this); renderTable()" placeholder="CONTAINS..." class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                        </div>
+
+                    </div>
+                    <div class="flex justify-end mt-4">
+                        <button onclick="resetFilters()" class="text-xs text-red-400 hover:text-red-300 uppercase font-bold">Reset Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg overflow-hidden flex flex-col h-[650px]">
+                <div class="p-4 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
+                    <h3 class="font-bold text-lg uppercase tracking-wide">Call Log</h3>
+                    <span id="recordCount" class="text-xs text-gray-500 uppercase font-mono">0 Records</span>
+                </div>
+                
+                <div class="history-table-wrapper overflow-auto flex-grow">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-900 text-gray-400 text-xs uppercase sticky top-0 z-10">
+                            <tr>
+                                <th id="th-incident" onclick="handleSort('incident')" class="p-4 font-medium tracking-wider sortable">
+                                    Incident # <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-datetime" onclick="handleSort('datetime')" class="p-4 font-medium tracking-wider sortable">
+                                    Date/Time <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-nature" onclick="handleSort('nature')" class="p-4 font-medium tracking-wider sortable">
+                                    Nature <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-address" onclick="handleSort('address')" class="p-4 font-medium tracking-wider sortable">
+                                    Address <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-type" onclick="handleSort('type')" class="p-4 font-medium tracking-wider sortable">
+                                    Type <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-units" onclick="handleSort('units')" class="p-4 font-medium tracking-wider sortable">
+                                    Units <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-mutual" onclick="handleSort('mutual')" class="p-4 font-medium tracking-wider sortable">
+                                    Mutual Aid <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-disposition" onclick="handleSort('disposition')" class="p-4 font-medium tracking-wider sortable">
+                                    Disposition <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th id="th-notes" onclick="handleSort('notes')" class="p-4 font-medium tracking-wider sortable">
+                                    Notes <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-gray-700 text-sm text-gray-300 uppercase cursor-pointer">
+                            </tbody>
+                    </table>
+                </div>
+                <div id="historyCallCards" class="space-y-3 p-3" aria-label="Call history"></div>
+                <div id="emptyState" class="hidden p-10 text-center text-gray-500">
+                    <i class="fa-solid fa-filter text-4xl mb-3 opacity-50" aria-hidden="true"></i>
+                    <p class="uppercase">No calls found matching filters.</p>
+                </div>
+                <div id="loadMoreContainer" class="hidden p-4 text-center border-t border-gray-700">
+                    <button type="button" onclick="loadMoreCalls()" class="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold uppercase text-sm">
+                        Load More Calls
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-stats" class="hidden fade-in space-y-6">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-xl font-bold text-white uppercase tracking-wide flex items-center">
+                    <i class="fa-solid fa-chart-pie mr-2 text-red-500"></i>
+                    <span id="statsTitle">2025 Statistics</span>
+                </h2>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs text-gray-400 uppercase font-bold">Select Year:</label>
+                    <select id="statsYearSelect" onchange="handleStatsYearChange(this)" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block p-2 uppercase font-bold min-w-[100px]">
+                        </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">Total Calls</h3>
+                    <p class="text-3xl font-bold text-white mt-1" id="stat-total">0</p>
+                </div>
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">Fire Runs</h3>
+                    <p class="text-3xl font-bold text-red-500 mt-1" id="stat-fire">0</p>
+                </div>
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 text-sm uppercase font-bold tracking-wider">EMS Runs</h3>
+                    <p class="text-3xl font-bold text-blue-400 mt-1" id="stat-ems">0</p>
+                </div>
+            </div>
+
+            <div id="widget-monthly" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Monthly Breakdown</h3>
+                <div id="stats-monthly" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div class="text-gray-500 text-sm italic">No data available</div>
+                </div>
+            </div>
+
+            <div id="widget-time-analysis" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Day of Week Analysis (Average)</h3>
+                    <div id="stats-dow" class="space-y-3">
+                         <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6 flex flex-col">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Hour of Day Analysis (Average)</h3>
+                    <div class="flex-grow flex items-end justify-between gap-1 h-64 w-full" id="stats-hod">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                    <div class="flex justify-between text-[9px] text-gray-500 mt-2 uppercase font-mono">
+                        <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <div id="widget-natures" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Top Call Natures</h3>
+                    <div id="stats-natures" class="space-y-3">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+                <div id="widget-addresses" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Top Addresses</h3>
+                    <div id="stats-addresses" class="space-y-3">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+                <div id="widget-mutual" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">Mutual Aid Breakdown</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Given (To)</span>
+                            <span id="stat-ma-given" class="text-3xl font-bold text-yellow-400 block mb-2">0</span>
+                        </div>
+                        
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold mb-1">Received (From)</span>
+                            <span id="stat-ma-received" class="text-3xl font-bold text-green-400 block mb-2">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-700">
+                        <div>
+                            <h4 class="text-xs text-yellow-500 uppercase font-bold mb-2 flex items-center gap-1"><i class="fa-solid fa-arrow-right"></i> Given To</h4>
+                            <ul id="stats-ma-given-list" class="text-sm space-y-1 text-gray-300">
+                                </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-xs text-green-500 uppercase font-bold mb-2 flex items-center gap-1"><i class="fa-solid fa-arrow-left"></i> Rec'd From</h4>
+                            <ul id="stats-ma-received-list" class="text-sm space-y-1 text-gray-300">
+                                </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="widget-crew" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Crew Analysis</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold">Day Crew</span>
+                            <span id="stat-crew-day" class="text-2xl font-bold text-blue-400">0</span>
+                        </div>
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold">Volunteer</span>
+                            <span id="stat-crew-vol" class="text-2xl font-bold text-orange-400">0</span>
+                            <span id="stat-crew-vol-pct" class="block text-xs text-gray-500 font-bold mt-1">0% Handled</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900/30 p-3 rounded border border-gray-700 text-xs text-gray-400">
+                        <p class="font-bold mb-1">SCHEDULE (EMS/BOTH ONLY):</p>
+                        <p>M-F: 06:00–18:00 · S-S: 08:00–18:00</p>
+                        <p>Holidays and all other times: Volunteer</p>
+                    </div>
+                </div>
+
+                <div id="widget-voldispo" class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg p-6">
+                    <h3 class="font-bold text-lg text-white mb-4 uppercase border-b border-gray-700 pb-2">EMS Volunteer Dispositions</h3>
+                    <div id="stats-vol-dispo" class="space-y-3">
+                        <div class="text-gray-500 text-sm italic">No data available</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <div id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-gray-800 w-full max-w-2xl rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
+            
+            <div class="p-6 border-b border-gray-700 bg-gray-850 flex justify-between items-center">
+                <div class="w-full mr-4">
+                    <h2 id="editModalTitle" class="text-xl font-bold text-white uppercase">Edit Incident</h2>
+                    <div class="mt-2">
+                         <label class="text-xs text-gray-500 uppercase font-bold">Incident ID</label>
+                         <input type="text" id="edit_incidentNumber" class="bg-gray-900 border border-gray-600 rounded px-3 py-1 text-yellow-400 font-mono text-sm font-bold w-full focus:ring-1 focus:ring-yellow-500 outline-none uppercase" oninput="forceCaps(this)">
+                    </div>
+                </div>
+                <button type="button" aria-label="Close edit incident" onclick="closeEditModal()" class="text-gray-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-2xl" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6">
+                
+                <input type="hidden" id="edit_docId">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Date</label>
+                        <input type="date" id="edit_dispatchDate" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Dispatch Time (24h)</label>
+                        <input type="text" id="edit_dispatchTime" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" inputmode="numeric" oninput="autoFormatTime(this)" onblur="validateTime(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-mono tracking-wider">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Call Nature</label>
+                        <input list="natures" id="edit_callNature" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Response Type</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button type="button" onclick="selectEditType('EMS')" id="edit_btn-ems" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">EMS</button>
+                                <button type="button" onclick="selectEditType('Fire')" id="edit_btn-fire" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">Fire</button>
+                                <button type="button" onclick="selectEditType('Both')" id="edit_btn-both" class="flex items-center justify-center py-2.5 rounded-lg font-bold border border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 transition uppercase text-xs">Both</button>
+                            </div>
+                            <input type="hidden" id="edit_responseType">
+                        </div>
+
+                        <div id="edit_emsDispositionSection" class="hidden animate-fade-in-down">
+                            <label class="block text-sm font-medium text-blue-400 mb-1 uppercase tracking-wider">EMS Disposition</label>
+                            <select id="edit_emsDisposition" class="w-full bg-gray-900 border border-blue-500 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition uppercase">
+                                <option value="">SELECT DISPOSITION</option>
+                                <option value="TRANSPORT">TRANSPORT</option>
+                                <option value="REFUSAL">REFUSAL</option>
+                                <option value="NO PATIENT">NO PATIENT</option>
+                                <option value="NO CREW/MA">NO CREW/MA</option>
+                                <option value="OTHER EMS XPORT">OTHER EMS XPORT</option>
+                                <option value="75 COVERAGE">75 COVERAGE</option>
+                                <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Address</label>
+                    <input type="text" id="edit_address" list="addressHistory" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase" autocomplete="off">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Units Responded</label>
+                    <div id="edit_unitChips" class="flex flex-wrap gap-2 mb-2 uppercase">
+                        </div>
+                    <input type="text" id="edit_units" oninput="forceCaps(this)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase">
+                </div>
+
+                <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                    <div class="flex items-center gap-3 mb-4">
+                        <input type="checkbox" id="edit_mutualAid" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-600 bg-gray-800" onchange="toggleEditMutualAid()">
+                        <label for="edit_mutualAid" class="font-medium text-white select-none cursor-pointer uppercase tracking-wide">Mutual Aid Involved?</label>
+                    </div>
+
+                    <div id="edit_mutualAidFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pl-8 border-l-2 border-blue-500/30">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Direction</label>
+                            <select id="edit_mutualAidType" onchange="handleEditMutualAidTypeChange()" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 uppercase">
+                                <option value="Given">Given (To)</option>
+                                <option value="Received">Received (From)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1 uppercase">Department</label>
+                            <div id="edit_deptChips" class="hidden flex flex-wrap gap-2 mb-2 transition-all uppercase">
+                                </div>
+                            <input list="maDepts" type="text" id="edit_mutualAidDept" oninput="forceCaps(this)" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 uppercase">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">Notes</label>
+                    <textarea id="edit_notes" oninput="forceCaps(this)" rows="3" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase"></textarea>
+                </div>
+
+            </div>
+
+            <div class="p-6 border-t border-gray-700 bg-gray-850 flex justify-between items-center">
+                <button onclick="deleteCall()" class="px-4 py-2 rounded-lg bg-red-900/50 text-red-500 font-bold hover:bg-red-900 hover:text-white transition uppercase flex items-center gap-2 border border-red-900/50 hover:border-red-500">
+                    <i class="fa-solid fa-trash-can"></i> Delete
+                </button>
+                <div class="flex gap-3">
+                    <button onclick="closeEditModal()" class="px-6 py-2 rounded-lg bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition uppercase">Cancel</button>
+                    <button onclick="saveEdit()" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg transition uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="monthModal" role="dialog" aria-modal="true" aria-labelledby="monthModalTitle" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-gray-800 w-full max-w-4xl rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-gray-700 bg-gray-850 flex justify-between items-center">
+                <h2 id="monthModalTitle" class="text-2xl font-bold text-white uppercase tracking-wide">MONTH DETAILS</h2>
+                <button type="button" aria-label="Close month details" onclick="closeMonthModal()" class="text-gray-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-2xl" aria-hidden="true"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600 text-center">
+                        <span class="block text-gray-400 text-xs uppercase font-bold">Total Calls</span>
+                        <span id="monthModalTotal" class="text-3xl font-bold text-white">0</span>
+                    </div>
+                    <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600 text-center">
+                        <span class="block text-gray-400 text-xs uppercase font-bold">Fire Runs</span>
+                        <span id="monthModalFire" class="text-3xl font-bold text-red-500">0</span>
+                    </div>
+                    <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600 text-center">
+                        <span class="block text-gray-400 text-xs uppercase font-bold">EMS Runs</span>
+                        <span id="monthModalEms" class="text-3xl font-bold text-blue-400">0</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Top Call Natures</h3>
+                        <div id="monthModalNatures" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+                    </div>
+                    
+                     <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Top 5 Addresses</h3>
+                        <div id="monthModalAddresses" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+                    </div>
+
+                    <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Crew Coverage</h3>
+                        <div id="monthModalCrew" class="space-y-2"></div>
+                    </div>
+
+                     <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">EMS Dispositions</h3>
+                        <div id="monthModalDispos" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+                    </div>
+
+                    <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                        <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Day of Week (Avg)</h3>
+                        <div id="monthModalDoW" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                    <h3 class="font-bold text-gray-300 uppercase text-sm mb-3 border-b border-gray-700 pb-2">Mutual Aid Analysis</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                             <div class="flex justify-between items-end mb-2">
+                                <span class="text-xs text-yellow-500 uppercase font-bold"><i class="fa-solid fa-arrow-right mr-1"></i> Given To</span>
+                                <span id="monthModalMaGivenCount" class="text-xl font-bold text-white">0</span>
+                             </div>
+                             <div id="monthModalMaGivenList" class="space-y-2"></div>
+                        </div>
+
+                        <div>
+                             <div class="flex justify-between items-end mb-2">
+                                <span class="text-xs text-green-500 uppercase font-bold"><i class="fa-solid fa-arrow-left mr-1"></i> Rec'd From</span>
+                                <span id="monthModalMaReceivedCount" class="text-xl font-bold text-white">0</span>
+                             </div>
+                             <div id="monthModalMaReceivedList" class="space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-gray-700 bg-gray-850 flex justify-between items-center">
+                 <button id="btn-month-export" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition uppercase text-sm shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                 </button>
+                 <button onclick="closeMonthModal()" class="px-6 py-2 rounded-lg bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition uppercase">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i class="fa-solid fa-check-circle"></i>
+        <span id="toastMessage" class="uppercase font-bold text-sm">Action Successful</span>
+    </div>
+
+</body>
+</html>
