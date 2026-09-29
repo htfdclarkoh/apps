@@ -1,554 +1,319 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#071018">
-  <meta name="color-scheme" content="dark">
-  <meta name="format-detection" content="telephone=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="HTFD">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>RMS Call Tracker</title>
-  <link rel="icon" type="image/png" href="./assets/icon-AV2rQ6CU.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icon-AV2rQ6CU.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="HTFD Mobile">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111827">
+    <title>HTFD Mobile Tracker</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0b1220;
+            --surface: #182235;
+            --surface-2: #111a2a;
+            --line: #334155;
+            --muted: #94a3b8;
+            --text: #f8fafc;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --green: #22c55e;
+            --orange: #f97316;
+        }
 
-  <style>
-    :root {
-      color-scheme: dark;
-      background: #071018;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-right: env(safe-area-inset-right, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-left: env(safe-area-inset-left, 0px);
-    }
+        * { box-sizing: border-box; }
+        html { background: var(--bg); }
+        body {
+            margin: 0;
+            min-height: 100dvh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior-y: none;
+        }
+        button, input, select, textarea { font: inherit; }
+        button { -webkit-tap-highlight-color: transparent; }
+        input, select, textarea { font-size: 16px; }
+        .app { width: 100%; max-width: 540px; min-height: 100dvh; margin: 0 auto; background: var(--bg); }
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+            background: rgba(24, 34, 53, .96);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--line);
+        }
+        .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .brand-mark {
+            width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+            background: rgba(239, 68, 68, .13); color: #fb7185; border: 1px solid rgba(239, 68, 68, .3);
+        }
+        .brand h1 { margin: 0; font-size: 17px; line-height: 1.1; letter-spacing: .02em; }
+        .status { display: flex; align-items: center; gap: 5px; margin-top: 4px; color: #fbbf24; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .status.online { color: #4ade80; }
+        .status.error { color: #fb7185; }
+        .status-dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; }
+        .incident-preview { text-align: right; flex: none; }
+        .incident-preview small { display: block; color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+        .incident-preview strong { display: block; color: #4ade80; font: 800 16px ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 3px; }
 
-    * { box-sizing: border-box; }
+        main { padding: 18px 14px calc(96px + env(safe-area-inset-bottom)); }
+        .view[hidden] { display: none !important; }
+        .page-heading { margin-bottom: 16px; }
+        .eyebrow { color: #fb7185; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; }
+        .page-heading h2 { margin: 4px 0 0; font-size: 26px; letter-spacing: -.03em; }
+        .page-heading p { color: var(--muted); margin: 5px 0 0; font-size: 13px; }
+        .card { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: 0 14px 35px rgba(0,0,0,.16); }
+        .stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+        .field-grid { min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .field { min-width: 0; }
+        .field label, .field-label { display: block; margin: 0 0 7px; color: #cbd5e1; font-size: 11px; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; }
+        .control {
+            width: 100%; min-height: 48px; border: 1px solid #475569; border-radius: 13px;
+            background: var(--surface-2); color: var(--text); padding: 11px 13px; outline: none;
+        }
+        .control:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(59,130,246,.18); }
+        textarea.control { min-height: 86px; resize: vertical; }
+        .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+        .segment {
+            min-height: 48px; border: 1px solid #475569; border-radius: 13px; background: var(--surface-2);
+            color: var(--muted); font-size: 12px; font-weight: 900; text-transform: uppercase;
+        }
+        .segment.active[data-value="EMS"] { background: var(--blue); border-color: #60a5fa; color: white; }
+        .segment.active[data-value="Fire"] { background: #dc2626; border-color: #f87171; color: white; }
+        .segment.active[data-value="Both"] { background: #7c3aed; border-color: #a78bfa; color: white; }
+        .chips { display: flex; gap: 8px; overflow-x: auto; padding: 1px 1px 7px; scrollbar-width: none; }
+        .chips::-webkit-scrollbar { display: none; }
+        .chip { flex: none; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #475569; background: var(--surface-2); color: #cbd5e1; font-size: 12px; font-weight: 800; }
+        .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; }
+        .switch-copy strong { display: block; font-size: 14px; }
+        .switch-copy span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+        .switch { position: relative; width: 52px; height: 30px; flex: none; }
+        .switch input { position: absolute; opacity: 0; }
+        .switch-track { position: absolute; inset: 0; border-radius: 999px; background: #475569; transition: .2s; }
+        .switch-track::after { content: ""; position: absolute; width: 24px; height: 24px; left: 3px; top: 3px; border-radius: 50%; background: white; transition: .2s; }
+        .switch input:checked + .switch-track { background: var(--red); }
+        .switch input:checked + .switch-track::after { transform: translateX(22px); }
+        .subpanel { border-top: 1px solid var(--line); padding-top: 14px; }
+        .subpanel[hidden] { display: none; }
+        .primary {
+            width: 100%; min-height: 54px; border: 0; border-radius: 15px; background: linear-gradient(135deg,#ef4444,#dc2626);
+            color: white; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em;
+            box-shadow: 0 10px 24px rgba(220,38,38,.25);
+        }
+        .primary:disabled { opacity: .55; }
+        .secondary { min-height: 44px; border-radius: 12px; border: 1px solid #475569; background: var(--surface-2); color: #e2e8f0; padding: 9px 13px; font-size: 12px; font-weight: 850; text-transform: uppercase; }
+        .danger { color: #fda4af; border-color: rgba(239,68,68,.45); }
 
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      height: 100dvh;
-      margin: 0;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 50% -12%, rgba(220, 38, 38, .18), transparent 31rem),
-        #071018;
-    }
+        .search-wrap { position: relative; margin-bottom: 12px; }
+        .search-wrap i { position: absolute; left: 14px; top: 16px; color: #64748b; }
+        .search-wrap .control { padding-left: 40px; }
+        .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .history-meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 11px; margin: 0 2px 10px; text-transform: uppercase; font-weight: 800; }
+        .call-list { display: grid; gap: 10px; }
+        .call-card { width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); padding: 14px; }
+        .call-card:active { transform: scale(.99); }
+        .call-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .call-id { font: 850 14px ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .badge { border-radius: 8px; padding: 5px 8px; font-size: 10px; font-weight: 900; }
+        .badge.ems { background: rgba(37,99,235,.3); color: #bfdbfe; }
+        .badge.fire { background: rgba(220,38,38,.3); color: #fecaca; }
+        .badge.both { background: rgba(124,58,237,.3); color: #ddd6fe; }
+        .call-time { color: var(--muted); font-size: 11px; margin-top: 8px; }
+        .call-nature { font-size: 15px; font-weight: 900; margin-top: 5px; }
+        .call-address { color: #cbd5e1; font-size: 13px; line-height: 1.35; margin-top: 4px; }
+        .call-details { display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: 11px; margin-top: 10px; }
+        .empty { text-align: center; color: var(--muted); padding: 38px 16px; }
+        .load-more { margin-top: 12px; }
 
-    body {
-      position: fixed;
-      inset: 0;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-    }
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 12px; }
+        .summary { min-width: 0; padding: 14px 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+        .summary span { display: block; color: var(--muted); font-size: 9px; font-weight: 900; text-transform: uppercase; }
+        .summary strong { display: block; margin-top: 6px; font-size: 25px; }
+        .summary.fire strong { color: #fb7185; }
+        .summary.ems strong { color: #60a5fa; }
+        .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; }
+        .section-title h3 { margin: 0; font-size: 16px; }
+        .section-title i { color: #64748b; }
+        .crew-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .crew-stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px; text-align: center; }
+        .crew-stat span { color: var(--muted); font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .crew-stat strong { display: block; margin-top: 5px; font-size: 29px; }
+        .crew-stat.day strong { color: #60a5fa; }
+        .crew-stat.vol strong { color: #fb923c; }
+        .crew-stat small { display: block; color: #cbd5e1; font-size: 11px; font-weight: 850; margin-top: 2px; }
+        .stats-stack { display: grid; gap: 12px; }
+        .month-list, .disposition-list { display: grid; gap: 9px; }
+        .bar-row-head { display: flex; justify-content: space-between; gap: 10px; color: #cbd5e1; font-size: 11px; font-weight: 850; text-transform: uppercase; }
+        .bar-track { height: 7px; border-radius: 999px; background: #334155; overflow: hidden; margin-top: 5px; }
+        .bar-fill { height: 100%; border-radius: inherit; background: var(--blue); }
+        .bar-fill.orange { background: var(--orange); }
 
-    .app-frame {
-      position: fixed;
-      top: var(--safe-top);
-      right: var(--safe-right);
-      bottom: 0;
-      left: var(--safe-left);
-      display: block;
-      width: calc(100% - var(--safe-left) - var(--safe-right));
-      height: calc(100% - var(--safe-top));
-      border: 0;
-      background: #071018;
-      opacity: 0;
-      transition: opacity .22s ease;
-    }
+        .bottom-nav {
+            position: fixed; z-index: 40; left: 50%; bottom: 0; transform: translateX(-50%);
+            width: min(100%, 540px); display: grid; grid-template-columns: repeat(3,1fr); gap: 6px;
+            padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+            background: rgba(17,26,42,.97); backdrop-filter: blur(18px); border-top: 1px solid var(--line);
+        }
+        .nav-button { min-height: 54px; border: 0; border-radius: 14px; background: transparent; color: #94a3b8; display: grid; place-items: center; align-content: center; gap: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .nav-button i { font-size: 18px; }
+        .nav-button.active { background: rgba(239,68,68,.13); color: #fb7185; }
 
-    .app-frame.ready { opacity: 1; }
-
-    .launch-screen {
-      position: fixed;
-      inset: var(--safe-top) var(--safe-right) 0 var(--safe-left);
-      z-index: 2;
-      display: grid;
-      place-content: center;
-      justify-items: center;
-      gap: 14px;
-      background: #071018;
-      color: #f9fafb;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      transition: opacity .2s ease, visibility .2s ease;
-    }
-
-    .launch-screen.hidden {
-      visibility: hidden;
-      opacity: 0;
-    }
-
-    .launch-icon {
-      position: relative;
-      display: grid;
-      width: 68px;
-      height: 68px;
-      place-items: center;
-      overflow: hidden;
-      border: 1px solid rgba(248, 113, 113, .45);
-      border-radius: 19px;
-      background: #111827;
-      box-shadow: 0 16px 44px rgba(0, 0, 0, .42), 0 0 0 6px rgba(220, 38, 38, .08);
-    }
-
-    .launch-icon::before,
-    .launch-icon::after {
-      position: absolute;
-      border-radius: 3px;
-      background: #ef4444;
-      box-shadow: 0 0 18px rgba(239, 68, 68, .3);
-      content: "";
-    }
-
-    .launch-icon::before { width: 36px; height: 13px; }
-    .launch-icon::after { width: 13px; height: 36px; }
-
-    .launch-title {
-      margin: 0;
-      font-size: 15px;
-      font-weight: 800;
-    }
-
-    .launch-caption {
-      margin: -7px 0 0;
-      color: #6b7280;
-      font-size: 10px;
-      font-weight: 700;
-    }
-
-    .spinner {
-      width: 22px;
-      height: 22px;
-      margin-top: 7px;
-      border: 2px solid #263241;
-      border-top-color: #ef4444;
-      border-radius: 50%;
-      animation: spin .8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(1turn); } }
-
-    @media (prefers-reduced-motion: reduce) {
-      .app-frame,
-      .launch-screen { transition: none; }
-      .spinner { animation-duration: 1.8s; }
-    }
-  </style>
+        dialog { width: min(100%, 540px); max-width: none; max-height: 91dvh; margin: auto auto 0; padding: 0; color: var(--text); border: 1px solid var(--line); border-bottom: 0; border-radius: 22px 22px 0 0; background: var(--surface); box-shadow: 0 -20px 60px rgba(0,0,0,.45); }
+        dialog::backdrop { background: rgba(2,6,23,.75); backdrop-filter: blur(3px); }
+        .sheet-head { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 15px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+        .sheet-head h2 { margin: 0; font-size: 18px; }
+        .icon-button { width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--surface-2); color: #cbd5e1; }
+        .sheet-body { padding: 16px 16px calc(18px + env(safe-area-inset-bottom)); overflow-y: auto; }
+        .sheet-actions { display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 16px; }
+        .toast { position: fixed; z-index: 80; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); transform: translate(-50%, 24px); width: calc(100% - 28px); max-width: 500px; padding: 13px 15px; border-radius: 13px; background: #166534; color: white; font-size: 12px; font-weight: 850; text-align: center; opacity: 0; pointer-events: none; transition: .22s; }
+        .toast.show { opacity: 1; transform: translate(-50%, 0); }
+        .toast.error { background: #991b1b; }
+        @media (max-width: 370px) {
+            .incident-preview small { display: none; }
+            .field-grid { grid-template-columns: 1fr; }
+            .brand h1 { font-size: 15px; }
+        }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+    </style>
+  <script type="module" crossorigin src="./assets/mobile-DqPX5Qv0.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/firebase-config-B0JAmdoZ.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-j1fhIcVl.js">
+  <link rel="stylesheet" crossorigin href="./assets/firebase-config-C47trcBy.css">
 </head>
 <body>
-  <div id="launchScreen" class="launch-screen" aria-live="polite">
-    <div class="launch-icon" aria-hidden="true"></div>
-    <p class="launch-title">RMS Call Tracker</p>
-    <p class="launch-caption">Harmony Township</p>
-    <div class="spinner" aria-label="Loading application"></div>
-  </div>
+    <div class="app">
+        <header class="topbar">
+            <div class="topbar-row">
+                <div class="brand">
+                    <div class="brand-mark"><i class="fa-solid fa-truck-medical" aria-hidden="true"></i></div>
+                    <div>
+                        <h1>HTFD Run Tracker</h1>
+                        <div id="mobileStatus" class="status"><span class="status-dot"></span><span>Connecting</span></div>
+                    </div>
+                </div>
+                <div class="incident-preview">
+                    <small>Next incident</small>
+                    <strong id="mobileNextId">—</strong>
+                </div>
+            </div>
+        </header>
 
-  <iframe
-    id="appFrame"
-    class="app-frame"
-    src="./index.html"
-    title="RMS Call Tracker mobile application"
-    allow="clipboard-write"
-  ></iframe>
+        <main>
+            <section id="view-new" class="view" aria-labelledby="newTitle">
+                <div class="page-heading">
+                    <span class="eyebrow">Quick entry</span>
+                    <h2 id="newTitle">New Incident</h2>
+                    <p>Designed for fast one-handed entry.</p>
+                </div>
+                <form id="mobileCallForm" class="card stack">
+                    <div class="field-grid">
+                        <div class="field"><label for="mobileDate">Dispatch date</label><input class="control" type="date" id="mobileDate" required></div>
+                        <div class="field"><label for="mobileTime">Dispatch time</label><input class="control" type="time" id="mobileTime" required></div>
+                    </div>
+                    <div>
+                        <span class="field-label">Response type</span>
+                        <div id="mobileResponseSegments" class="segmented" role="group" aria-label="Response type">
+                            <button class="segment" type="button" data-value="EMS"><i class="fa-solid fa-star-of-life" aria-hidden="true"></i> EMS</button>
+                            <button class="segment" type="button" data-value="Fire"><i class="fa-solid fa-fire" aria-hidden="true"></i> Fire</button>
+                            <button class="segment" type="button" data-value="Both"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Both</button>
+                        </div>
+                    </div>
+                    <div class="field"><label for="mobileNature">Call nature</label><input class="control caps" id="mobileNature" list="mobileNatures" placeholder="SELECT OR TYPE" required><datalist id="mobileNatures"></datalist></div>
+                    <div id="mobileDispositionField" class="field"><label for="mobileDisposition">EMS disposition</label><select class="control" id="mobileDisposition">
+                        <option value="">SELECT DISPOSITION</option><option>TRANSPORT</option><option>REFUSAL</option><option>NO PATIENT</option><option>NO CREW/MA</option><option>OTHER EMS XPORT</option><option>75 COVERAGE</option><option>CANCELLED</option>
+                    </select></div>
+                    <div class="field"><label for="mobileAddress">Address</label><input class="control caps" id="mobileAddress" list="mobileAddresses" placeholder="1234 MAIN ST" autocomplete="street-address" required><datalist id="mobileAddresses"></datalist></div>
+                    <div class="field">
+                        <label for="mobileUnits">Units responded</label>
+                        <div id="mobileUnitChips" class="chips" aria-label="Quick unit choices"></div>
+                        <input class="control caps" id="mobileUnits" placeholder="M176, E76">
+                    </div>
+                    <div>
+                        <div class="switch-row">
+                            <div class="switch-copy"><strong>Mutual aid involved?</strong><span>Add direction and department</span></div>
+                            <label class="switch"><input type="checkbox" id="mobileMutual"><span class="switch-track"></span></label>
+                        </div>
+                        <div id="mobileMutualFields" class="subpanel stack" hidden>
+                            <div class="field-grid">
+                                <div class="field"><label for="mobileMutualType">Direction</label><select class="control" id="mobileMutualType"><option value="Given">Given to</option><option value="Received">Received from</option></select></div>
+                                <div class="field"><label for="mobileMutualDept">Department</label><input class="control caps" id="mobileMutualDept" list="mobileDepartments" placeholder="DEPARTMENT"><datalist id="mobileDepartments"></datalist></div>
+                            </div>
+                            <div id="mobileDeptChips" class="chips" aria-label="Quick department choices"></div>
+                        </div>
+                    </div>
+                    <div class="field"><label for="mobileNotes">Notes</label><textarea class="control caps" id="mobileNotes" placeholder="OPTIONAL NOTES"></textarea></div>
+                    <button id="mobileSaveButton" class="primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save call record</button>
+                </form>
+            </section>
 
-  <script>
-    (() => {
-      const frame = document.getElementById('appFrame');
-      const launchScreen = document.getElementById('launchScreen');
+            <section id="view-history" class="view" aria-labelledby="historyTitle" hidden>
+                <div class="page-heading"><span class="eyebrow">Call log</span><h2 id="historyTitle">Incident History</h2><p>Tap a record to review or edit it.</p></div>
+                <div class="search-wrap"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input class="control caps" id="mobileSearch" placeholder="SEARCH ID, ADDRESS, NATURE"></div>
+                <div class="filter-row">
+                    <select class="control" id="mobileHistoryYear" aria-label="Filter by year"><option value="">ALL YEARS</option></select>
+                    <select class="control" id="mobileHistoryType" aria-label="Filter by response type"><option value="">ALL TYPES</option><option value="EMS">EMS</option><option value="Fire">FIRE</option><option value="Both">BOTH</option></select>
+                </div>
+                <div class="history-meta"><span id="mobileHistoryCount">0 records</span><span>Newest first</span></div>
+                <div id="mobileCallList" class="call-list"></div>
+                <div id="mobileHistoryEmpty" class="empty" hidden><i class="fa-solid fa-magnifying-glass"></i><p>No matching calls</p></div>
+                <button id="mobileLoadMore" type="button" class="secondary load-more" hidden>Load more calls</button>
+            </section>
 
-      const mobileStyles = `
-        :root {
-          color-scheme: dark;
-          background: #071018;
-          --mobile-nav-height: 76px;
-          --mobile-safe-bottom: clamp(2px, var(--host-safe-bottom, 2px), 4px);
-          --mobile-nav-total-height: calc(var(--mobile-nav-height) + var(--mobile-safe-bottom));
-        }
+            <section id="view-stats" class="view" aria-labelledby="statsMobileTitle" hidden>
+                <div class="page-heading"><span class="eyebrow">Department data</span><h2 id="statsMobileTitle">Statistics</h2><p>Live totals and EMS crew coverage.</p></div>
+                <div class="field" style="margin-bottom:12px"><label for="mobileStatsYear">Statistics year</label><select class="control" id="mobileStatsYear"></select></div>
+                <div class="summary-grid">
+                    <div class="summary"><span>Total calls</span><strong id="mobileStatTotal">0</strong></div>
+                    <div class="summary fire"><span>Fire runs</span><strong id="mobileStatFire">0</strong></div>
+                    <div class="summary ems"><span>EMS runs</span><strong id="mobileStatEms">0</strong></div>
+                </div>
+                <div class="stats-stack">
+                    <div class="card">
+                        <div class="section-title"><h3>EMS Crew Analysis</h3><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+                        <div class="crew-grid">
+                            <div class="crew-stat day"><span>Day crew</span><strong id="mobileCrewDay">0</strong></div>
+                            <div class="crew-stat vol"><span>Volunteer</span><strong id="mobileCrewVolunteer">0</strong><small id="mobileCrewHandled">0% handled</small></div>
+                        </div>
+                    </div>
+                    <div class="card"><div class="section-title"><h3>Runs by Month</h3><i class="fa-solid fa-chart-column"></i></div><div id="mobileMonths" class="month-list"></div></div>
+                    <div class="card"><div class="section-title"><h3>Volunteer Outcomes</h3><i class="fa-solid fa-clipboard-check"></i></div><div id="mobileDispositions" class="disposition-list"></div></div>
+                </div>
+            </section>
+        </main>
 
-        html {
-          background: #071018;
-          overscroll-behavior: none;
-        }
+        <nav class="bottom-nav" aria-label="Mobile sections">
+            <button type="button" class="nav-button active" data-view="new"><i class="fa-solid fa-plus-circle"></i><span>New</span></button>
+            <button type="button" class="nav-button" data-view="history"><i class="fa-solid fa-list"></i><span>Calls</span></button>
+            <button type="button" class="nav-button" data-view="stats"><i class="fa-solid fa-chart-pie"></i><span>Stats</span></button>
+        </nav>
+    </div>
 
-        body {
-          min-height: 100%;
-          overflow-x: hidden;
-          background:
-            radial-gradient(circle at 50% -12%, rgba(220, 38, 38, .16), transparent 28rem),
-            #071018 !important;
-          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif !important;
-          -webkit-font-smoothing: antialiased;
-          -webkit-tap-highlight-color: transparent;
-          touch-action: manipulation;
-        }
+    <dialog id="mobileEditDialog" aria-labelledby="mobileEditTitle">
+        <div class="sheet-head"><div><div class="eyebrow">Incident record</div><h2 id="mobileEditTitle">Edit Call</h2></div><button id="mobileEditClose" class="icon-button" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+        <form id="mobileEditForm" class="sheet-body stack">
+            <input type="hidden" id="mobileEditId">
+            <div class="field"><label for="mobileEditIncident">Incident number</label><input class="control" id="mobileEditIncident" readonly></div>
+            <div class="field-grid"><div class="field"><label for="mobileEditDate">Date</label><input class="control" type="date" id="mobileEditDate" required></div><div class="field"><label for="mobileEditTime">Time</label><input class="control" type="time" id="mobileEditTime" required></div></div>
+            <div class="field"><label for="mobileEditNature">Call nature</label><input class="control caps" id="mobileEditNature" list="mobileNatures" required></div>
+            <div class="field"><label for="mobileEditType">Response type</label><select class="control" id="mobileEditType"><option value="EMS">EMS</option><option value="Fire">FIRE</option><option value="Both">BOTH</option></select></div>
+            <div class="field"><label for="mobileEditDisposition">EMS disposition</label><select class="control" id="mobileEditDisposition"><option value="">NONE</option><option>TRANSPORT</option><option>REFUSAL</option><option>NO PATIENT</option><option>NO CREW/MA</option><option>OTHER EMS XPORT</option><option>75 COVERAGE</option><option>CANCELLED</option></select></div>
+            <div class="field"><label for="mobileEditAddress">Address</label><input class="control caps" id="mobileEditAddress" list="mobileAddresses" required></div>
+            <div class="field"><label for="mobileEditUnits">Units</label><input class="control caps" id="mobileEditUnits"></div>
+            <div class="field"><label for="mobileEditMutualType">Mutual aid</label><select class="control" id="mobileEditMutualType"><option value="">NONE</option><option value="Given">GIVEN TO</option><option value="Received">RECEIVED FROM</option></select></div>
+            <div class="field"><label for="mobileEditMutualDept">Mutual aid department</label><input class="control caps" id="mobileEditMutualDept" list="mobileDepartments"></div>
+            <div class="field"><label for="mobileEditNotes">Notes</label><textarea class="control caps" id="mobileEditNotes"></textarea></div>
+            <div class="sheet-actions"><button id="mobileDelete" class="secondary danger" type="button"><i class="fa-solid fa-trash"></i> Delete</button><button id="mobileEditSave" class="primary" type="submit">Save changes</button></div>
+        </form>
+    </dialog>
 
-        nav {
-          position: sticky !important;
-          top: 0;
-          z-index: 60 !important;
-          min-height: 66px;
-          padding: 10px 14px !important;
-          border-color: rgba(75, 85, 99, .58) !important;
-          background: rgba(10, 18, 28, .9) !important;
-          box-shadow: 0 8px 26px rgba(0, 0, 0, .22) !important;
-          -webkit-backdrop-filter: blur(18px) saturate(140%);
-          backdrop-filter: blur(18px) saturate(140%);
-        }
+    <div id="mobileToast" class="toast" role="status" aria-live="polite"></div>
 
-        .app-nav-inner {
-          display: flex !important;
-          max-width: 100% !important;
-          flex-direction: row !important;
-          align-items: center !important;
-          gap: 10px !important;
-        }
-
-        .app-nav-inner > .flex:first-child {
-          width: 100%;
-          min-width: 0;
-          gap: 10px !important;
-        }
-
-        .app-nav-inner > .flex:first-child > i {
-          display: grid;
-          width: 38px;
-          height: 38px;
-          flex: 0 0 38px;
-          place-items: center;
-          border: 1px solid rgba(248, 113, 113, .35);
-          border-radius: 12px;
-          background: rgba(220, 38, 38, .12);
-          font-size: 17px !important;
-          box-shadow: inset 0 1px rgba(255, 255, 255, .04);
-        }
-
-        nav h1 {
-          overflow: hidden;
-          font-size: 15px !important;
-          line-height: 1.15 !important;
-          letter-spacing: .035em !important;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        #connectionStatus {
-          margin-top: 3px;
-          font-size: 10px !important;
-          letter-spacing: .02em;
-        }
-
-        .app-nav-actions {
-          position: fixed;
-          right: 0;
-          bottom: 0;
-          left: 0;
-          z-index: 80;
-          display: grid !important;
-          width: 100%;
-          height: var(--mobile-nav-total-height);
-          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-          gap: 6px !important;
-          padding: 8px 10px .5px;
-          border-top: 1px solid rgba(75, 85, 99, .62);
-          background: rgba(10, 18, 28, .94);
-          box-shadow: 0 -12px 32px rgba(0, 0, 0, .26);
-          -webkit-backdrop-filter: blur(22px) saturate(150%);
-          backdrop-filter: blur(22px) saturate(150%);
-        }
-
-        .app-nav-actions button {
-          display: flex !important;
-          min-width: 0 !important;
-          min-height: 56px;
-          flex-direction: column;
-          justify-content: center;
-          gap: 4px;
-          padding: 5px 4px !important;
-          border-color: transparent !important;
-          border-radius: 13px !important;
-          box-shadow: none !important;
-          font-size: 10px !important;
-          letter-spacing: .04em !important;
-        }
-
-        .app-nav-actions button i {
-          margin: 0 !important;
-          font-size: 17px;
-        }
-
-        .app-nav-actions button[aria-selected="false"] {
-          background: transparent !important;
-          color: #8792a3 !important;
-        }
-
-        .app-nav-actions button[aria-selected="true"] {
-          border-color: rgba(248, 113, 113, .26) !important;
-          background: rgba(220, 38, 38, .16) !important;
-          color: #fca5a5 !important;
-        }
-
-        main {
-          width: 100% !important;
-          max-width: 100% !important;
-          padding: 12px 12px calc(var(--mobile-nav-total-height) + 18px) !important;
-        }
-
-        #tab-entry { max-width: 100% !important; }
-
-        #tab-entry > div,
-        #tab-history > div,
-        #tab-stats > div,
-        #widget-monthly,
-        #widget-natures,
-        #widget-addresses,
-        #widget-mutual,
-        #widget-crew,
-        #widget-districts,
-        #widget-voldispo,
-        #widget-time-analysis > div {
-          border-color: rgba(75, 85, 99, .56) !important;
-          background-color: rgba(22, 31, 43, .9) !important;
-          box-shadow: 0 14px 38px rgba(0, 0, 0, .2) !important;
-        }
-
-        #tab-entry > div > div:first-child {
-          padding: 15px 16px !important;
-          background: linear-gradient(135deg, rgba(31, 41, 55, .98), rgba(24, 34, 47, .94)) !important;
-        }
-
-        #tab-entry > div > div:first-child h2 { font-size: 15px !important; }
-        #previewIncidentId { font-size: 20px !important; }
-        #callForm { padding: 16px !important; }
-
-        #callForm.space-y-6 > :not([hidden]) ~ :not([hidden]),
-        #editModal .space-y-6 > :not([hidden]) ~ :not([hidden]) {
-          margin-top: 18px !important;
-        }
-
-        #callForm .gap-6,
-        #editModal .gap-6,
-        #monthModal .gap-6 { gap: 16px !important; }
-
-        label { letter-spacing: .045em !important; }
-
-        input:not([type="checkbox"]):not([type="file"]),
-        select,
-        textarea {
-          min-height: 48px;
-          border-radius: 12px !important;
-          font-size: 16px !important;
-        }
-
-        textarea { min-height: 94px; }
-
-        input[type="checkbox"] {
-          width: 23px !important;
-          height: 23px !important;
-          flex: 0 0 23px;
-        }
-
-        #btn-ems,
-        #btn-fire,
-        #btn-both,
-        #edit_btn-ems,
-        #edit_btn-fire,
-        #edit_btn-both {
-          min-height: 48px;
-          padding: 8px 4px !important;
-          border-radius: 12px !important;
-          font-size: 12px !important;
-          transform: none !important;
-        }
-
-        #btn-ems i,
-        #btn-fire i,
-        #btn-both i { margin-right: 5px !important; }
-
-        .unit-chip {
-          min-height: 40px;
-          padding: 9px 13px !important;
-          border-radius: 12px !important;
-        }
-
-        #callForm > .pt-4:last-child {
-          align-items: stretch !important;
-          flex-direction: column-reverse;
-          gap: 12px !important;
-        }
-
-        #submitBtn {
-          width: 100%;
-          min-height: 54px;
-          justify-content: center;
-          border-radius: 14px !important;
-          font-size: 15px;
-          box-shadow: 0 12px 28px rgba(127, 29, 29, .3) !important;
-        }
-
-        #callForm > .pt-4:last-child > button:first-child { min-height: 44px; }
-        #tab-history > div:first-child { padding: 12px !important; }
-
-        #tab-history > div:first-child > div:first-child,
-        #tab-history > div:first-child > div:first-child > div {
-          align-items: stretch !important;
-        }
-
-        #tab-history > div:first-child button,
-        #tab-history > div:first-child label {
-          min-height: 44px;
-          justify-content: center;
-        }
-
-        #tab-history > div:nth-child(2) {
-          height: auto !important;
-          min-height: 420px;
-          overflow: visible !important;
-        }
-
-        #historyCallCards { padding: 10px !important; }
-
-        .mobile-call-card {
-          border-radius: 14px !important;
-          background: rgba(17, 24, 39, .82) !important;
-          box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
-        }
-
-        #tab-stats > div:first-child {
-          align-items: stretch !important;
-          margin-bottom: 14px !important;
-          padding: 4px 2px;
-        }
-
-        #tab-stats > div:first-child h2 { font-size: 17px !important; }
-
-        #tab-stats > .grid.grid-cols-1.sm\\:grid-cols-3 {
-          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-          gap: 8px !important;
-        }
-
-        #tab-stats > .grid.grid-cols-1.sm\\:grid-cols-3 > div {
-          padding: 13px 10px !important;
-          text-align: center;
-        }
-
-        #tab-stats > .grid.grid-cols-1.sm\\:grid-cols-3 h3 {
-          font-size: 9px !important;
-          line-height: 1.25;
-        }
-
-        #tab-stats > .grid.grid-cols-1.sm\\:grid-cols-3 p { font-size: 24px !important; }
-        #tab-stats .p-6 { padding: 16px !important; }
-
-        #editModal,
-        #monthModal {
-          align-items: flex-end !important;
-          padding: 0 !important;
-        }
-
-        #editModal > div,
-        #monthModal > div {
-          width: 100% !important;
-          max-height: 96% !important;
-          border-right: 0 !important;
-          border-bottom: 0 !important;
-          border-left: 0 !important;
-          border-radius: 22px 22px 0 0 !important;
-        }
-
-        #editModal > div > div,
-        #monthModal > div > div { padding: 16px !important; }
-
-        #editModal > div > div:last-child {
-          gap: 10px;
-          padding-bottom: 18px !important;
-        }
-
-        #editModal > div > div:last-child > div { gap: 8px !important; }
-
-        #editModal > div > div:last-child button {
-          min-height: 46px;
-          padding: 8px 12px !important;
-          font-size: 11px;
-        }
-
-        #toast {
-          right: 12px !important;
-          bottom: calc(var(--mobile-nav-total-height) + 12px) !important;
-          left: 12px !important;
-          justify-content: center;
-          padding: 14px 16px !important;
-          border-radius: 14px !important;
-        }
-
-        @media (orientation: landscape) and (max-height: 500px) {
-          :root { --mobile-nav-height: 62px; }
-          nav { position: relative !important; min-height: 56px; }
-          .app-nav-actions { padding-top: 5px; padding-bottom: .5px; }
-          .app-nav-actions button { min-height: 48px; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          *, *::before, *::after { scroll-behavior: auto !important; }
-        }
-      `;
-
-      function prepareMobileApp() {
-        try {
-          const appDocument = frame.contentDocument;
-          if (!appDocument) return;
-
-          appDocument.documentElement.classList.add('mobile-home-screen');
-          const hostSafeBottom = getComputedStyle(document.documentElement)
-            .getPropertyValue('--safe-bottom')
-            .trim() || '0px';
-          appDocument.documentElement.style.setProperty('--host-safe-bottom', hostSafeBottom);
-
-          const viewport = appDocument.querySelector('meta[name="viewport"]');
-          if (viewport) {
-            viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
-          }
-
-          const oldStyle = appDocument.getElementById('iphone-mobile-overrides');
-          if (oldStyle) oldStyle.remove();
-          const style = appDocument.createElement('style');
-          style.id = 'iphone-mobile-overrides';
-          style.textContent = mobileStyles;
-          appDocument.head.appendChild(style);
-
-          const tabBar = appDocument.querySelector('.app-nav-actions');
-          if (tabBar && tabBar.parentElement !== appDocument.body) {
-            appDocument.body.appendChild(tabBar);
-          }
-
-          const appTitle = appDocument.querySelector('nav h1');
-          if (appTitle) appTitle.textContent = 'RMS Call Tracker';
-
-          // Keep edit fields from receiving focus and opening the keyboard
-          // when an existing History record is first opened on mobile.
-          const editModalHeader = appDocument.querySelector('#editModal > div > div:first-child');
-          const editCloseButton = editModalHeader?.querySelector(
-            'button[aria-label="Close edit incident"]'
-          );
-          if (editModalHeader && editCloseButton) {
-            editCloseButton.style.order = '9999';
-            editModalHeader.prepend(editCloseButton);
-          }
-
-          frame.classList.add('ready');
-          launchScreen.classList.add('hidden');
-        } catch (error) {
-          launchScreen.querySelector('.launch-caption').textContent = 'Unable to open the application';
-          launchScreen.querySelector('.spinner').hidden = true;
-        }
-      }
-
-      frame.addEventListener('load', prepareMobileApp);
-    })();
-  </script>
 </body>
 </html>
