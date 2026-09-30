@@ -10,8 +10,9 @@
     <meta name="apple-mobile-web-app-title" content="HARMONY">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
-  <script type="module" crossorigin src="./assets/main-BIuqCVyA.js"></script>
+  <script type="module" crossorigin src="./assets/main-BZkUh9Wf.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/firebase-config-BKJw2nsI.js">
+  <link rel="modulepreload" crossorigin href="./assets/history-filters-BfwIPJqt.js">
   <link rel="modulepreload" crossorigin href="./assets/utils-j1fhIcVl.js">
   <link rel="stylesheet" crossorigin href="./assets/firebase-config-BQLXGCLC.css">
 </head>
@@ -208,6 +209,20 @@
                         </div>
 
                         <div>
+                            <label for="filterWeekday" class="block text-xs text-gray-500 uppercase font-bold mb-1">Day of the Week</label>
+                            <select id="filterWeekday" onchange="applyHistoryFilters()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ALL DAYS</option>
+                                <option value="0">SUNDAY</option>
+                                <option value="1">MONDAY</option>
+                                <option value="2">TUESDAY</option>
+                                <option value="3">WEDNESDAY</option>
+                                <option value="4">THURSDAY</option>
+                                <option value="5">FRIDAY</option>
+                                <option value="6">SATURDAY</option>
+                            </select>
+                        </div>
+
+                        <div>
                             <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Response Type</label>
                             <select id="filterType" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
                                 <option value="">ALL TYPES</option>
@@ -238,7 +253,7 @@
 
                         <div>
                             <label for="filterMutual" class="block text-xs text-gray-500 uppercase font-bold mb-1">Mutual Aid</label>
-                            <select id="filterMutual" aria-describedby="mutualAidFilterHelp" onchange="applyMutualAidFilters()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                            <select id="filterMutual" aria-describedby="mutualAidFilterHelp" onchange="applyHistoryFilters()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
                                 <option value="">ANY</option>
                                 <option value="YES">YES (ANY)</option>
                                 <option value="NO">NO</option>
@@ -249,7 +264,7 @@
 
                         <div class="lg:col-span-2">
                             <label for="filterMutualDept" class="block text-xs text-gray-500 uppercase font-bold mb-1">Mutual Aid Department</label>
-                            <select id="filterMutualDept" onchange="applyMutualAidFilters()" aria-describedby="mutualAidFilterHelp" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                            <select id="filterMutualDept" onchange="applyHistoryFilters()" aria-describedby="mutualAidFilterHelp" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
                                 <option value="">ALL DEPARTMENTS</option>
                             </select>
                         </div>

@@ -182,8 +182,9 @@
         }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
     </style>
-  <script type="module" crossorigin src="./assets/mobile-DiLlCdjq.js"></script>
+  <script type="module" crossorigin src="./assets/mobile-BGv09ImM.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/firebase-config-BKJw2nsI.js">
+  <link rel="modulepreload" crossorigin href="./assets/history-filters-BfwIPJqt.js">
   <link rel="modulepreload" crossorigin href="./assets/utils-j1fhIcVl.js">
   <link rel="stylesheet" crossorigin href="./assets/firebase-config-BQLXGCLC.css">
 </head>
@@ -263,6 +264,17 @@
                 <div class="filter-row">
                     <select class="control" id="mobileHistoryYear" aria-label="Filter by year"><option value="">ALL YEARS</option></select>
                     <select class="control" id="mobileHistoryType" aria-label="Filter by response type"><option value="">ALL TYPES</option><option value="EMS">EMS</option><option value="Fire">FIRE</option><option value="Both">BOTH</option></select>
+                </div>
+                <div class="field" style="margin-bottom:14px">
+                    <label for="mobileHistoryWeekday">Day of the week</label>
+                    <select class="control" id="mobileHistoryWeekday"><option value="">ALL DAYS</option>
+                                <option value="0">SUNDAY</option>
+                                <option value="1">MONDAY</option>
+                                <option value="2">TUESDAY</option>
+                                <option value="3">WEDNESDAY</option>
+                                <option value="4">THURSDAY</option>
+                                <option value="5">FRIDAY</option>
+                                <option value="6">SATURDAY</option></select>
                 </div>
                 <div class="history-meta"><span id="mobileHistoryCount">0 records</span><span>Newest first</span></div>
                 <div id="mobileCallList" class="call-list"></div>
