@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="HARMONY">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
-  <script type="module" crossorigin src="./assets/main-HKk1N8CN.js"></script>
+  <script type="module" crossorigin src="./assets/main-C7cP8jXF.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/firebase-config-BKJw2nsI.js">
   <link rel="modulepreload" crossorigin href="./assets/utils-j1fhIcVl.js">
   <link rel="stylesheet" crossorigin href="./assets/firebase-config-BQLXGCLC.css">
@@ -186,7 +186,7 @@
                         <button onclick="toggleFilterPanel()" id="btn-toggle-filter" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm px-4 py-2 rounded-lg border border-gray-600 transition uppercase flex items-center gap-2">
                             <i class="fa-solid fa-filter"></i> Filters
                         </button>
-                        <input type="text" id="searchInput" oninput="forceCaps(this)" placeholder="SEARCH ADDRESS, NOTES, ID..." onkeyup="renderTable()" class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg px-4 py-2 w-full md:w-64 focus:ring-1 focus:ring-red-500 outline-none uppercase">
+                        <input type="text" id="searchInput" oninput="forceCaps(this)" placeholder="SEARCH ADDRESS, NOTES, ID, DEPT..." aria-label="Search call history, including mutual aid departments" onkeyup="renderTable()" class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg px-4 py-2 w-full md:w-64 focus:ring-1 focus:ring-red-500 outline-none uppercase">
                     </div>
                 </div>
 
@@ -232,13 +232,20 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Mutual Aid</label>
-                            <select id="filterMutual" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                            <label for="filterMutual" class="block text-xs text-gray-500 uppercase font-bold mb-1">Mutual Aid</label>
+                            <select id="filterMutual" aria-describedby="mutualAidFilterHelp" onchange="applyMutualAidFilters()" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
                                 <option value="">ANY</option>
                                 <option value="YES">YES (ANY)</option>
                                 <option value="NO">NO</option>
-                                <option value="GIVEN">GIVEN</option>
-                                <option value="RECEIVED">RECEIVED</option>
+                                <option value="GIVEN">GIVEN BY US</option>
+                                <option value="RECEIVED">RECEIVED BY US</option>
+                            </select>
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <label for="filterMutualDept" class="block text-xs text-gray-500 uppercase font-bold mb-1">Mutual Aid Department</label>
+                            <select id="filterMutualDept" onchange="applyMutualAidFilters()" aria-describedby="mutualAidFilterHelp" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white uppercase">
+                                <option value="">ALL DEPARTMENTS</option>
                             </select>
                         </div>
 
@@ -248,6 +255,7 @@
                         </div>
 
                     </div>
+                    <p id="mutualAidFilterHelp" class="text-xs text-gray-400 mt-4">Select a department to see all mutual aid calls involving them. GIVEN BY US = we assisted them. RECEIVED BY US = they assisted us.</p>
                     <div class="flex justify-end mt-4">
                         <button onclick="resetFilters()" class="text-xs text-red-400 hover:text-red-300 uppercase font-bold">Reset Filters</button>
                     </div>
