@@ -145,6 +145,7 @@
         .crew-stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px; text-align: center; }
         .crew-stat span { color: var(--muted); font-size: 10px; font-weight: 900; text-transform: uppercase; }
         .crew-stat strong { display: block; margin-top: 5px; font-size: 29px; }
+        .crew-stat.combined { grid-column: 1 / -1; }
         .crew-stat.day strong { color: #60a5fa; }
         .crew-stat.vol strong { color: #fb923c; }
         .crew-stat small { display: block; color: #cbd5e1; font-size: 11px; font-weight: 850; margin-top: 2px; }
@@ -182,11 +183,11 @@
         }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
     </style>
-  <script type="module" crossorigin src="./assets/mobile-BGv09ImM.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/firebase-config-BKJw2nsI.js">
-  <link rel="modulepreload" crossorigin href="./assets/history-filters-BfwIPJqt.js">
+  <script type="module" crossorigin src="./assets/mobile-Dzo-X_ud.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/firebase-config-DfzmGFVY.js">
   <link rel="modulepreload" crossorigin href="./assets/utils-j1fhIcVl.js">
-  <link rel="stylesheet" crossorigin href="./assets/firebase-config-BQLXGCLC.css">
+  <link rel="modulepreload" crossorigin href="./assets/history-filters-B_9VBzLc.js">
+  <link rel="stylesheet" crossorigin href="./assets/firebase-config-D5kQ36xn.css">
 </head>
 <body>
     <div class="app">
@@ -294,9 +295,13 @@
                     <div class="card">
                         <div class="section-title"><h3>EMS Crew Analysis</h3><i class="fa-solid fa-users" aria-hidden="true"></i></div>
                         <div class="crew-grid">
-                            <div class="crew-stat day"><span>Day crew</span><strong id="mobileCrewDay">0</strong></div>
-                            <div class="crew-stat vol"><span>Volunteer</span><strong id="mobileCrewVolunteer">0</strong><small id="mobileCrewHandled">0% handled</small></div>
+                            <div class="crew-stat day"><span>Day crew</span><strong id="mobileCrewDay">0</strong><small id="mobileCrewDayPct">0% Resp</small></div>
+                            <div class="crew-stat vol"><span>Volunteer</span><strong id="mobileCrewVolunteer">0</strong><small id="mobileCrewHandled">0% Resp</small></div>
+                            <div class="crew-stat combined"><span>Combined</span><strong id="mobileCrewCombined">0</strong><small id="mobileCrewCombinedPct">0% Resp</small></div>
+                            <div class="crew-stat"><span>75 Coverage</span><strong id="mobileCrewCoverage75">0</strong></div>
+                            <div class="crew-stat"><span>75 Saturday</span><strong id="mobileCrewSaturday75">0</strong></div>
                         </div>
+                        <p style="color:var(--muted);font-size:11px;margin:12px 0 0">EMS/Both only. Resp = percentage without NO CREW/MA. 75 Coverage counts that disposition; 75 Saturday counts checked calls. Coverage counts may overlap crew totals.</p>
                     </div>
                     <div class="card"><div class="section-title"><h3>Runs by Month</h3><i class="fa-solid fa-chart-column"></i></div><div id="mobileMonths" class="month-list"></div></div>
                     <div class="card"><div class="section-title"><h3>Volunteer Outcomes</h3><i class="fa-solid fa-clipboard-check"></i></div><div id="mobileDispositions" class="disposition-list"></div></div>

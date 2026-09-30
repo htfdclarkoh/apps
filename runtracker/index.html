@@ -10,11 +10,11 @@
     <meta name="apple-mobile-web-app-title" content="HARMONY">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
-  <script type="module" crossorigin src="./assets/main-BZkUh9Wf.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/firebase-config-BKJw2nsI.js">
-  <link rel="modulepreload" crossorigin href="./assets/history-filters-BfwIPJqt.js">
+  <script type="module" crossorigin src="./assets/main-B4Tl5x8_.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/firebase-config-DfzmGFVY.js">
   <link rel="modulepreload" crossorigin href="./assets/utils-j1fhIcVl.js">
-  <link rel="stylesheet" crossorigin href="./assets/firebase-config-BQLXGCLC.css">
+  <link rel="modulepreload" crossorigin href="./assets/history-filters-B_9VBzLc.js">
+  <link rel="stylesheet" crossorigin href="./assets/firebase-config-D5kQ36xn.css">
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans min-h-screen flex flex-col">
 
@@ -445,17 +445,33 @@
                         <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
                             <span class="block text-gray-400 text-xs uppercase font-bold">Day Crew</span>
                             <span id="stat-crew-day" class="text-2xl font-bold text-blue-400">0</span>
+                            <span id="stat-crew-day-pct" class="block text-xs text-gray-500 font-bold mt-1">0% Resp</span>
                         </div>
                         <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
                             <span class="block text-gray-400 text-xs uppercase font-bold">Volunteer</span>
                             <span id="stat-crew-vol" class="text-2xl font-bold text-orange-400">0</span>
-                            <span id="stat-crew-vol-pct" class="block text-xs text-gray-500 font-bold mt-1">0% Handled</span>
+                            <span id="stat-crew-vol-pct" class="block text-xs text-gray-500 font-bold mt-1">0% Resp</span>
+                        </div>
+                        <div class="col-span-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                            <span class="block text-gray-400 text-xs uppercase font-bold">Combined</span>
+                            <span id="stat-crew-combined" class="text-2xl font-bold text-white">0</span>
+                            <span id="stat-crew-combined-pct" class="block text-xs text-gray-500 font-bold mt-1">0% Resp</span>
+                        </div>
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center" title="EMS/Both calls with a 75 COVERAGE disposition">
+                            <span class="block text-gray-400 text-xs uppercase font-bold">75 Coverage</span>
+                            <span id="stat-crew-coverage75" class="text-2xl font-bold text-white">0</span>
+                        </div>
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center" title="EMS/Both calls with 75 SATURDAY? checked">
+                            <span class="block text-gray-400 text-xs uppercase font-bold">75 Saturday</span>
+                            <span id="stat-crew-saturday75" class="text-2xl font-bold text-white">0</span>
                         </div>
                     </div>
                     <div class="bg-gray-900/30 p-3 rounded border border-gray-700 text-xs text-gray-400">
                         <p class="font-bold mb-1">SCHEDULE (EMS/BOTH ONLY):</p>
                         <p>M-F: 06:00–18:00 · S-S: 08:00–18:00</p>
                         <p>Holidays and all other times: Volunteer</p>
+                        <p class="mt-2">Resp = percentage of calls without a NO CREW/MA disposition.</p>
+                        <p>75 Coverage counts that disposition; 75 Saturday counts checked calls. These may overlap crew totals.</p>
                     </div>
                 </div>
 
