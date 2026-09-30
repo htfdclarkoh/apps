@@ -182,7 +182,7 @@
         }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
     </style>
-  <script type="module" crossorigin src="./assets/mobile-vwjwO83C.js"></script>
+  <script type="module" crossorigin src="./assets/mobile-DiLlCdjq.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/firebase-config-BKJw2nsI.js">
   <link rel="modulepreload" crossorigin href="./assets/utils-j1fhIcVl.js">
   <link rel="stylesheet" crossorigin href="./assets/firebase-config-BQLXGCLC.css">
@@ -248,6 +248,10 @@
                             <div id="mobileDeptChips" class="chips" aria-label="Quick department choices"></div>
                         </div>
                     </div>
+                    <div class="switch-row">
+                        <label for="mobileSaturday75" class="switch-copy"><strong>75 SATURDAY?</strong></label>
+                        <label class="switch"><input type="checkbox" id="mobileSaturday75" name="saturday75" aria-label="75 SATURDAY?"><span class="switch-track"></span></label>
+                    </div>
                     <div class="field"><label for="mobileNotes">Notes</label><textarea class="control caps" id="mobileNotes" placeholder="OPTIONAL NOTES"></textarea></div>
                     <button id="mobileSaveButton" class="primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save call record</button>
                 </form>
@@ -308,6 +312,10 @@
             <div class="field"><label for="mobileEditUnits">Units</label><input class="control caps" id="mobileEditUnits"></div>
             <div class="field"><label for="mobileEditMutualType">Mutual aid</label><select class="control" id="mobileEditMutualType"><option value="">NONE</option><option value="Given">GIVEN TO</option><option value="Received">RECEIVED FROM</option></select></div>
             <div class="field"><label for="mobileEditMutualDept">Mutual aid department</label><input class="control caps" id="mobileEditMutualDept" list="mobileDepartments"></div>
+            <div class="switch-row">
+                <label for="mobileEditSaturday75" class="switch-copy"><strong>75 SATURDAY?</strong></label>
+                <label class="switch"><input type="checkbox" id="mobileEditSaturday75" name="saturday75" aria-label="75 SATURDAY?"><span class="switch-track"></span></label>
+            </div>
             <div class="field"><label for="mobileEditNotes">Notes</label><textarea class="control caps" id="mobileEditNotes"></textarea></div>
             <div class="sheet-actions"><button id="mobileDelete" class="secondary danger" type="button"><i class="fa-solid fa-trash"></i> Delete</button><button id="mobileEditSave" class="primary" type="submit">Save changes</button></div>
         </form>
